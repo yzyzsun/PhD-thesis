@@ -1,0 +1,290 @@
+\documentclass{mimosis}
+
+\usepackage{metalogo}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Some of my favourite personal adjustments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% These are the adjustments that I consider necessary for typesetting
+% a nice thesis. However, they are *not* included in the template, as
+% I do not want to force you to use them.
+
+% This ensures that I am able to typeset bold font in table while still aligning the numbers
+% correctly.
+\usepackage{etoolbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Hyperlinks & bookmarks
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[%
+  colorlinks = true,
+  citecolor  = RedViolet,
+  linkcolor  = NavyBlue,
+  urlcolor   = NavyBlue,
+  backref    = page
+  ]{hyperref}
+
+\renewcommand*{\backref}[1]{}
+\renewcommand*{\backrefalt}[4]{%
+    \ifcase #1%
+          \or [cited on page~#2]%
+          \else [cited on pages~#2]%
+    \fi%
+    }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Bibliography
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage[sort]{natbib}
+\setcitestyle{%
+    authoryear,%
+    open={[},close={]},citesep={;},%
+    aysep={},yysep={,},%
+    notesep={, }}
+
+% ACM bibliography style looks more professional
+\bibliographystyle{ACM-Reference-Format}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Fonts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ifxetexorluatex
+  \setmainfont{Minion Pro}
+\else
+  \usepackage[tt=false,type1=true]{libertine}
+  \usepackage[varqu]{zi4}
+  \usepackage[libertine]{newtxmath}
+  % \usepackage[lf]{ebgaramond}
+  % \usepackage[oldstyle,scale=0.7]{sourcecodepro}
+  % \singlespacing
+\fi
+
+\usepackage{CJKutf8}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Ordinals
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\makeatletter
+\@ifundefined{st}{%
+  \newcommand{\st}{\textsuperscript{\textup{st}}\xspace}
+}{}
+\@ifundefined{rd}{%
+  \newcommand{\rd}{\textsuperscript{\textup{rd}}\xspace}
+}{}
+\@ifundefined{nd}{%
+  \newcommand{\nd}{\textsuperscript{\textup{nd}}\xspace}
+}{}
+\makeatother
+
+\renewcommand{\th}{\textsuperscript{\textup{th}}\xspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Load my packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\usepackage{ottalt}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[narrower=0.6,lab=#1,#2]
+    {#3}
+    {#4}
+}
+
+%%----------------------------------------------------------------------------%%
+
+
+\title{Compositional Programming in Action}
+\author{Yaozhu Sun}
+\date{21 January 2025}
+
+
+%%----------------------------------------------------------------------------%%
+%%    Environment for Title Page                                              %%
+%%----------------------------------------------------------------------------%%
+
+\makeatletter
+\renewcommand{\maketitle}
+{%
+  \begin{titlepage}
+    \renewcommand{\baselinestretch}{1}
+    \begin{center}
+      \vspace*{\stretch{3}}
+      {\huge\textsf{\textbf{\@title}}\par}
+      \vspace*{1.25cm}
+      {\large\textit{by}\par}
+      \vspace*{1cm}
+      {\Large\textbf{\@author}\par}
+      {\begin{CJK}{UTF8}{mj}（孫耀珠）\end{CJK}\par}
+      \vspace*{\stretch{5}}
+      {{\includegraphics[width=30mm]{figures/hku}} \par}
+      {\hbox{}\par}
+      \vspace*{\stretch{5}}
+      {
+        {\normalsize
+        A thesis submitted in partial fulfillment of the requirements for \\
+        the degree of Doctor of Philosophy \\
+        at the University of Hong Kong \\
+        \par
+        }
+      }
+      \vspace*{\stretch{1}}
+      {\large\@date\par}
+      \vspace*{\stretch{1}}
+    \end{center}
+  \end{titlepage}
+} \makeatother
+
+
+
+
+%%----------------------------------------------------------------------------%%
+%%    Environment for Abstract                                                %%
+%%----------------------------------------------------------------------------%%
+
+\makeatletter
+\newenvironment{abstract}%
+{
+  \if@twocolumn
+    \@restonecoltrue\onecolumn
+  \else
+    \@restonecolfalse\newpage
+  \fi
+  \pagestyle{empty}%
+  \setcounter{page}\@ne
+  \mbox{}
+  \newpage
+  \pagestyle{empty}%
+  \setcounter{page}\@ne
+  \cleardoublepage
+  \begin{center}
+  \large
+  Abstract of thesis entitled            \par
+  \textbf{``\@title''}                   \par
+                                         \vspace*{0.2in}
+  Submitted by                           \par
+  \textbf{\@author}                      \par
+                                         \vspace*{0.2in}
+  for the degree of Doctor of Philosophy \\
+  at the University of Hong Kong         \\
+  on \@date
+  \end{center}
+  \vspace*{0.5in}
+}%
+{
+  \if@restonecol\twocolumn \else \newpage \fi
+  \if@twoside\else
+  \setcounter{page}\@ne
+  \fi
+}
+\makeatother
+
+%%----------------------------------------------------------------------------%%
+%%    Environment for Declaration                                             %%
+%%----------------------------------------------------------------------------%%
+
+
+\makeatletter
+\newcommand{\makedeclaration}
+{
+\chapter*{Declaration}
+\addcontentsline{toc}{chapter}{Declaration}
+\noindent I declare that this thesis represents my own work, except
+where due acknowledgment is made, and that it has not been
+previously included in a thesis, dissertation, or report submitted
+to this University or to any other institution for a degree,
+diploma, or other qualifications.
+\vspace*{1.5in}
+
+\noindent%
+\begin{tabular}{@{}l@{}}
+\dotfill \\
+\@author\hspace*{3cm}\\
+\@date\\
+\end{tabular}
+}
+\makeatother
+
+%%----------------------------------------------------------------------------%%
+%%    Environment for Acknowledgments                                         %%
+%%----------------------------------------------------------------------------%%
+
+\makeatletter
+\newcommand{\makeAck}
+{
+\chapter*{Acknowledgments}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+\input{chapters/acknowledgments}
+}
+\makeatother
+
+
+\KOMAoptions{listof=totoc}
+% \setkomafont{sectioning}{\normalfont\bfseries}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Incipit
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\input{chapters/abstract}
+\end{abstract}
+
+
+%%---------------------%%
+\frontmatter
+%%---------------------%%
+\makedeclaration
+\makeAck
+\tableofcontents
+\listoffigures
+\listoftables
+% \listoftheorems[ignoreall, show={theorem,lemma}]
+
+%%---------------------%%
+\mainmatter
+%%---------------------%%
+
+\part{Prologue}
+\input{chapters/introduction}
+\input{chapters/background}
+
+\part{Why Compositional Programming Matters}
+\input{chapters/embedding}
+\input{chapters/inheritance}
+
+\part{Compilation of Compositional Programming}
+\input{chapters/compilation}
+
+\part{Compositional Programming with Union Types}
+\input{chapters/arguments}
+
+\part{Epilogue}
+\input{chapters/related}
+\input{chapters/conclusion}
+
+\part{Appendices}
+\appendix
+\input{chapters/appendices}
+
+% This ensures that the subsequent sections are being included as root
+% items in the bookmark structure of your PDF reader.
+\bookmarksetup{startatroot}
+
+%%---------------------%%
+% \backmatter
+%%---------------------%%
+
+\cleardoublepage
+\bibliography{Thesis}
+
+\end{document}
