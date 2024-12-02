@@ -1,0 +1,140 @@
+\begin{lstlisting}
+{-# LANGUAGE DuplicateRecordFields, NamedFieldPuns, OverloadedRecordDot, RecordWildCards #-}
+\end{lstlisting}
+
+\hypertarget{modular-interpretations-in-tagless-final-embeddings}{%
+\subsubsection{Modular Interpretations in Tagless-Final
+Embeddings}\label{modular-interpretations-in-tagless-final-embeddings}}
+
+\begin{lstlisting}[language=Haskell]
+data Vector = Vector { x :: Double, y :: Double } deriving Show
+\end{lstlisting}
+\noindent
+A tagless-final embedding defines region constructors in a type class,
+instead of a closed algebraic data type:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+class RegionHudak repr where
+  circle    :: Double -> repr
+  outside   :: repr -> repr
+  union     :: repr -> repr -> repr
+  intersect :: repr -> repr -> repr
+  translate :: Vector -> repr -> repr
+\end{lstlisting}
+\noindent
+\lstinline!Size! can be modularly defined as an instance
+of the type class since it has no dependency:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+newtype Size = S { size :: Int }
+
+instance RegionHudak Size where
+  circle      _ = S 1
+  outside     a = S $ a.size + 1
+  union     a b = S $ a.size + b.size + 1
+  intersect a b = S $ a.size + b.size + 1
+  translate _ a = S $ a.size + 1
+\end{lstlisting}
+\noindent
+But how about \lstinline!Text!? As a first try, we might
+write:
+
+\begin{lstlisting}[language=Haskell]
+newtype Text = T { text :: String }
+
+instance RegionHudak Text where
+   circle  r = T { text = "circular region of radius " ++ show r }
+-- outside a = T { text = "outside a region of size " ++ show a.size }
+-- ......
+\end{lstlisting}
+\noindent
+We will get a type error concerning \lstinline!a.size! if
+we uncomment the line above, because \lstinline!a! has
+type \lstinline!Text! and thus does not contain a field
+named \lstinline!size!. So the problem is that, once we
+need operations that have some dependencies on other operations, we get
+into trouble! But programs with dependencies are common in practice.
+This is a serious limitation.
+
+\hypertarget{a-non-modular-workaround-for-dependencies}{%
+\subsubsection{A Non-Modular Workaround for
+Dependencies}\label{a-non-modular-workaround-for-dependencies}}
+
+A simple workaround is to pack the two operations together and duplicate
+the code of size calculation. We have already described this approach
+for shallow embeddings, and the same workaround works for tagless-final
+embeddings:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+data SizeAndText = ST { size :: Int, text :: String }
+
+instance RegionHudak SizeAndText where
+  circle  r = ST { size = 1, text = "circular region of radius " ++ show r }
+  outside a = ST { size = a.size + 1, text = "outside a region of size "
+                                           ++ show a.size }
+  union a b = ST { size, text = "union of two regions of size "
+                              ++ show size ++ " in total" }
+    where size = a.size + b.size + 1
+  intersect a b = ST { size, text = "intersection of two regions of size "
+                                  ++ show size ++ " in total" }
+    where size = a.size + b.size + 1
+  translate v a = ST { size, text = "translated region of size " ++ show size }
+    where size = a.size + 1
+\end{lstlisting}
+\noindent
+However, this is not modular since we have to duplicate code for size
+calculation. If we have another operation that depends on
+\lstinline!size!, we have to repeat the same code even
+again. This workaround is an \emph{anti-pattern}, which violates
+basic principles of software engineering.
+
+\hypertarget{modular-language-constructs}{%
+\subsubsection{Modular Language
+Constructs}\label{modular-language-constructs}}
+
+Of course, new region constructors can be modularly added in a
+tagless-final embedding:
+
+\begin{lstlisting}[language=Haskell]
+class RegionHofer repr where
+  univ  :: repr
+  empty :: repr
+  scale :: Vector -> repr -> repr
+\end{lstlisting}
+\noindent
+We have to resort to the workaround again when we encounter mutual
+recursion:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+data UE = UE { isUniv :: Bool, isEmpty :: Bool }
+
+instance RegionHudak UE where
+  circle      _ = UE { isUniv = False,     isEmpty = False }
+  outside     a = UE { isUniv = a.isEmpty, isEmpty = a.isUniv }
+  union     a b = UE { isUniv = a.isUniv || b.isUniv
+                     , isEmpty = a.isEmpty && b.isEmpty }
+  intersect a b = UE { isUniv = a.isUniv && b.isUniv
+                     , isEmpty = a.isEmpty || b.isEmpty }
+  translate _ a = UE { isUniv = a.isUniv,  isEmpty = a.isEmpty }
+
+instance RegionHofer UE where
+  univ      = UE { isUniv = True,     isEmpty = False }
+  empty     = UE { isUniv = False,    isEmpty = True }
+  scale _ a = UE { isUniv = a.isUniv, isEmpty = a.isEmpty }
+\end{lstlisting}
+
+\hypertarget{use-case}{%
+\subsubsection{Use Case}\label{use-case}}
+
+We can use all constructors from \lstinline!RegionHudak!
+and \lstinline!RegionHofer! to create a region, as long as
+\lstinline!UE! implements both type classes:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+region :: UE
+region = outside empty `union` circle 1
+
+main :: IO ()
+main = do putStrLn $ "Univ:  " ++ show region.isUniv
+          putStrLn $ "Empty: " ++ show region.isEmpty
+\end{lstlisting}

@@ -1,0 +1,98 @@
+\section{Introduction}
+
+A common approach to defining DSLs is via a direct embedding into a host
+language. This approach is used in several programming languages, such as
+Haskell, Scala, and Racket. In those languages, various DSLs -- including pretty
+printers~\citep{hughes1995design,wadler2003prettier}, parser
+combinators~\citep{leijen2001parsec}, and property-based testing
+frameworks~\citep{claessen2000quickcheck} -- are defined as embedded DSLs. There
+are a few techniques for such embeddings, including the well-known
+\emph{shallow} and \emph{deep} embeddings~\citep{boulton1992experience}.
+
+Unfortunately, shallow and deep embeddings come with various trade-offs in
+existing programming languages. Such trade-offs have been widely discussed in
+the literature~\citep{rompf2012scala,scherr2014implicit,gibbons2014folding}. On
+the one hand, the strengths of shallow embeddings are in providing
+\emph{linguistic reuse}~\citep{krishnamurthi2001linguistic}, exploiting
+meta-language optimizations, and allowing the addition of new DSL constructs
+easily. On the other hand, deep embeddings shine in enabling the definition of
+complex semantic interpretations and optimizations over the abstract syntax tree
+(AST) of the DSL, and they enable adding new semantic interpretations easily.
+Regarding such trade-offs, \citet{svenningsson2015combining} made the following
+striking comment:
+
+\begin{quoting}
+\noindent ``The holy grail of embedded language implementation is to be able to
+combine the advantages of shallow and deep in a single implementation.''
+\end{quoting}
+
+While progress has been made in embedded language implementation, the holy grail
+is still not fully achieved in existing programming languages. Owing to the
+trade-offs between shallow and deep embeddings, many realistic embedded DSLs end
+up using a mix of both approaches in practice or more advanced forms of
+embeddings. For instance, there have been several
+approaches~\citep{rompf2012scala,svenningsson2015combining,jovanovic2014yinyang}
+promoting the use of shallow embeddings as the frontend of the DSL to enable
+linguistic reuse, while deep embeddings are used as the backend for added
+flexibility in defining semantic interpretations. While such approaches manage
+to alleviate some of the trade-offs, they require translations between the two
+embeddings, a substantial amount of code, and some advanced coding techniques.
+Alternatively, there are more advanced embedding techniques, which are inspired
+by work on extensible Church encodings of algebraic data
+types~\citep{hinze2006generics,oliveira2006extensible,oliveira2009modular}. Such
+techniques include \emph{tagless-final
+embeddings}~\citep{carette2009finally,kiselyov2010typed}, \emph{polymorphic
+embeddings}~\citep{hofer2008polymorphic}, and \emph{object
+algebras}~\citep{oliveira2012extensibility}, and they are able to eliminate some
+of the trade-offs too. In particular, those approaches eliminate the trade-offs
+with respect to extensibility, facilitating both the addition of new DSL
+constructs and semantic interpretations. However, being quite close to shallow
+embeddings, those approaches lack some important capabilities, such as the
+ability to define complex interpretations and the use of (nested) pattern
+matching to express semantic interpretations and transformations easily and
+modularly.
+
+In this chapter, we show that the \emph{compositional programming}
+paradigm~\citep{zhang2021compositional} and the CP language provide improved
+programming language support for embedded DSLs. Compositional programming
+provides an alternative way to define data structures compared to algebraic data
+types in functional programming or class hierarchies in object-oriented
+programming. Compositional interfaces and traits play a role similar to
+algebraic data types and definitions by pattern matching in functional programs.
+However, unlike algebraic data types and definitions by pattern matching,
+compositional interfaces and traits are modularly extensible. \emph{Intersection
+types}~\citep{oliveira2016disjoint} enable the composition of interfaces, while
+\emph{nested composition}~\citep{bi2018essence} enables the composition of
+traits with pattern matching definitions.  Thus, the CP language does not suffer
+from the infamous \emph{expression problem}~\citep{wadler1998expression}. In
+addition, CP comes with several mechanisms to express \emph{modular
+dependencies}, allowing powerful forms of dependency injection and complex
+semantic interpretations.
+
+With those programming language features, we obtain a new form of embedding
+called a \emph{compositional embedding}, with nearly all of the advantages of
+both shallow and deep embeddings. On the one hand, compositional embeddings
+enable various forms of linguistic reuse that are characteristic of shallow
+embeddings, including the ability to reuse host-language optimizations in the
+DSL and easily add new DSL constructs. On the other hand, similarly to deep
+embeddings, compositional embeddings support definitions by pattern matching or
+dynamic dispatching, including optimizations and transformations over the
+abstract syntax of the DSL, as well as the ability to add new interpretations.
+In short, we believe that compositional embeddings come very close to the holy
+grail of embedded language implementation desired by
+\citet{svenningsson2015combining}.
+
+We reimplemented the CP language and made it available as an in-browser
+interpreter. Using this new implementation of CP, we illustrate an instance of
+compositional embeddings with a DSL for document authoring called \ExT
+(\textbf{Ex}tensible \textbf{T}ypesetting). The DSL is highly flexible and
+extensible, allowing users to create various non-trivial extensions. For
+instance, \ExT supports extensions that enable the production of wiki-like
+documents, \LaTeX{} documents, SVG charts, or computational graphics like
+fractals. Our largest application is Minipedia: a mini version of Wikipedia.
+Minipedia includes wiki pages for several states and cities and some tables that
+list countries by population or area. The \ExT DSL, as well as its various
+extensions and applications, is available online:
+\begin{center}
+  \url{https://plground.org}
+\end{center}

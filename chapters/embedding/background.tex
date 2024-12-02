@@ -1,0 +1,389 @@
+\section{Embeddings of DSLs} \label{sec:embed}
+
+In this section, we give some background on existing approaches to embedded DSLs
+and evaluate their strengths and drawbacks. This will be useful for the
+comparison in \autoref{sec:lang}. We focus on \emph{shallow} and \emph{deep}
+embeddings~\citep{boulton1992experience}, which are the two main alternative
+forms of embeddings. We also discuss some other forms of embeddings near the end
+of this section. To illustrate all these embeddings, we present programs in
+Haskell, which is well known for its good support for embedded DSLs and has a
+syntax close to the CP language.
+
+\subsection{A Simple Region DSL}
+
+Inspired by \citet{hudak1998modular} and \citet{hofer2008polymorphic}, we
+consider a simple region DSL for plane geometry. To illustrate the challenges in
+developing such a DSL, we consider five separate steps in the development, which
+illustrate various desired features, such as linguistic reuse and the ease of
+adding features for software evolution.
+
+\begin{enumerate}
+\item \textbf{Initial system.}
+      We start with a small region language with five constructs:
+      \lstinline{circle} for creating a circular region with a given radius,
+      \lstinline{outside} for a complement to a certain region,
+      two set operators \lstinline{union} and \lstinline{intersect}, and finally
+      \lstinline{translate} for moving a region by a given vector.
+      The initial interpretation is to simply calculate the syntactic size of a region.
+\item \textbf{Linguistic reuse.}
+      We create a region with structure sharing to assess the difficulty of
+      reusing host-language optimizations.
+\item \textbf{Extensibility with new constructs.}
+      We extend the region language with three more constructs:
+      \lstinline{univ} for the universal region that contains all points,
+      \lstinline{empty} for the empty region that contains no points, and
+      \lstinline{scale} for resizing a region by two scale factors in a vector.
+\item \textbf{Extensibility with new operations.}
+      We add a new interpretation that checks whether a given point resides in a region.
+\item \textbf{Complex interpretations, transformations, and optimizations.}
+      Last but not least, we discuss three kinds of more complex interpretations
+      that illustrate dependent interpretations (i.e.~interpretations that need
+      to call other interpretations in their implementations) and
+      transformations over the AST of the region language. 
+\end{enumerate}
+
+\subsection{Initial System}
+
+\begin{figure}
+\begin{lstlisting}[language=Haskell,basicstyle=\ttfamily\footnotesize]
+data Vector = Vector { x :: Double, y :: Double } deriving Show
+\end{lstlisting}
+\begin{subfigure}[b]{.5\textwidth}
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect},basicstyle=\ttfamily\footnotesize]
+type Region = Int
+
+circle :: Double -> Region
+circle _  =  1
+
+outside :: Region -> Region
+outside a  =  a + 1
+
+union :: Region -> Region -> Region
+union a b  =  a + b + 1
+
+intersect :: Region -> Region -> Region
+intersect a b  =  a + b + 1
+
+translate :: Vector -> Region -> Region
+translate _ a  =  a + 1
+\end{lstlisting}
+\caption{A shallow embedding.}
+\end{subfigure}%
+\begin{subfigure}[b]{.5\textwidth}
+\begin{lstlisting}[language=Haskell,basicstyle=\ttfamily\footnotesize]
+data Region where
+  Circle    :: Double -> Region
+  Outside   :: Region -> Region
+  Union     :: Region -> Region -> Region
+  Intersect :: Region -> Region -> Region
+  Translate :: Vector -> Region -> Region
+
+
+size :: Region -> Int
+size (Circle      _) = 1
+size (Outside     a) = size a + 1
+size (Union     a b) = size a + size b + 1
+size (Intersect a b) = size a + size b + 1
+size (Translate _ a) = size a + 1
+\end{lstlisting}
+\caption{A deep embedding.} \label{fig:pattern}
+\end{subfigure}
+\caption{The initial system for the region DSL.} \label{fig:initial}
+\end{figure}
+
+\noindent
+\autoref{fig:initial} shows the definitions of the initial DSL, including the
+language interface and a simple interpretation for shallow and deep embeddings.
+
+\paragraph{Language interfaces.}
+In the shallow embedding, \lstinline{Region} denotes the semantic domain. All
+the five language constructs are implemented as functions (called denotation
+functions), which implement the respective semantics of the language constructs.
+Thus, the language interface is essentially the signature of the denotation
+functions and is entangled with the definition of a particular semantic domain.
+In the deep embedding, \lstinline{Region} is defined as an algebraic data
+type.\footnote{We use the notation of \emph{generalized} algebraic data types to
+make type annotations clear.} Algebraic data types only capture the abstract
+syntax, thus enabling the language interface to be separated from any concrete
+semantics.
+
+\paragraph{Semantic interpretations.}
+There can be many semantic interpretations, which associate language constructs
+with their meanings. The initial semantics that we choose here is an abstract
+interpretation, which calculates the syntactic size of a region (i.e.~the number
+of AST nodes). We opt to have an interpretation that is slightly artificial, but
+simple, so that we can focus on the key aspects of compositional embeddings. In
+the shallow embedding, the semantics is defined together with the language
+interface since we must specify some concrete type (\lstinline{Int} in this
+case) for \lstinline{Region}. In contrast, to create a new semantic
+interpretation in the deep embedding, we define a function \lstinline{size}
+using pattern matching over the \lstinline{Region} data type. 
+
+We can see that the two embeddings work quite differently: the shallow embedding
+encodes semantics in region constructors, and the interpretation function from
+\lstinline{Region} to \lstinline{Int} is merely the identity function; the deep
+embedding does nothing concerning constructors but hands over the work to the
+interpretation function \lstinline{size}.
+
+\subsection{Linguistic Reuse and Meta-Language Optimizations} \label{sec:meta}
+
+An important concern for embedded DSLs is \emph{linguistic
+reuse}~\citep{krishnamurthi2001linguistic}. One of the key selling points of
+embedded DSLs is that they can reuse much of the infrastructure of the host
+language and inherit various optimizations that are available in the host
+language. However, there are important differences between shallow and deep
+embeddings with respect to linguistic reuse. As widely observed in previous
+work~\citep{rompf2012scala,jovanovic2014yinyang,svenningsson2015combining},
+shallow embeddings make linguistic reuse easier. To illustrate this, we can
+create a region that contains a series of repeated subregions with horizontally
+aligned circles:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+circles = go 20 (2 ** 18)
+  where go :: Int -> Double -> Region
+        go 0 offset = circle 1
+        go n offset = let shared = go (n - 1) (offset / 2)
+                      in union (translate Vector { x = -offset, y = 0 } shared)
+                               (translate Vector { x =  offset, y = 0 } shared)
+\end{lstlisting}
+
+\noindent
+The region \lstinline{circles} is defined via an auxiliary recursive function
+\lstinline{go}. In the shallow embedding, \lstinline{shared} is of type
+\lstinline{Int}, and using \lstinline{shared} twice in the \lstinline{let}-body
+will avoid interpreting the region twice. The code above also works for the deep
+embedding, assuming some smart constructors such as \lstinline{circle = Circle}.
+However, in the deep embedding, \lstinline{shared} is an AST of type
+\lstinline{Region}. In this case, the AST will be duplicated in the
+\lstinline{let}-body, and later when we interpret the region, we need to
+traverse the same AST twice, duplicating the size calculation. Since
+\lstinline{go} is recursive, it will lead to a lot of sharing for the shallow
+approach and a lot of repetition for the deep approach. As a result, the
+evaluation of \lstinline{circles} is instantaneous in the shallow approach,
+whereas in the deep approach, it basically does not terminate in a reasonable
+amount of time. In short, in shallow embeddings, we are able to preserve sharing
+by naturally exploiting the sharing optimizations present in the host language,
+but sharing is lost in deep embeddings.
+
+We should remark that this particular issue regarding sharing (which is just an
+instance of linguistic reuse) is well
+known~\citep{gill2009type,kiselyov2011implementing,oliveira2013abstract}. There
+have been several proposed techniques that enable preserving sharing in deeply
+embedded DSLs. However, all those techniques add extra complexity to the DSL
+encoding, and they may even make the DSL harder to use. This is in contrast to
+the shallow approach, where no extra work is required by the programmer and
+host-language features are naturally reused.
+
+\subsection{Adding More Language Constructs}
+
+As part of evolving the DSL with additional features, we may decide to add more
+constructs for regions. To evaluate how easy it is to add more language constructs,
+we add three more
+language constructs for the universal or empty region as well as a scaling
+operator. Shallow embeddings make such extensions very easy. We only need
+to add three new denotation functions:
+
+\noindent
+\begin{minipage}{0.25\textwidth}
+\begin{lstlisting}[language=Haskell]
+univ :: Region
+univ = 1
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{0.25\textwidth}
+\begin{lstlisting}[language=Haskell]
+empty :: Region
+empty = 1
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{0.5\textwidth}
+\begin{lstlisting}[language=Haskell]
+scale :: Vector -> Region -> Region
+scale _ a  =  a + 1
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+Notwithstanding the modular extension in shallow embeddings, it is awkward to
+add language constructs in deep embeddings. We have to modify the algebraic data
+type \lstinline{Region} and all related interpretation functions to add new
+cases. This is not modular because we must change the existing code. Even if we
+have access to previous definitions, it is inevitable to recompile all the code
+that depends on \lstinline{Region}.
+
+In essence, once we start adding new features, we are quickly faced with an
+instance of the \emph{expression problem}~\citep{wadler1998expression}. Shallow
+embeddings make adding constructs easy, whereas adding new constructs in deep
+embeddings is more difficult and non-modular. As we shall see next, when adding
+new semantic interpretations, we have a dual problem.
+
+\subsection{Adding a New Interpretation} \label{sec:contains}
+
+The syntactic size is too abstract to describe a region, so let us add a new
+interpretation that checks whether a region contains a given point. For example,
+a circular region of radius $r$ contains $(x,y)$ if and only if $x^2 + y^2 \le
+r^2$. Although adding constructs is awkward in deep embeddings, adding a new
+interpretation function is trivial:
+
+\begin{lstlisting}[language=Haskell]
+contains :: Region -> Vector -> Bool
+Circle      r `contains` p  =  p.x ** 2 + p.y ** 2 <= r ** 2
+Outside     a `contains` p  =  not (a `contains` p)
+Union     a b `contains` p  =  a `contains` p || b `contains` p
+Intersect a b `contains` p  =  a `contains` p && b `contains` p
+Translate Vector {..} a `contains` p  =
+                      a `contains` Vector { x = p.x - x, y = p.y - y }
+\end{lstlisting}
+
+\noindent
+The code is mostly straightforward.\footnote{Two GHC language extensions are
+required here: \emph{OverloadedRecordDot} and \emph{RecordWildCards}.} The only
+minor remark is that we use a record wildcard (\lstinline|Vector {..}|) in the
+case of \lstinline{Translate} to bring record fields (\lstinline{x} and
+\lstinline{y}) into scope.
+
+However, there is no easy modular way to support multiple interpretations in
+shallow embeddings. We need to completely change the definition of
+\lstinline{Region} and remap all the language constructs to a new semantic
+domain. The issue of semantic extension in shallow embeddings is dual to that of
+language extension in deep embeddings. To address the tension between the two
+dimensions, some alternative embeddings are proposed, such as tagless-final
+embeddings~\citep{carette2009finally,kiselyov2010typed} and polymorphic
+embeddings~\citep{hofer2008polymorphic}, though they still have some significant
+drawbacks, which will be revealed shortly.
+
+\subsection{Dependencies, Complex Interpretations, and Domain-Specific Optimizations} \label{sec:transform}
+
+One area where deeply embedded DSLs shine is in enabling more complex kinds of
+interpretations. These interpretations may, for example, enable transformations
+or rewritings on the AST, which are helpful for writing domain-specific
+optimizations, among other things. For writing such complex forms of
+interpretations, we often require multiple \emph{dependent} functions defined by
+pattern matching, and sometimes we may even need nested pattern matching. Such
+interpretations are very challenging for shallow DSLs and are often the reason
+why DSL writers prefer deep embeddings.
+
+\paragraph{Dependent interpretations.}
+Let us start with a dependent interpretation that shows a text representation of
+a region using a deep embedding:
+
+\begin{lstlisting}[language=Haskell]
+text :: Region -> String
+text   (Circle      r)  =  "circular region of radius " ++ show r
+text   (Outside     a)  =  "outside a region of size " ++ show (size a)
+text s@(Union     _ _)  =
+    "union of two regions of size " ++ show (size s) ++ " in total"
+text s@(Intersect _ _)  =
+    "intersection of two regions of size " ++ show (size s) ++ " in total"
+text s@(Translate _ _)  =  "translated region of size " ++ show (size s)
+\end{lstlisting}
+
+\noindent
+Note that the definition of \lstinline{text} \emph{depends} on the previously
+defined \lstinline{size} function. Such a definition is challenging in shallow
+embeddings. A workaround sometimes used in shallow embeddings is to use tuples
+to define multiple interpretations simultaneously. For example, we can define
+\lstinline{size} and \lstinline{text} together as:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+type Region = (Int, String) -- (size, text)
+circle      r  =  (1, "circular region of radius " ++ show r)
+outside     a  =  (fst a + 1, "outside a region of size " ++ show (fst a))
+union     a b  =
+    (size, "union of two regions of size " ++ show size ++ " in total")
+  where size = fst a + fst b + 1
+intersect a b  =
+    (size, "intersection of two regions of size " ++ show size ++ " in total")
+  where size = fst a + fst b + 1
+translate _ a  =  (size, "translated region of size " ++ show size)
+  where size = fst a + 1
+\end{lstlisting}
+
+\paragraph{Mutually dependent interpretations.} \label{sec:mutual}
+A similar but more interesting example is two interpretations for checking
+universality and emptiness:
+
+\begin{lstlisting}[language=Haskell]
+isUniv :: Region -> Bool
+isUniv            Univ  =  True
+isUniv (Outside     a)  =  isEmpty a
+isUniv (Union     a b)  =  isUniv a || isUniv b
+isUniv (Intersect a b)  =  isUniv a && isUniv b
+isUniv (Translate _ a)  =  isUniv a
+isUniv (Scale     _ a)  =  isUniv a
+isUniv               _  =  False
+
+isEmpty :: Region -> Bool
+isEmpty           Empty  =  True
+isEmpty (Outside     a)  =  isUniv a
+isEmpty (Union     a b)  =  isEmpty a && isEmpty b
+isEmpty (Intersect a b)  =  isEmpty a || isEmpty b
+isEmpty (Translate _ a)  =  isEmpty a
+isEmpty (Scale     _ a)  =  isEmpty a
+isEmpty               _  =  False
+\end{lstlisting}
+
+\noindent
+Unlike in the previous example, where only \lstinline{text} depends on
+\lstinline{size}, the two definitions are \emph{mutually recursive}, depending
+on each other. If we want to rewrite them using shallow embeddings, they also
+have to be encoded as a pair to call each other via
+\lstinline[language=Haskell]{fst} and \lstinline[language=Haskell]{snd}:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+type Region = (Bool, Bool) -- (isUniv, isEmpty)
+
+univ           =  (True,           False)
+empty          =  (False,          True)
+circle      _  =  (False,          False)
+outside     a  =  (snd a,          fst a)
+union     a b  =  (fst a || fst b, snd a && snd b)
+intersect a b  =  (fst a && fst b, snd a || snd b)
+translate _ a  =  (fst a,          snd a)
+scale     _ a  =  (fst a,          snd a)
+\end{lstlisting}
+
+\noindent 
+Generally speaking, using tuples to deal with dependencies is non-modular and
+awkward to use in that interpretations become tightly coupled. Adding more
+interpretations with dependencies, for example, would require a complete rewrite
+of the code: dependent interpretations have to be defined together with the
+interpretations that they depend on. More advanced encodings, such as
+tagless-final embeddings~\citep{kiselyov2010typed} or polymorphic
+embeddings~\citep{hofer2008polymorphic}, provide ways to modularize
+\emph{independent} interpretations into reusable units, but they cannot scale
+well to \emph{dependent} interpretations and often have to resort to similar
+techniques using tuples like the code above. In \autoref{sec:tagless}, we encode
+the two examples above in tagless-final embeddings and illustrate that they
+suffer from the same problems as shallow embeddings with respect to
+dependencies, both mutual and non-mutual.
+
+\paragraph{Nested pattern matching.} \label{sec:nested}
+Another strength of deep embeddings is their ability to perform nested pattern
+matching, which is rather useful to inspect smaller constructs. Here we take
+an optimization that eliminates double negation for example. Nested pattern
+matching is used to check if an \lstinline{Outside} is directly wrapped around
+an outer \lstinline{Outside}. If so, both of them are eliminated; otherwise,
+\lstinline{eliminate} is recursively called with inner constructs:
+
+\begin{lstlisting}[language=Haskell]
+eliminate :: Region -> Region
+eliminate (Outside (Outside a))  =  eliminate a
+eliminate (Outside           a)  =  Outside (eliminate a)
+eliminate (Union           a b)  =  Union (eliminate a) (eliminate b)
+eliminate (Intersect       a b)  =  Intersect (eliminate a) (eliminate b)
+eliminate (Translate       v a)  =  Translate v (eliminate a)
+eliminate (Scale           v a)  =  Scale v (eliminate a)
+eliminate                     a  =  a
+\end{lstlisting}
+
+\noindent
+The common use of nested pattern matching poses a second challenge to
+domain-specific optimizations. \citet{kiselyov2010typed} discusses the
+``\emph{seemingly impossible pattern-matching}'' problem with nested patterns,
+which appear not directly encodable in tagless-final embeddings. Instead, he
+proposes that such algorithms can often be implemented in a tagless-final
+interpreter as context-dependent interpretations by essentially changing the
+algorithm. An extra parameter is added so the semantic type looks like
+\lstinline{Ctx -> repr}. However, in the general case, it is not obvious how to
+convert an algorithm with nested pattern matching into one based on contexts. 

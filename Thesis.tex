@@ -88,6 +88,8 @@
 % Load my packages
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\usepackage[vskip=1em,font=itshape]{quoting}
+
 \usepackage{ottalt}
 
 \renewcommand\ottaltinferrule[4]{
@@ -95,6 +97,27 @@
     {#3}
     {#4}
 }
+
+\usepackage{listings}
+\lstset{
+  columns=fullflexible,
+  basicstyle=\ttfamily\small,
+  commentstyle=\color{gray},
+  stringstyle=\color{violet},
+  keywords={else,extends,false,fix,forall,if,implements,inherits,interface,in,let,letrec,new,open,override,then,toString,trait,true,type,undefined,with,Bool,Bot,Double,Int,String,Top,Trait},
+  literate={->}{{$\rightarrow$}}1 {=>}{{$\Rightarrow$}}1 {<=}{{$\le$}}1 {>=}{{$\ge$}}1,
+  alsoother={@},
+  comment=[l]{--},
+  morecomment=[n]{\{-}{-\}},
+  string=[b]",
+  morestring=[b]`,
+  showstringspaces=false,
+  keepspaces=true,
+  breaklines,
+  breakatwhitespace
+}
+
+\newcommand{\ExT}{\texorpdfstring{E\kern -.1em\lower .4ex\hbox {\footnotesize X}\kern -.2emT}{ExT}\xspace}
 
 %%----------------------------------------------------------------------------%%
 
