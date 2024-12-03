@@ -1,0 +1,200 @@
+\begin{lstlisting}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleInstances, GADTs, KindSignatures, MultiParamTypeClasses, RankNTypes, ScopedTypeVariables, TypeApplications, TypeOperators, UndecidableInstances #-}
+\end{lstlisting}
+
+\hypertarget{generic-definitions-for-records}{%
+\subsubsection{Generic Definitions for
+Records}\label{generic-definitions-for-records}}
+
+First of all, we need to define a type-indexed record as follows:
+
+\begin{lstlisting}[language=Haskell]
+data Record :: [*] -> * where
+  Nil  :: Record '[]
+  Cons :: a -> Record as -> Record (a ': as)
+\end{lstlisting}
+\noindent
+We also need a projection operation that finds an element by its type
+from the record:
+
+\begin{lstlisting}[language=Haskell]
+class a `In` as where
+  project :: Record as -> a
+
+instance {-# OVERLAPPING #-} a `In` (a ': as) where
+  project (Cons x _) = x
+
+instance {-# OVERLAPPING #-} a `In` as => a `In` (b ': as) where
+  project (Cons _ xs) = project xs
+\end{lstlisting}
+\noindent
+Moreover, \lstinline!All c s! is a data type whose term
+can be constructed only if all types in \lstinline!s!
+implement the type class \lstinline!c!:
+
+\begin{lstlisting}[language=Haskell]
+data All c :: [*] -> * where
+  AllNil  :: All c '[]
+  AllCons :: c a => All c as -> All c (a ': as)
+\end{lstlisting}
+
+\hypertarget{region-dsl-infrastructure}{%
+\subsubsection{Region DSL Infrastructure}\label{region-dsl-infrastructure}}
+
+\begin{lstlisting}[language=Haskell]
+data Vector = Vector { x :: Double, y :: Double }
+\end{lstlisting}
+\noindent
+The same as before, we define region constructors in a type class:
+
+\begin{lstlisting}[language=Haskell]
+class Region0 r where
+  univ_   :: r
+  empty_  :: r
+  circle_ :: Double -> r
+\end{lstlisting}
+\noindent
+Note that the constructors above are simpler because they do not have
+\lstinline!r! in input positions. The encoding of other
+constructors is more ingenious because we need to consider how to inject
+dependencies. Here we employ \lstinline!Record s! to
+encode the dependencies an interpretation relies on:
+
+\begin{lstlisting}[language=Haskell]
+class Region0 r => Region1 s r where
+  outside_   :: Record s -> r
+  union_     :: Record s -> Record s -> r
+  intersect_ :: Record s -> Record s -> r
+  translate_ :: Vector -> Record s -> r
+  scale_     :: Vector -> Record s -> r
+\end{lstlisting}
+\noindent
+Furthermore, we create an auxiliary type class that constrains
+\lstinline!s1! to satisfy the dependencies of all
+interpretations in \lstinline!s2!:
+
+\begin{lstlisting}[language=Haskell]
+class Region2 s1 s2 where
+  modality :: All (Region1 s1) s2
+
+instance Region2 s1 '[] where
+  modality = AllNil
+
+instance (Region1 s1 a, Region2 s1 as) => Region2 s1 (a ': as) where
+  modality = AllCons modality
+\end{lstlisting}
+\noindent
+With the infrastructure above, we can define smart constructors for all
+kinds of regions. Each smart constructor returns a term of type
+\lstinline!Record s! that composes all corresponding
+interpretations if \lstinline!s! is self-contained (no
+interpretation in \lstinline!s! has external
+dependencies):
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+univ :: forall s. Region2 s s => Record s
+univ = univ' (modality @s @s)
+  where univ' :: All (Region1 s1) s2 -> Record s2
+        univ' AllNil      = Nil
+        univ' (AllCons m) = Cons univ_ (univ' m)
+
+empty :: forall s. Region2 s s => Record s
+empty = empty' (modality @s @s)
+  where empty' :: All (Region1 s1) s2 -> Record s2
+        empty' AllNil      = Nil
+        empty' (AllCons m) = Cons empty_ (empty' m)
+
+circle :: forall s. Region2 s s => Double -> Record s
+circle = circle' (modality @s @s)
+  where circle' :: All (Region1 s1) s2 -> Double -> Record s2
+        circle' AllNil      _ = Nil
+        circle' (AllCons m) r = Cons (circle_ r) (circle' m r)
+
+outside :: forall s. Region2 s s => Record s -> Record s
+outside = outside' (modality @s @s)
+  where outside' :: All (Region1 s1) s2 -> Record s1 -> Record s2
+        outside' AllNil      _ = Nil
+        outside' (AllCons m) a = Cons (outside_ a) (outside' m a)
+
+union :: forall s. Region2 s s => Record s -> Record s -> Record s
+union = union' (modality @s @s)
+  where union' :: All (Region1 s1) s2 -> Record s1 -> Record s1 -> Record s2
+        union' AllNil      _ _ = Nil
+        union' (AllCons m) a b = Cons (union_ a b) (union' m a b)
+
+intersect :: forall s. Region2 s s => Record s -> Record s -> Record s
+intersect = intersect' (modality @s @s)
+  where intersect':: All (Region1 s1) s2 -> Record s1 -> Record s1 -> Record s2
+        intersect' AllNil      _ _ = Nil
+        intersect' (AllCons m) a b = Cons (intersect_ a b) (intersect' m a b)
+
+translate :: forall s. Region2 s s => Vector -> Record s -> Record s
+translate = translate' (modality @s @s)
+  where translate' :: All (Region1 s1) s2 -> Vector -> Record s1 -> Record s2
+        translate' AllNil      _ _ = Nil
+        translate' (AllCons m) v a = Cons (translate_ v a) (translate' m v a)
+
+scale :: forall s. Region2 s s => Vector -> Record s -> Record s
+scale = scale' (modality @s @s)
+  where scale' :: All (Region1 s1) s2 -> Vector -> Record s1 -> Record s2
+        scale' AllNil      _ _ = Nil
+        scale' (AllCons m) v a = Cons (scale_ v a) (scale' m v a)
+\end{lstlisting}
+\noindent
+As shown above, there is a lot of boilerplate code for each language
+construct of the region DSL.
+
+\hypertarget{tagless-final-embeddings}{%
+\subsubsection{Tagless-Final Embeddings}\label{tagless-final-embeddings}}
+
+Now we can write dependent interpretations in a tagless-final style. We
+take the more interesting example with mutual recursion for example:
+
+\begin{lstlisting}[language=Haskell]
+newtype IsUniv  = U { isUniv  :: Bool }
+newtype IsEmpty = E { isEmpty :: Bool }
+
+instance Region0 IsUniv where
+  circle_ _ = U False
+  univ_     = U True
+  empty_    = U False
+
+instance (IsEmpty `In` s, IsUniv `In` s) => Region1 s IsUniv where
+  outside_     a = U $ isEmpty (project a)
+  union_     a b = U $ isUniv (project a) || isUniv (project b)
+  intersect_ a b = U $ isUniv (project a) && isUniv (project b)
+  translate_ _ a = U $ isUniv (project a)
+  scale_     _ a = U $ isUniv (project a)
+
+instance Region0 IsEmpty where
+  circle_ _ = E False
+  univ_     = E False
+  empty_    = E True
+
+instance (IsUniv `In` s, IsEmpty `In` s) => Region1 s IsEmpty where
+  outside_     a = E $ isUniv (project a)
+  union_     a b = E $ isEmpty (project a) && isEmpty (project b)
+  intersect_ a b = E $ isEmpty (project a) || isEmpty (project b)
+  translate_ _ a = E $ isEmpty (project a)
+  scale_     _ a = E $ isEmpty (project a)
+\end{lstlisting}
+\noindent
+We can easily declare dependencies using type constraints, and
+explicit projections help us find appropriate interpretations
+in the type-indexed record.
+
+\hypertarget{use-case}{%
+\subsubsection{Use Case}\label{use-case}}
+
+Since \lstinline!'[IsUniv, IsEmpty]! is self-contained,
+we can use smart constructors to create a region:
+
+\begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
+region :: Record '[IsUniv, IsEmpty]
+region = outside empty `union` circle 1
+
+main :: IO ()
+main = do let Cons u (Cons e Nil) = region
+          putStrLn $ "Univ:  " ++ show (isUniv u)
+          putStrLn $ "Empty: " ++ show (isEmpty e)
+\end{lstlisting}
