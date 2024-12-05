@@ -1,3 +1,388 @@
 \chapter{Related Work} \label{ch:related}
 
 \section{Solutions to the Expression Problem}
+
+\section{Embedded Domain-Specific Languages}
+
+\paragraph{Modular embeddings.}
+There are quite a few existing approaches to modular embeddings, which
+essentially exploit solutions to the \emph{expression
+problem}~\citep{wadler1998expression} in existing languages. Such approaches
+include, for example, \emph{tagless-final embeddings}~\citep{carette2009finally}
+and \emph{data types à la carte}~\citep{swierstra2008data} in functional
+programming, \emph{polymorphic embeddings}~\citep{hofer2008polymorphic} and
+\emph{object algebras}~\citep{oliveira2012extensibility} in object-oriented
+languages, and solutions to the \emph{expression compatibility
+problem}~\citep{haeri2016expression,haeri2019solving}, just to name a few.
+\autoref{sec:comparison} already compares those approaches with compositional
+embeddings in detail. In essence, the lack of sufficient programming language
+support for modularity makes it hard to model modular dependencies in those
+approaches. Compositional embeddings offer an elegant solution to many issues by
+exploiting the support for Compositional Programming in the CP language.
+
+\paragraph{Hybrid embeddings.}
+\citet{svenningsson2015combining} propose combining shallow and deep embeddings
+by translating a shallowly embedded interface to a deeply embedded core
+language. In this way, language interfaces can be shallowly extended, and
+multiple interpretations are possible in the deep core. In addition, some
+features in the host language can be exploited in the shallow part, which is
+called \emph{deep linguistic reuse} in Scala-Virtualized~\citep{rompf2012scala}.
+\citet{jovanovic2014yinyang} further propose an automatic translation between
+shallow and deep embeddings using Scala macros instead of a manual translation.
+Their Yin-Yang framework targets lightweight modular
+staging~\citep{rompf2010lightweight} as the deep embedding backend but
+completely conceals internal encodings from the users. A similar but slightly
+different approach called \emph{implicit staging} is proposed by
+\citet{scherr2014implicit}. Implicit staging extracts an intermediate
+representation from a shallowly embedded DSL and reintegrates it after some
+transformations. Their research prototype works in Java through load-time
+reflection. Compared to such hybrid approaches, compositional embeddings do not
+require the use of two different embeddings and the translations between them
+while supporting most features from both shallow and deep embeddings.
+
+\paragraph{Generative programming.}
+As stated in \autoref{sec:dsl}, \ExT performs a lightweight desugaring during
+parsing to generate compositionally embedded fragments in CP. This is an
+\emph{ad-hoc} generative technique. Some generative approaches in other
+languages, such as Racket macros~\citep{ballantyne2020macros} and Template
+Haskell~\citep{sheard2002template}, provide more flexible mechanisms compared to
+ours. Nevertheless, in this work, our goal is not to develop generative
+programming in CP. Instead, we try to keep the DSL as close to the underlying
+compositional embeddings as possible so that there is an obvious one-to-one
+mapping between \ExT and CP. Rather than syntactic extensibility (i.e.~the
+ability to extend the syntax of the source language), our focus is on semantic
+support for DSLs. Our approach is different from some generative frameworks like
+EVF~\citep{zhang2017evf} and Castor~\citep{zhang2020castor}, which generate
+extensible visitors from annotations via meta-programming. Although they also
+enable modular and extensible programming language components, their code uses
+various non-standard annotations, whose semantics may be unclear to programmers.
+What is worse, type checking is delayed in the aforementioned generative
+frameworks so error messages are reported in terms of the generated code. This
+can be quite confusing without detailed knowledge of how the generated code
+works. In contrast, in our implementation, type checking is done in the source
+language, and error messages are reported in terms of the original \ExT code.
+
+\paragraph{Language workbenches.}
+JetBrains MPS~\citep{mps}, Xtext~\citep{xtext},
+MontiCore~\citep{krahn2010monticore}, and Spoofax~\citep{kats2010spoofax}, just
+to name a few, are popular \emph{language
+workbenches}~\citep{fowler2005language} that enable easier DSL development.
+\citet{erdweg2015evaluating} have done a comprehensive evaluation about them.
+Notably, in addition to textual DSLs, JetBrains MPS supports tables,
+mathematical symbols, and diagrammatic notations, which significantly enhance
+user experience. Modern language workbenches also provide editor support for
+user-defined DSLs. Similar to compositional embeddings, they often allow
+language components to be modularly composed, but their focus is mainly on
+syntactic extensibility instead of semantic extensibility. In contrast to direct
+embeddings into host languages, external tools are required by language
+workbenches to generate DSL implementations from specifications. This is the
+essential difference from compositional embeddings, where composition is
+directly built in the programming language.
+
+\paragraph{Document DSLs.}
+There are quite a few existing DSLs for document authoring. \emph{\LaTeX} is one
+of the most commonly used document languages, and \ExT's syntax is inspired by
+it. In contrast to \ExT, \LaTeX{} is an external DSL and does not have a static
+type system. \LaTeX{} supports arbitrary computation, but it is not easy to
+write meta-programs over the AST of \LaTeX. Moreover, \LaTeX{} is not intended
+to render web documents, which is an important goal of \ExT.
+\emph{Wikitext}~\citep{wikitext} is widely used across wiki websites, including
+Wikipedia and Fandom. Wikitext has some design limitations like the absence of
+type safety, data consistency, and general-purpose computation, which have been
+elaborated in \autoref{sec:minipedia}. \emph{Skribe}~\citep{gallesio2005skribe}
+is a document DSL built on top of the Scheme programming language and extends
+Scheme's syntax from S-expressions to \emph{Sk-expressions} for easier text
+writing. Skribe makes use of Scheme macros and functions to construct documents.
+This idea is inherited and popularized by
+\emph{Scribble}~\citep{flatt2009scribble} in the Racket community, and DrRacket
+offers very good tool support for Scribble. Regarding syntax, a new
+\emph{@-notation} is designed for Scribble, which is desugared to normal
+S-expressions. \ExT's syntax is similar to Scribble's but is more flexible.
+Based on the infrastructure provided by Racket, Scribble supports arbitrary
+computation and linguistic reuse like \ExT. However, Scribble has a fixed
+document structure~\citep{scribble}, and its rendering function performs
+conventional pattern matching on it. Thus, it is not easy to extend their core
+document constructs and functions without modifying the original source code.
+Furthermore, there is no static typing in Scribble, though it uses Racket's
+\emph{contract} system to perform run-time type checking.
+
+\section{Compilation of Inheritance}
+
+In his excellent survey on inheritance, \citet{taivalsaari1996notion}
+distinguishes two strategies for implementing inheritance: \emph{delegation} and
+\emph{concatenation}. Most prototype-based languages, such as
+\textsc{Self}~\citep{ungar1987self} and JavaScript, implement inheritance via
+delegation, where an object contains a reference to its prototype (e.g.
+\lstinline{__proto__} in JavaScript), and methods that are not found in the
+current object will be delegated to its ancestors in the prototype chain. In
+contrast, CP implements inheritance via concatenation (a.k.a. \emph{merging}
+throughout the paper), where a trait is self-contained and itself contains all
+the methods of its ancestors. Although some copying is involved, the
+concatenation strategy is more efficient than delegation in terms of method
+lookup.
+
+To improve the performance of method lookup, newer implementations of the
+\textsc{Self} language cache all lookup results for a polymorphic call site in a
+\emph{polymorphic inline cache} (PIC)~\citep{holzle1991optimizing}. The methods
+cached in a PIC will be inlined into the caller to further reduce the overhead
+of method calls. Since a PIC is empty until a method is called for the first
+time, dynamic recompilation is required to optimize the code at run time.
+Moreover, the presence of \emph{dynamic inheritance} may lead to a full method
+lookup in \textsc{Self}~\citep{chambers1992design}. Modern JavaScript engines,
+such as V8 used in Node.js, utilize similar PIC-based techniques to optimize
+method calls. Though the CP compiler does not implement inlining at all, which
+is definitely a useful optimization, it is still efficient in terms of method
+lookup, and dynamic inheritance \emph{never} causes a slower lookup.
+
+Typical compilers for mainstream class-based languages, such as C++ and Java,
+add a \emph{virtual method table} (vtable)~\citep{driesen1995message} to each
+object to avoid searching for methods in the inheritance hierarchy at run time.
+A vtable is basically an array of function pointers, associating each method
+name (and parameter types if overloaded) with its implementation. Similarly, CP
+compiles an object to a type-indexed record, which also associates each method
+name and type with the corresponding implementation, among other fields. What is
+more, CP allows for first-class classes (traits) and dynamic inheritance, which
+are not supported by most mainstream languages. This is one of the key
+differences of our work compared to other OOP language compilers.
+
+Another significant difference from mainstream OOP languages is that our
+compilation of inheritance is based on the denotational model by
+\citet{cook1989denotational}. In this model, classes (traits) are encoded as
+functions, and inheritance is essentially merging functions, which is
+illustrated in \autoref{sec:inheritance}. That is why the source language of the
+compilation scheme (\lambdaiplus) does not contain any notion of classes or
+objects. Such encodings are common in the literature on foundations for
+statically typed
+OOP~\citep{bruce1999comparing,bruce2002foundations,pierce2002types}, and they
+largely simplify the formalization of compilation and its metatheory.
+
+Since objects are encoded as multi-field records, which are essentially merges
+of single-field records in \lambdaiplus, the compilation of objects is closely
+related to the elaboration of merges. Next, we discuss the elaboration of
+intersection types and the merge operator.
+
+\paragraph{Elaboration of intersection types and the merge operator.}
+\citet{dunfield2014elaborating} shows that \emph{unrestricted} intersection
+types and a term-level merge operator~\citep{reynolds1997design} can encode
+various features like overloading and multi-field records, and they can be
+elaborated into product types and pairs. However, her approach lacks the
+critical property of coherence, i.e. the property that ensures the result of a
+merge is unambiguous. In the follow-up work on \emph{disjoint} intersection
+types~\citep{oliveira2016disjoint}, the merged components are required to be
+disjoint with each other to avoid the semantic ambiguity.
+\citet{alpuim2017disjoint} added parametric polymorphism to the calculus.
+\citet{bi2018essence,bi2019distributive} further enhanced the intersection
+subtyping with distributivity, enabling more novel features like nested
+composition and family polymorphism. In other words, only
+\citeauthor{bi2019distributive}'s \fiplus calculus fully covers the topics
+mentioned in \autoref{sec:overview}. All the aforementioned work employs
+elaboration semantics with standard $\lambda$-calculi serving as targets. They
+use nested pairs as the target of elaboration, and consequently, the time
+complexity of extracting a component by type can degenerate to linear in the
+worst case. In addition, extensible records require fewer coercions than nested
+pairs because some different source terms compile to equivalent records. These
+differences from our CP compiler have been discussed in detail in
+\autoref{sec:dunfield}. In short, they do not consider more efficient runtime
+representations or eliminating redundant coercions, nor do they have benchmarks
+to evaluate performance. Instead, their focus is on proving the type safety and
+coherence of the elaboration. Furthermore, none of the aforementioned work
+develops a language with separate compilation units.
+
+The compilation of merges in our work has similarities to the compilation of
+\emph{type-indexed rows}~\citep{shields2001type}, where record labels are
+discarded and record fields are sorted by their types. However, the work on
+type-indexed rows does not consider subtyping, which eliminates many of the
+issues that we had to deal with. For instance, they do not need to apply
+coercions to ensure that information statically hidden by subtyping is also
+hidden at run time.
+
+\paragraph{Compilation of extensible records.}
+\citet{ohori1995polymorphic} investigates a polymorphic record calculus and
+introduces an efficient type-directed compilation method for records. Following
+the type-inference stage, records are converted into vectors with explicit
+indexing. However, his records are not extensible, and his method has
+difficulties to handle subtyping. Subtyping for records frequently enables field
+hiding and reordering, rendering it impossible to determine a label's offset
+statically. \citet{gaster1996polymorphic} propose a compilation technique for
+polymorphic extensible records that utilizes qualified
+types~\citep{jones1994theory}. During the compilation process to the target
+language, supplementary parameters are introduced to determine suitable offsets.
+This approach is integrated into Hugs, a well-known implementation of Haskell,
+as an extension. Their system is later generalized by type-indexed
+rows~\citep{shields2001type}. In summary, subtyping and record concatenation (or
+merges) pose significant challenges to the compilation of extensible records.
+Our work takes pragmatic considerations into account, including targeting widely
+used dynamic languages such as JavaScript. As a result, we rely on the primitive
+support of objects and object extension in our target language and do not delve
+into low-level representations of extensible records, for which a comprehensive
+summary can be found in the paper by \citet{leijen2005extensible}.
+
+\begin{comment}
+\paragraph{Compilation of feature-oriented programming.}
+\emph{Feature-oriented programming}
+(FOP)~\citep{prehofer1997feature,apel2009overview} is a programming paradigm
+that aims to modularize features in software product
+lines~\citep{apel2013feature}. There is a debate on what modularity exactly
+means, and \citet{kastner2011road} mention two notions of modularity:
+\emph{cohesion} and \emph{information hiding}. The majority of FOP
+work~\citep{batory2004scaling,apel2005featurec++,apel2013language} focuses on
+the notion of cohesion and basically does source-to-source transformations,
+which hinders modular type checking and separate compilation. There is some
+other work, such as Jiazzi~\citep{mcdirmid2001jiazzi} and
+Scala~\citep{odersky2005scalable}, leveraging information hiding instead and
+supporting modular type checking and separate compilation. However, FOP is
+usually achieved via verbose design patterns or metaprogramming in those
+languages. For instance, some precursor work of compositional programming, done
+in Scala, employs design patterns based on object
+algebras~\citep{oliveira2012extensibility} to achieve
+FOP~\citep{oliveira2013feature,rendel2014object}. Since merging is not directly
+supported in Scala, specialized composition operators are required to simulate
+merges for different object algebra interfaces. The creation and use of those
+composition operators cause a significant burden for developing programs. In
+contrast, CP natively supports merges, eliminating the need for such specialized
+composition operators and supporting FOP more directly.
+
+\emph{Delta-oriented programming}
+(DOP)~\citep{schaefer2010delta} is an extension of FOP, which features delta
+modules that can add, remove, or modify classes. A feature module is a delta
+module without the remove operation. DOP supports compositional type
+checking~\citep{bettini2013compositional} at the level of source code. More
+recently, a core calculus for \emph{dynamic} DOP is proposed by
+\citet{damiani2018core} to support runtime
+variability~\citep{hallsteinsen2008dynamic} and is proven to be type-safe.
+However, dynamic DOP is not yet implemented, and its separation compilation is
+unexplored.
+\end{comment}
+
+\section{Multiple, Dynamic Inheritance and Virtual Classes}
+
+\emph{Multiple inheritance} is a well-known troublemaker in OOP languages,
+bringing the diamond problem and method conflicts, among other issues.
+Alternative notions like \emph{mixins}~\citep{bracha1990mixin} and
+\emph{traits}~\citep{ducasse2006traits} are proposed to alleviate the issues. A
+core difference between mixins and traits is how they handle conflicts when the
+same method name occurs in multiple ancestors. Mixins resolve conflicts
+implicitly by linearization (e.g. C3
+linearization~\citep{barrett1996monotonic}). However, the implicit resolution of
+conflicts may conceal accidental conflicts and lead to subtle bugs. Traits, on
+the other hand, require the programmer to resolve conflicts explicitly. CP
+adopts the trait model and imposes the disjointness constraint on merging (and
+trait inheritance). Note that the disjointness constraint does not only consider
+the method names but also takes into account the types of the methods, so the
+methods with the same name but different return types are considered disjoint
+and do not conflict with each other. By this means, CP tries to reach a balance
+between safety and flexibility.
+
+\paragraph{Dynamic inheritance and first-class classes.} \label{sec:first-class}
+While various forms of multiple inheritance are well studied and implemented in
+some popular languages, such as C++, Ruby, and Scala, dynamic inheritance is
+more challenging and involved, especially in terms of static typing. In the
+literature of OOP, dynamic inheritance is often discussed in a broader context
+of \emph{first-class classes}~\citep{strickland2013contracts}, where inherited
+classes can be determined at run time, among other dynamic features. There are
+only a few statically typed languages that support first-class classes. To the
+best of our knowledge, they are \texttt{gbeta}~\citep{ernst2000gbeta},
+TypeScript~\citep{typescript}, Typed Racket~\citep{takikawa2012gradual},
+Wyvern~\citep{lee2015theory}, and most recently,
+CP~\citep{zhang2021compositional}. As elaborated in \autoref{sec:background},
+the most popular one, TypeScript, has significant type-safety issues when
+dealing with dynamic inheritance.
+
+Typed Racket is gradually typed and uses row polymorphism to represent class
+types. Similarly to the disjointness constraints in CP, there are constraints on
+row variables to express absence, and thus the \emph{inexact superclass problem}
+that TypeScript suffers from is resolved in Typed Racket. However, the absence
+constraint on a row variable only includes the method name but not the type, so
+the dynamically inherited class is more restricted than in CP. Moreover,
+\citet{xie2020row} formally prove that CP's disjoint polymorphism is more
+powerful than similar forms of row polymorphism. Furthermore, unlike Typed
+Racket, CP can model virtual classes and family polymorphism. 
+
+Wyvern is a language for design-driven assurance, and \citet{lee2015theory}
+explored a foundational account of first-class classes based on
+tagging~\citep{glew1999type}. Similarly to our formalization, they give an
+elaboration semantics of an OOP language. However, their theory is very
+different from ours, and they target a more sophisticated calculus with
+hierarchical tagging and dependent types. In contrast, our target language is a
+standard record calculus. Furthermore, their calculus cannot model multiple
+inheritance or family polymorphism, and their implementation is an interpreter
+rather than a compiler.
+
+The \texttt{gbeta} language is the most interesting one and is the closest to CP
+because it supports dynamic multiple inheritance and family polymorphism.
+However, separate compilation was not supported at the time when
+\citet{ernst2000gbeta} wrote his dissertation because of some technical issues
+with the Mjølner BETA persistence support. If this factor is disregarded,
+separate compilation can still be accomplished, but at the cost of efficient
+attribute lookup. Since an object in \texttt{gbeta} may have more mixin
+instances at run time than what is statically known, and the mixin instances may
+occur in a different order, the offset of an attribute cannot be determined
+statically. As a result, \texttt{gbeta} has to perform a linear search through
+super-mixins to look up inherited attributes. In contrast, attribute lookup in
+CP, even with dynamic inheritance, is more efficient, and no linear search is
+needed.
+
+The notion of \emph{patterns} in \texttt{gbeta} unifies classes and methods, and
+patterns can be composed using the combination operator `\&', which is similar
+to the merge operator `$\bbcomma$' in CP. Though dynamic multiple inheritance
+can be achieved using `\&', only a subset of dynamic combinations is safe, where
+at least one of the classes being composed must be created by single
+inheritance~\citep{ernst2002safe}. Otherwise, the C3 linearization algorithm
+used by \texttt{gbeta} may fail at run time. In contrast, dynamic inheritance
+via `$\bbcomma$' is completely type-safe, because CP utilizes disjointness to
+avoid conflicts, and no linearization is needed. This difference has been
+summarized earlier as \emph{mixins versus traits}. Some other notable
+consequences of this difference are:
+\begin{itemize}
+\item `$\bbcomma$' is commutative, while `\&' is not;
+\item `$\bbcomma$' supports mutual dependencies between traits, while `\&'
+rejects such cycles.
+\end{itemize}
+
+\paragraph{Virtual classes and family polymorphism.}
+Virtual classes~\citep{madsen1989virtual}, similarly to virtual methods, are
+nested classes that can be overridden in subclasses. Virtual classes enable
+family polymorphism~\citep{ernst2001family}, which can naturally solve the
+expression problem~\citep{ernst2004expression}. The idea of virtual classes was
+initially introduced in the BETA programming language~\citep{madsen1993object}
+and later generalized in \texttt{gbeta}~\citep{ernst2000gbeta}.
+CaesarJ~\citep{aracic2006overview}, an aspect-oriented programming language
+based on Java, also supports virtual classes but does not allow cross-family
+inheritance and dynamic inheritance. Newspeak~\citep{bracha2010modules}, a
+descendant of Smalltalk, combines virtual classes and first-class modules (i.e.
+instances of top-level classes) but is dynamically typed. The calculi
+Jx~\citep{nystrom2004scalable}, J\&~\citep{nystrom2006j},
+\emph{vc}~\citep{ernst2006virtual}, Tribe~\citep{clarke2007tribe}, and
+.FJ~\citep{saito2008lightweight}, just to name a few, formalize virtual classes
+with static inheritance but do not support dynamic inheritance.
+
+\citet{zhang2017familia} propose the Familia programming language that unites
+object-oriented polymorphism and parametric polymorphism by unifying interfaces
+and type classes. In Familia, a mechanism of family polymorphism based on
+\emph{nested inheritance}, similarly to Jx~\citep{nystrom2004scalable}, is also
+deployed. During compilation, a \emph{linkage} is computed for every class,
+which consists of a self-reference, a dispatch table, and the linkages of its
+nested classes, among others. At the heart of the mechanism is \emph{further
+binding}~\citep{madsen1993object}: rewiring self-references for nested classes.
+Further binding is realized in Familia by linkage concatenation between
+families. This process is similar to the nested trait composition in CP, but
+there is a significant distinction in terms of separate compilation. CP
+\emph{only} needs type information of the imported modules at compile time,
+while Familia requires class linkages that contain some implementation details
+of the imported modules (e.g. method definitions) and copy these details from
+superclasses' linkages. In this sense, with linkages, Familia supports some
+degree of separate compilation, but not to the same extent as the CP compiler
+does. Moreover, since Familia does not support dynamic inheritance, their class
+hierarchies are determined statically. In contrast, CP supports dynamic trait
+composition, which brings extra flexibility.
+
+More recently, \citet{kravchuk2024persimmon} propose \textsc{Persimmon}, a
+functional programming language that features extensible variant types and
+extensible pattern matching. CP also supports them via compositional interfaces
+and method patterns. \textsc{Persimmon} additionally allows types to be members
+of a family, relying on the support for \emph{relative path
+types}~\citep{saito2008lightweight} in their core calculus. Internally,
+\textsc{Persimmon} makes use of \emph{linkages} that are similar to those in
+Familia. An important limitation of their current design is that modular type
+checking and separate compilation are \emph{not} supported for multi-file
+programs, while CP fully supports them.
