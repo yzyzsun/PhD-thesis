@@ -2,9 +2,7 @@
 {-# LANGUAGE DuplicateRecordFields, NamedFieldPuns, OverloadedRecordDot, RecordWildCards #-}
 \end{lstlisting}
 
-\hypertarget{modular-interpretations-in-tagless-final-embeddings}{%
-\subsubsection{Modular Interpretations in Tagless-Final
-Embeddings}\label{modular-interpretations-in-tagless-final-embeddings}}
+\subsubsection{Modular Interpretations in Tagless-Final Embeddings}
 
 \begin{lstlisting}[language=Haskell]
 data Vector = Vector { x :: Double, y :: Double } deriving Show
@@ -56,9 +54,7 @@ need operations that have some dependencies on other operations, we get
 into trouble! But programs with dependencies are common in practice.
 This is a serious limitation.
 
-\hypertarget{a-non-modular-workaround-for-dependencies}{%
-\subsubsection{A Non-Modular Workaround for
-Dependencies}\label{a-non-modular-workaround-for-dependencies}}
+\subsubsection{A Non-Modular Workaround for Dependencies}
 
 A simple workaround is to pack the two operations together and duplicate
 the code of size calculation. We have already described this approach
@@ -88,9 +84,7 @@ calculation. If we have another operation that depends on
 again. This workaround is an \emph{anti-pattern}, which violates
 basic principles of software engineering.
 
-\hypertarget{modular-language-constructs}{%
-\subsubsection{Modular Language
-Constructs}\label{modular-language-constructs}}
+\subsubsection{Modular Language Constructs}
 
 Of course, new region constructors can be modularly added in a
 tagless-final embedding:
@@ -123,8 +117,7 @@ instance RegionHofer UE where
   scale _ a = UE { isUniv = a.isUniv, isEmpty = a.isEmpty }
 \end{lstlisting}
 
-\hypertarget{use-case}{%
-\subsubsection{Use Case}\label{use-case}}
+\subsubsection{Use Case}
 
 We can use all constructors from \lstinline!RegionHudak!
 and \lstinline!RegionHofer! to create a region, as long as

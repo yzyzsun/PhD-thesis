@@ -2,9 +2,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleInstances, GADTs, KindSignatures, MultiParamTypeClasses, RankNTypes, ScopedTypeVariables, TypeApplications, TypeOperators, UndecidableInstances #-}
 \end{lstlisting}
 
-\hypertarget{generic-definitions-for-records}{%
-\subsubsection{Generic Definitions for
-Records}\label{generic-definitions-for-records}}
+\subsubsection{Generic Definitions for Records}
 
 First of all, we need to define a type-indexed record as follows:
 
@@ -38,8 +36,7 @@ data All c :: [*] -> * where
   AllCons :: c a => All c as -> All c (a ': as)
 \end{lstlisting}
 
-\hypertarget{region-dsl-infrastructure}{%
-\subsubsection{Region DSL Infrastructure}\label{region-dsl-infrastructure}}
+\subsubsection{Region DSL Infrastructure}
 
 \begin{lstlisting}[language=Haskell]
 data Vector = Vector { x :: Double, y :: Double }
@@ -144,8 +141,7 @@ scale = scale' (modality @s @s)
 As shown above, there is a lot of boilerplate code for each language
 construct of the region DSL.
 
-\hypertarget{tagless-final-embeddings}{%
-\subsubsection{Tagless-Final Embeddings}\label{tagless-final-embeddings}}
+\subsubsection{Tagless-Final Embeddings}
 
 Now we can write dependent interpretations in a tagless-final style. We
 take the more interesting example with mutual recursion for example:
@@ -183,8 +179,7 @@ We can easily declare dependencies using type constraints, and
 explicit projections help us find appropriate interpretations
 in the type-indexed record.
 
-\hypertarget{use-case}{%
-\subsubsection{Use Case}\label{use-case}}
+\subsubsection{Use Case}
 
 Since \lstinline!'[IsUniv, IsEmpty]! is self-contained,
 we can use smart constructors to create a region:
