@@ -1,0 +1,492 @@
+\section{Dynamic Inheritance in CP} \label{sec:overview}
+
+CP~\citep{zhang2021compositional} is a statically typed language that supports
+dynamic inheritance via merging and still guarantees type safety. In this
+section, we first give an overview of the key features of CP: merges and
+disjointness. We then show how potential conflicts in dynamic inheritance
+are resolved in CP, and how CP solves the inexact superclass problem.
+Finally, we demonstrate a form of \emph{dynamic} family
+polymorphism in CP.
+
+\subsection{Merges, Disjointness, and the Treatment of Conflicts}\label{sec:merge}
+
+The \emph{merge operator} is used to construct a term that has an intersection
+type. The idea originates from the Forsythe programming language by
+\citet{reynolds1997design}, but the general merge operator that we employ was
+first introduced by \citet{dunfield2014elaborating}. If $e_1$ has type $A$ and
+$e_2$ has type $B$, then the merged term ($e_1 \bbcomma e_2$) has the
+intersection type ($A\&B$). When we specialize $A$ and $B$ to be record types,
+$e_1 \bbcomma e_2$ is basically concatenating two records. Therefore, the merge
+operator can be regarded as a generalized form of record concatenation. Since
+objects are commonly modeled as records in the literature, record concatenation,
+or more generally, the merge operator is closely related to
+inheritance~\citep{wand1991type,cook1989denotational}.
+
+However, adding an unrestricted merge operator to a language would lead to
+semantic ambiguity. In other words, the semantics of the language would become
+non-deterministic. For example, $1\bbcomma2$ could evaluate to either $1$ or
+$2$. That is why \citet{oliveira2016disjoint} introduced the notion of
+\emph{disjointness} to avoid ambiguity. If specialized to record types again,
+disjointness is similar to constraints used in \emph{row
+polymorphism}~\citep{harper1991record}. In the presence of disjointness, the two
+terms to be merged are restricted to have disjoint types so that the information
+they convey does not overlap. By this means, $1\bbcomma2$ is rejected because it
+is not well-typed, as \lstinline{Int} and \lstinline{Int} itself are not
+disjoint.
+
+\paragraph{Interaction between merging and subtyping.}
+According to the notion of disjointness, \lstinline|{ x: Int }| and
+\lstinline|{ x: Int }| itself are not disjoint either, so the merge
+\lstinline{r,s} is rejected in the following code:
+\begin{lstlisting}
+let merge (r: { x: Int }) (s: { x: Int }) = r,s in  -- Type Error!
+merge { x = 1 } { x = 3 }  --> { x = ? }
+\end{lstlisting}
+If we further consider subtyping, the merge operator is still problematic, and
+disjointness alone is not sufficient to prevent ambiguity. For example, consider
+the following code:
+\begin{lstlisting}
+let merge (r: { x: Int }) (s: { y: Int }) = r,s in
+merge { x = 1; y = 2 } { x = 3; y = 4 }  --> { x = ?; y = ? }
+\end{lstlisting}
+Note that we change the type of \lstinline{s} from \lstinline|{ x: Int }| to
+\lstinline|{ y: Int }|. Although the type of \lstinline{s} is now disjoint with
+that of \lstinline{r}, we can pass terms of their subtypes to \lstinline{merge}.
+In this case, \lstinline{r} has an extra field \lstinline{y} and \lstinline{s}
+has an extra \lstinline{x}. Now the issue of ambiguity occurs again.
+
+If we look at the function \lstinline{merge} statically, we would expect that
+the field \lstinline{x} is from \lstinline{r} and \lstinline{y} from
+\lstinline{s}. Therefore, the most reasonable result for the code above is
+\lstinline|{ x = 1; y = 4 }|. However, there is no naive way to implement the
+merge operator to achieve this result. \emph{Neither} left-biased \emph{nor}
+right-biased overriding is able to handle this case. Furthermore, selecting
+other fields at run time can actually lead to type unsoundness. For example,
+consider a variant of the previous merge:
+\begin{lstlisting}
+merge { x = 1; y = "Hi" } { x = "Bye"; y = 4 }  --> { x = ?; y = ? }
+\end{lstlisting}
+Statically, the function is expected to compute a value of type
+\lstinline|{ x: Int; y: Int }|, but fields of type \lstinline{String} could be
+selected. The interaction between record concatenation and subtyping is
+inherently difficult and was the reason preventing
+\citet{cardelli1991operations} from choosing concatenation as the primitive
+operator in their calculus. This problem is closely related to the inexact
+superclass problem discussed in \autoref{sec:override}, which can be seen as a
+manifestation of the more general problem identified by
+\citeauthor{cardelli1991operations}.
+
+The solution found in the line of work by \citet{oliveira2016disjoint} is to
+employ a \emph{coercive} semantics of subtyping, where a subtyping relationship
+$A <: B$ implies a coercion function of type $A \to B$. This solution picks the
+field \lstinline{x} from \lstinline{s} and \lstinline{y} from \lstinline{r}, by
+being aware of the static types when selecting components. In the previous
+example, during the function application, \lstinline{r} is coerced to a
+single-field record \lstinline|{ x = 1 }|, corresponding to the parameter type
+\lstinline|{ x: Int }|. A similar coercion is inserted for \lstinline{s} as
+well, coercing it to \lstinline|{ y = 4 }|. Then the merge operator simply
+concatenates \lstinline|{ x = 1 }| and \lstinline|{ y = 4 }|, which has no
+ambiguity. Thus, a combination of disjointness and a coercive approach to
+subtyping is able to eliminate the ambiguity introduced by an unrestricted merge
+operator.
+
+\paragraph{Disjoint polymorphism and disjointness constraints.}
+In the previous example, some type information about the records being merged is
+lost. But we may wish to preserve other fields in the records that do not create
+ambiguity. This can be achieved by merging polymorphic terms, whose static types
+are not fully known. For example, consider a variant of the previous example:
+\begin{lstlisting}
+let mergeSub (A <: { x: Int }) (B <: { y: Int }) (r: A) (s: B) = r,s in
+mergeSub @{ x: Int; y: Int } @{ x: Int; y: Int }  -- explicit type application
+          { x = 1;  y = 2  }  { x = 3;  y = 4  }
+\end{lstlisting}
+The code is written in pseudo-CP, where \lstinline{<:} denotes the upper bound
+of a type parameter. In this example, \lstinline{A} and \lstinline{B} are
+declared to be subtypes of \lstinline|{ x: Int }| and \lstinline|{ y: Int }|
+respectively. Since CP does not yet support implicit polymorphism, both type
+parameters are instantiated explicitly on the second line. Like in Haskell,
+\lstinline|@| is the prefix of type arguments in CP. With bounded
+quantification~\citep{cardelli1985understanding}, we cannot guarantee the
+disjointness of \lstinline{A} and \lstinline{B}, so the issue of ambiguity comes
+back again. This issue can be solved by \emph{disjoint
+quantification}~\citep{alpuim2017disjoint} (disjointness is denotated by
+\lstinline{*}):
+\begin{lstlisting}
+let mergeDis (A * { y: Int }) (B * A & { x: Int })  -- B * A and B * { x: Int }
+             (r: A & { x: Int }) (s: B & { y: Int }) = r,s in
+mergeDis @{y: Int} @{x: Int} { x = 1; y = 2 } { x = 3; y = 4 }  -- Type Error!
+mergeDis @Top @Top { x = 1 } { y = 4 }  --> { x = 1; y = 4 }
+\end{lstlisting}
+Note that the type of \lstinline{r} is now \lstinline|A & { x: Int }| instead of
+\lstinline{A}. This is how we usually translate subtype-bounded quantification
+to disjoint quantification~\citep{xie2020row}. The type parameter \lstinline{A}
+is declared to be disjoint with \lstinline|{ y: Int }| to avoid the overlap, and
+\lstinline{B} is disjoint with \lstinline|{ x: Int }| similarly. Another
+important constraint here is the disjointness of \lstinline{A} and
+\lstinline{B}, ensuring that other fields will never conflict as well. For
+example, consider a third field of type \lstinline|{ z: Int }|:
+\begin{lstlisting}
+mergeDis @{z: Int} @{z: Int} { x = 1; z = 5 } { y = 4; z = 6 }  -- Type Error!
+mergeDis @Top @{z: Int} { x = 1 } { y = 4; z = 6 }  --> { x = 1; y = 4; z = 6 }
+\end{lstlisting}
+The first line of code fails to type-check because \lstinline{A} and
+\lstinline{B} are not disjoint and both contain a field of type
+\lstinline|{ z: Int }|. The second line resolves the conflict, and we can access
+all three fields after merging. The absence of certain fields is not expressible
+in TypeScript. As we shall see in \autoref{sec:dynamic}, this is important for
+CP to safely handle dynamic inheritance.
+
+\subsection{From Merging to Inheritance} \label{sec:inheritance}
+
+Let us now turn to the topic of how we model inheritance as merging. According
+to the denotational semantics of inheritance~\citep{cook1989denotational}, an
+object is essentially a record, and a class (or a trait in CP) is essentially a
+function over records. Also note that, since CP is a purely functional language,
+there is no distinction between object fields and methods -- a method is just a
+field that may have a function type. Class \lstinline{A} in
+\autoref{fig:dynamic} can be encoded as:
+\begin{lstlisting}
+type Rcd = { m: String; n: String };
+
+-- class A
+mkA = \(this: Rcd) -> { m = "foobar"; n = toUpperCase this.m };
+\end{lstlisting}
+The function parameter \lstinline{this} is a self-reference. With the
+self-reference, we can refer to other fields like \lstinline{this.m} in the
+\lstinline{n} field. In this model, the instantiation of a class is obtained by
+taking a fixpoint of the function. Furthermore, class inheritance can be encoded
+as record concatenation:
+\begin{lstlisting}
+-- class B extends A
+mkB = \(this: Rcd) -> let super = mkA this in super , { m = 48 };
+\end{lstlisting}
+We first provide the new self-reference to \lstinline{mkA} to obtain
+\lstinline{super}. Then we merge \lstinline{super} with the body of class
+\lstinline{B} to obtain the final object. After instantiating class
+\lstinline{B} with a fixpoint, we can access the \lstinline{n} field:
+\begin{lstlisting}
+o = fix this: Rcd. mkB this;  --> { m = "foobar"; n = "FOOBAR"; m = 48 }
+o.n  --> "FOOBAR"
+\end{lstlisting}
+Here we get the expected result instead of a runtime error. The key point is
+that we allow duplicate labels as long as the fields have disjoint types.
+Because of the merging semantics of CP, \lstinline{o} will have two
+\lstinline{m} fields: one of type \lstinline{Int} and the other of type
+\lstinline{String}. Thus, unlike TypeScript, no implicit (and type-unsafe)
+overriding happens in this case. Instead, both \lstinline|{ m = "foobar" }| and
+\lstinline|{ m = 48 }| are kept in the record \lstinline{o}, and
+\lstinline{toUpperCase this.m} will automatically pick the former one.
+Internally, \lstinline{o.m} has the intersection type \lstinline{String&Int},
+which means it contains a merge of a string and an integer. Such behavior is a
+kind of \emph{overloading by return type}, which is supported in some languages
+such as Swift and Haskell (via type classes)~\citep{marntirosian2020resolution}.
+
+\emph{Traits in CP} follow the aforementioned model of inheritance. Therefore,
+the example above can be rewritten in the form of traits:
+\begin{lstlisting}
+mkA = trait [this: Rcd] => { m = "foobar"; n = toUpperCase this.m };
+mkB = trait [this: Rcd] inherits mkA => { m = 48 };
+\end{lstlisting}
+The self-type annotation \lstinline{[this: Rcd]} corresponds to the function
+parameter \lstinline{this} in the previous code. If there is no use of
+\lstinline{this} in any field, the self-type annotation can be omitted. The
+instantiation of a trait is more conveniently done by the \lstinline{new}
+keyword:
+\begin{lstlisting}
+o = new mkB;  o.n  --> "FOOBAR"
+\end{lstlisting}
+
+\paragraph{Merging versus overriding.}
+So far we have discussed how disjointness prevents ambiguity in merging.
+Basically we avoid any overlap between the two terms to be merged. According to
+the model of inheritance that we use, this constraint automatically applies to
+inheritance as well. One may ask whether this means that overriding is forbidden
+in CP. This is not true: programmers can explicitly declare overriding using the
+\lstinline{override} keyword. For example, we can have:
+\begin{lstlisting}
+base = trait => { m = 48 };
+derived = trait inherits base => { override m = super.m - 2 };
+\end{lstlisting}
+This forces programmers to think about the potential conflict and make a
+decision. Scala and other programming languages also require programmers to
+write \lstinline{override} explicitly. Accidentally overriding a field or a
+method in the base class can lead to unexpected behavior, which is a common
+source of bugs in OOP languages. For example, \lstinline{base} may have other
+fields that assume \lstinline{m} is exactly 48 and will not work properly if
+\lstinline{m} is overridden. This issue is also known as the \emph{fragile base
+class problem}~\citep{mikhajlov1998study}. At run time, CP will exclude the
+overridden field from the base trait before merging.
+
+\paragraph{Multiple inheritance.}
+CP supports a form of multiple trait inheritance, which makes the treatment of
+conflicts more complicated. For example, consider the following code:
+\begin{lstlisting}
+base1 = trait => { m = 48; n = "Hi" };
+base2 = trait => { m = 46; n = "Bye" };
+derived = trait inherits base1 , base2 => { ... };  -- Type Error!
+\end{lstlisting}
+In some OOP languages that support multiple inheritance, such as Scala and
+Python, the order of inheritance determines which field is chosen if fields in
+different base classes have the same name. However, the default resolution order
+may not be what programmers desire. It easily causes bugs if programmers are not
+aware of the implicit overriding. What is worse, there is no way to pick
+\lstinline{n} from \lstinline{base1} and \lstinline{m} from \lstinline{base2} at
+the same time. In CP, programmers are again required to explicitly resolve the
+conflicts, while having more flexibility to choose the desired fields:
+\begin{lstlisting}
+derived = trait inherits base1\m , base2\n => { ... };  -- OK!
+      --> trait =>  { n = "Hi" } , { m = 46 } , { ... }
+\end{lstlisting}
+With the record restriction operator (\lstinline{\}) powered by \emph{type
+difference}~\citep{xu2023making}, we can easily remove \lstinline{m} from
+\lstinline{base1} and \lstinline{n} from \lstinline{base2}. In traditional OOP
+languages, inheritance involves two things: inheriting all fields from the base
+classes, and overriding some of them. In contrast, symmetric merging in CP does
+not imply any overriding. Nevertheless, for the sake of convenience, CP also
+provides biased versions of merging (e.g. \lstinline{base1 ,+ base2} or
+\lstinline{base1 +, base2}) if left-to-right or right-to-left overriding is
+desired. They are also powered by type difference under the hood.
+
+\subsection{Dynamic Inheritance in CP} \label{sec:dynamic}
+
+\begin{figure}
+\begin{lstlisting}[xleftmargin=.2\textwidth]
+mixin (TBase * { m: Int }) (base: Trait<TBase>) =
+  trait [this: TBase] inherits base => { m = 48 };
+
+mkA = trait [this: { m: String; n: String }] => {
+  m = "foobar";
+  n = toUpperCase this.m;
+};
+
+o = new mixin @{ m: String; n: String } mkA;
+o.n  --> "FOOBAR"
+\end{lstlisting}
+\caption{Solving the inexact superclass problem in CP.}
+\label{fig:inexactCP}
+\end{figure}
+
+Now let us go back to the safety issue demonstrated in \autoref{fig:dynamic} and
+see how it can be solved in CP. The code for a CP solution is shown in
+\autoref{fig:inexactCP}. Here the function \lstinline{mixin} has two parameters:
+\lstinline{TBase} is a type parameter, which is disjoint with
+\lstinline|{ m: Int }|; and \lstinline{base} is a term parameter, which is a
+trait that implements \lstinline{TBase}. Like first-class classes in TypeScript,
+we can dynamically create a trait that inherits from \lstinline{base} in CP. The
+difference here is that we can declare the absence of \lstinline|{ m: Int }| in
+the trait \lstinline{base} to make sure that there is no conflict. As mentioned
+in \autoref{sec:inheritance}, CP does a fine-grained disjointness check that
+considers, not only the label name, but also the field type. Therefore,
+\lstinline|{ m: String }| is disjoint with \lstinline|{ m: Int }|, and there is
+no conflict in the dynamic inheritance. Since both versions of \lstinline{m}
+fields are available in \lstinline{o}, the \lstinline{n} field can still rely on
+the original \lstinline{m} field that contains a string. Together with
+disjointness constraints, type safety is guaranteed in CP without sacrificing
+the flexibility of dynamic inheritance.
+
+Finally, note that if we apply \lstinline{mixin} to a different trait that
+contains a \lstinline{m} field of type \lstinline{Int}:
+\begin{lstlisting}
+mkA' = trait => { m = 0; n = 0 };
+o = new mixin @{ m: Int; n: Int } mkA';  -- Type Error!
+\end{lstlisting}
+We will get a type error because \lstinline|{ m: Int; n: Int }| is \emph{not}
+disjoint with \lstinline|{ m: Int }|. In other words, the field \lstinline{m} in
+\lstinline{mkA'} conflicts with \lstinline{m} in \lstinline{mixin}.
+
+
+\subsection{Family Polymorphism in CP} \label{sec:ep}
+
+Here we revisit the example of family polymorphism in \autoref{sec:family} and
+show how it can be implemented in CP. As before, we start with the evaluation of
+numeric literals and addition. The CP code is shown in
+\autoref{fig:EP_cp_initial}. The compositional interface \lstinline{AddSig}
+serves as the specification of expressions, while type \lstinline{Eval}
+represents the evaluation operation. Note that \lstinline{<Exp>} is a special
+type parameter called a \emph{sort} in CP. A sort is kept abstract until it is
+instantiated with a concrete type like in \lstinline{AddSig<Eval>}. The
+interface \lstinline{AddSig<Eval>} is implemented by trait
+\lstinline{familyEval}, where syntactic sugar called \emph{method patterns} is
+used to keep code compact. The desugared code is:
+\begin{lstlisting}
+familyEval = trait implements AddSig<Eval> => {
+  Lit = \n   -> trait => { eval = n };
+  Add = \l r -> trait => { eval = l.eval + r.eval };
+};
+\end{lstlisting}
+Although the syntactic sugar makes it seem that \lstinline{eval} is defined by
+pattern matching of constructors, \lstinline{(Lit n)} and \lstinline{(Add l r)}
+are actually nested traits, which are virtual and can be refined in CP.
+
+\begin{figure}
+\begin{minipage}{.5\textwidth}
+\begin{subfigure}{\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+type AddSig<Exp> = {
+  Lit: Int -> Exp;
+  Add: Exp -> Exp -> Exp;
+};
+
+type Eval = { eval: Int };
+
+familyEval =
+  trait implements AddSig<Eval> => {
+    (Lit   n).eval = n;
+    (Add l r).eval = l.eval + r.eval;
+  };
+\end{lstlisting}
+\caption{Initial family.}\label{fig:EP_cp_initial}
+\end{subfigure}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+\begin{subfigure}{\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+type Print = { print: String };
+
+familyPrint =
+  trait implements AddSig<Print> => {
+    (Lit   n).print = toString n;
+    (Add l r).print = l.print ++ " + "
+                   ++ r.print;
+  };
+\end{lstlisting}
+\caption{Adding a new operation.}\label{fig:EP_cp_operation}
+\end{subfigure}
+\par\bigskip
+\begin{subfigure}{\textwidth}
+\begin{lstlisting}[basicstyle=\ttfamily\footnotesize]
+type NegSig<Exp> = { Neg: Exp -> Exp };
+
+familyNeg =
+  trait implements NegSig<Eval&Print> => {
+    (Neg e).eval  = -e.eval;
+    (Neg e).print = "-(" ++ e.print ++ ")";
+  };
+\end{lstlisting}
+\caption{Adding a new expression.}\label{fig:EP_cp_expression}
+\end{subfigure}
+\end{minipage}
+\caption{Expression Problem in CP.}
+\end{figure}
+
+The solution to the expression problem in CP is quite straightforward. To extend
+operations, we instantiate the sort with another type and implement it with
+another trait. For example, \autoref{fig:EP_cp_operation} shows how to add
+support for pretty-printing. In the other dimension, we add negation to numeric
+literals and addition. We define a new compositional interface and implement
+both operations with a trait in \autoref{fig:EP_cp_expression}. This time we
+instantiate the sort of \lstinline{NegSig} with the intersection type
+\lstinline{Eval&Print}.
+
+Finally, we can compose the two-dimensional extensions together by the merge
+operator easily:
+\begin{lstlisting}
+fam = new familyEval , familyPrint , familyNeg
+    : AddSig<Eval&Print> & NegSig<Eval&Print>;
+\end{lstlisting}
+
+\paragraph{Nested composition and distributive subtyping.}
+The merge of the three traits seems simple from a syntactic perspective.
+However, it requires a more sophisticated mechanism under the hood. Let us look
+at the desugared code for the merge between \lstinline{familyEval} and
+\lstinline{familyPrint}:
+\begin{lstlisting}
+trait implements AddSig<Eval> => {                 -- familyEval
+  Lit = \n   -> trait => { eval = n };
+  Add = \l r -> trait => { eval = l.eval + r.eval };
+} ,
+trait implements AddSig<Print> => {                -- familyPrint
+  Lit = \n   -> trait => { print = toString n };
+  Add = \l r -> trait => { print = l.print ++ " + " ++ r.print };
+}
+\end{lstlisting}
+Our expectation is that the result of merging should contain, for example, a
+single constructor \lstinline{Lit} that supports both the \lstinline{eval} and
+\lstinline{print} operations. Therefore, the result should be equivalent to:
+\begin{lstlisting}
+trait implements AddSig<Eval&Print> => {
+  Lit = \n   -> trait => { eval = n;
+                           print = toString n };
+  Add = \l r -> trait => { eval = l.eval + r.eval;
+                           print = l.print ++ " + " ++ r.print };
+}
+\end{lstlisting}
+To achieve this, CP employs \emph{nested composition}~\citep{bi2018essence} and
+\emph{distributive subtyping}~\citep{barendregt1983filter}, where traits,
+records, and functions distribute over intersections. In other words, merging
+applies to the whole trait hierarchy, including nested traits. This example
+showcases family polymorphism by the refinement of nested traits (i.e. CP's
+version of virtual classes).
+
+With these features available in CP, we can access the three constructors
+(\lstinline{Lit}, \lstinline{Add}, and \lstinline{Neg}) as well as the two
+operations (\lstinline{eval} and \lstinline{print}), similarly to the previous
+TypeScript code:
+\begin{lstlisting}
+e = new fam.Add (new fam.Lit 48) (new fam.Neg (new fam.Lit 2));
+e.print ++ " = " ++ toString e.eval  --> "48 + -(2) = 46"
+\end{lstlisting}
+
+\paragraph{Dynamic family polymorphism.}
+Since merging generalizes dynamic inheritance, we can rewrite
+\lstinline{familyNeg}, for instance, using a mixin style:
+\begin{lstlisting}
+familyNeg (TBase * NegSig<Eval&Print>) (base: Trait<TBase>) =
+  trait [this: TBase] implements NegSig<Eval&Print> inherits base => {
+    (Neg e).eval  = -e.eval;
+    (Neg e).print = "-(" ++ e.print ++ ")";
+  };
+fam = new familyNeg @AddSig<Eval&Print> (familyEval,familyPrint)
+    : AddSig<Eval&Print> & NegSig<Eval&Print>;
+\end{lstlisting}
+By applying \lstinline{familyNeg} to \lstinline{(familyEval,familyPrint)}, we
+dynamically create a trait that inherits from the latter. Of course, we can
+choose other traits as a base trait at run time, which is supported by dynamic
+inheritance in CP.
+
+Note that in \autoref{sec:family}, \lstinline{FamilyEval},
+\lstinline{FamilyPrint}, and \lstinline{FamilyNeg} have a statically fixed
+inheritance hierarchy. As a result, the negation expression cannot be separated
+from the other two expressions because \lstinline{FamilyNeg} is a subclass of
+\lstinline{FamilyPrint}. In contrast, the inheritance hierarchy can be
+dynamically determined in CP, so \lstinline{familyEval},
+\lstinline{familyPrint}, and \lstinline{familyNeg} can all be individually used
+or composed with any other traits. In fact, CP's solution solves a dynamic
+variant of the expression problem, which can be seen as the combination of the
+expression product line~\citep{lopez2005evaluating} and dynamic software product
+lines~\citep{hallsteinsen2008dynamic}.
+
+\subsection{Discussion}
+
+In this and the previous section, we have seen that both CP and
+JavaScript/TypeScript support a powerful and expressive form of dynamic
+inheritance. However, there are some important differences worth noting:
+
+\begin{itemize}
+
+\item \textbf{CP is type-safe.}
+      While the three languages provide a high degree of flexibility, CP is the
+      only language which combines flexibility and type safety.
+
+\item \textbf{No implicit overriding in CP.}
+      Unlike JavaScript/TypeScript, where implicit overriding is common, CP
+      adopts a trait model, so implicit overriding can \emph{never} happen.
+
+\item \textbf{Dealing with conflicts using disjoint types.}
+      In JavaScript/TypeScript, method overriding is based on \emph{names}. So
+      even when the method or field in the superclass has a different (or
+      disjoint) type, overriding happens when the subclass has a method with the
+      same name. As we have seen, this is the source of type unsoundness in the
+      inexact superclass problem. In CP, methods with disjoint types can coexist
+      in the same object. Thus, for the same situation, CP will not override but
+      inherit the method from the superclass.
+\end{itemize}
+
+\noindent
+These differences are important to obtain flexibility while preserving type
+safety. However, these differences also mean that the dynamic semantics of CP
+needs to be different from that of JavaScript/TypeScript. In particular, the
+dynamic semantics of CP has to be aware of types, since types play a role in
+determining whether conflicts exist or not, and in unambiguously performing
+method lookup. This creates important challenges in obtaining an efficient
+implementation, which have not been addressed in previous work.

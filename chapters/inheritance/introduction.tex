@@ -1,0 +1,187 @@
+\section{Introduction}
+
+Many programming language constructs are first-class. First-class functions are
+a key construct of functional programming. Similarly, objects are first-class in
+object-oriented programming (OOP). First-class constructs enable the
+corresponding values to be abstracted by variables, passed as arguments, or
+returned by functions or methods.
+
+While classes are pervasive in most OOP languages, first-class classes are
+\emph{much less} studied, and they are \emph{rarely} supported in mainstream
+statically typed OOP languages. Languages such as Java, C\#, and Swift, just to
+name a few, do not support first-class classes. In these languages, no variables
+can abstract over classes, and thus a class cannot pick which class to inherit
+from at run time. Nevertheless, some dynamically typed languages treat classes
+as first-class constructs and allow dynamic inheritance. Taking
+JavaScript\footnote{Although object-orientation in JavaScript is originally
+prototype-based, newer standards (ECMAScript 6+) also support classes on top of
+prototypes.} as an example, a base class can be passed as an argument, and the
+inheritance hierarchy is determined at run time, after the application of the
+function happens:
+\begin{lstlisting}[language=TypeScript]
+function Mixin(Base) {
+  return class extends Base {
+    greet() { alert('Hello, world!') }
+  }
+}
+\end{lstlisting}
+First-class classes offer powerful and flexible abstraction mechanisms for
+programmers. For instance, \emph{mixins}~\citep{bracha1990mixin}, which are
+class-like abstractions that can be mixed into other classes to add new
+features, are encodable via first-class classes and dynamic inheritance. In our
+example, the \lstinline{Mixin} function creates a class that inherits from
+\lstinline{Base} and adds a \lstinline{greet} method. At run time, we can apply
+\lstinline{Mixin} to different base classes that need \lstinline{greet}. Dynamic
+inheritance rejects the common assumption that inheritance hierarchies are fixed
+at compile time, providing a greater degree of flexibility compared to static
+inheritance. Furthermore, first-class classes provide natural support for
+\emph{nested classes}: classes defined within another class, or even inside
+methods or functions as in the \lstinline{Mixin} example. Nested classes can
+access definitions and methods in the surrounding lexical scope. In JavaScript,
+nested classes are supported via first-class classes. Some other OOP languages,
+such as Java, support nested classes without supporting first-class classes.
+
+\begin{figure}
+\centering
+\begin{subfigure}{.33\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class A {
+  m() { return 48 }
+}
+\end{lstlisting}
+\end{subfigure}
+\begin{subfigure}{.33\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class B extends A {
+  m() { return "Hi" }
+}
+\end{lstlisting}
+\end{subfigure}
+\caption{JavaScript allows unconstrained overriding, whereas TypeScript's type
+  system attempts to prevent type-unsafe overriding and statically rejects the
+  example.} \label{fig:override}
+\end{figure}
+
+To ensure type-safe inheritance, an important concern is how to deal with
+\emph{overriding} and, more generally, method conflicts. JavaScript deals with
+method conflicts by employing \emph{implicit} overriding. That is, a method in a
+subclass will override a method in the superclass if the superclass contains a
+method with the \emph{same name}. Otherwise, a new method is defined in the
+subclass if no method with the same name exists in the superclass. In JavaScript
+or other dynamically typed languages, overriding is completely unconstrained,
+allowing the overriding method to return a different type. An example is shown
+in \autoref{fig:override}. Such overriding is not type-safe if an object of the
+subclass \lstinline{B} is to be used in the place where the superclass
+\lstinline{A} is expected, since the method \lstinline{m} in \lstinline{A} is
+expected to return a number instead of a string.
+
+Since TypeScript is a superset of JavaScript, it adopts the same implicit
+overriding approach. However, like most statically typed OOP languages,
+TypeScript places restrictions on overriding to ensure type safety. In
+TypeScript, overriding methods must have types compatible with the overridden
+ones, in order to allow for the safe use of a subclass in the place of a
+superclass. Another possibility is to allow subclasses not to be subtypes of the
+superclass~\citep{cook1990inheritance}, which is sometimes seen in structurally
+typed OOP languages. In this case, a subclass may not always be used in place of
+a superclass, and a type system can prevent the use of subclasses that are not
+subtypes.  Nevertheless, this does not imply that overriding can be fully
+unconstrained, as it is still possible to have type-safety issues even when
+inheritance does not imply subtyping.
+
+First-class classes and dynamic inheritance make type-safe overriding much
+harder. Few statically typed languages attempt to support such features, and
+some of the ones that do have type-unsound designs. For instance, in addition to
+supporting conventional static inheritance idioms, TypeScript also supports
+dynamic inheritance, but its type system cannot always ensure type-safe
+overriding. With dynamic inheritance, the exact type of the superclass is
+unknown statically, so it is hard to guarantee that no method is accidentally
+overridden with an incompatible type at run time. We will illustrate this point
+using examples in TypeScript later in this chapter.
+
+Implicit overriding is not the only way to deal with method conflicts. Another
+possibility is to detect and prevent conflicts, \emph{disallowing} any form of
+implicit overriding. For instance, the \emph{trait}
+model~\citep{ducasse2006traits} adopts an approach where implicit overriding is
+disallowed. With traits overriding is still possible, but it must be
+\emph{explicitly} triggered by the programmer, instead of being implicitly done
+by the compiler. For instance, when composing two traits with conflicts, the
+composition will be \emph{rejected}. To resolve conflicts, a programmer can, for
+example, decide to take one of the implementations for the method, or provide a
+new method implementation instead. 
+
+Yet another possibility to deal with conflicts is what we call \emph{merging}.
+Merging is not a new idea and has been used to a certain degree in existing
+programming language designs. For instance, merging is central in programming
+language designs with \emph{virtual
+classes}~\citep{madsen1989virtual,ernst2006virtual,clarke2007tribe} and
+\emph{family
+polymorphism}~\citep{ernst2001family,saito2008lightweight,zhang2017familia}.
+Virtual classes are a form of nested classes. However, the main feature of
+virtual classes is that, when a virtual class conflicts with another virtual
+class with the same name, the old class is \emph{not overridden}. Instead, the
+behaviors of the two classes are \emph{merged}: the new class will contain all
+the methods of the old class as well as the new methods. So, unlike overriding,
+merging does not replace existing behaviors. Instead, it preserves existing
+behaviors and adds some new ones.\footnote{Strictly speaking, most designs with
+virtual classes will combine merging with overriding, in the case that the two
+virtual classes have conflicting methods. In our discussion, when we describe
+merging, we assume that the sets of methods in the two virtual classes are
+disjoint and, consequently, no overriding takes place.}
+
+The idea of merging can be extended to deal with conventional methods as well.
+For example, in a language that adopts merging, code similar to that in
+\autoref{fig:override} can be accepted. Class \lstinline{B} would contain
+\emph{two} versions of the method \lstinline{m}: one returning a number and the
+other returning a string. In other words, merging would act as a kind of
+\emph{overloading} in this case, enabling two methods with the same name but
+different types to coexist in the same class. Invocations of \lstinline{m} could
+be disambiguated by the surrounding context or, if needed, by the programmer. Of
+course, in the merging model, the combination of two methods with the same name
+and \emph{related types} would still be problematic, as it would not be clear
+how to choose and disambiguate between the two method implementations.
+
+A solution to this problem is to adopt a trait-like model with merging. This is
+the model adopted by the CP language and is the focus of this chapter. In a
+trait-like model with merging, method conflicts are still forbidden, but methods
+with the same name and \emph{disjoint types} (i.e. the types are unrelated) do
+not create a conflict. In other words, if we compose two traits, each having a
+method with the same name and related types, then we get an \emph{error} due to
+a method conflict. However, if the methods have the same name but disjoint
+types, then the composition is accepted, and the resulting object will retain
+the two method implementations. By allowing merging in the disjoint case, we can
+express the forms of composition that are required for virtual classes. In such
+cases, virtual classes are modeled as fields, and two virtual classes with the
+same name but disjoint interfaces (i.e. the types of the virtual class methods)
+can be merged.
+
+Such a model offers important advantages over designs that adopt implicit
+overriding instead. A first advantage is that we can obtain flexible, powerful,
+and type-safe inheritance models and avoid many of the restrictions imposed by
+languages with static inheritance.  With merging it is possible to have a model
+of inheritance that allows \emph{dynamic inheritance} and forms of
+\emph{multiple inheritance} and \emph{family polymorphism} all at once. We are
+aware of some designs with dynamic inheritance and first-class
+classes~\citep{takikawa2012gradual,lee2015theory}, but without family
+polymorphism.  We are also aware of some designs with both multiple inheritance
+and family polymorphism~\citep{nystrom2006j,aracic2006overview,clarke2007tribe},
+but without dynamic inheritance. Except for the CP language, the only statically
+typed language we know that supports all three features is
+\texttt{gbeta}~\citep{ernst2000gbeta}. However, \texttt{gbeta} cannot statically
+guarantee that every use of dynamic inheritance is type-safe, although
+\citet{ernst2002safe} proves a subset of use cases to be type-safe. Moreover,
+separate compilation can only be supported with an inefficient linear search
+through super-mixins for inherited attributes. To the best of our knowledge, CP
+is the only language that supports all three features in a completely type-safe
+manner, without compromising on modular type checking or separate compilation.
+We believe that this absence in the design space is because it is hard to have
+flexible and type-safe designs that support all these features at once.
+
+Because our design is based on the trait model, we also inherit its advantages.
+In particular, since merging extends behavior rather than replace behavior, it
+is less prone to problems such as the \emph{fragile base class
+problem}~\citep{mikhajlov1998study}. As we shall see, in the presence of dynamic
+inheritance, designs based on implicit overriding, such as TypeScript,
+exacerbate the fragile base class problem: not only can overriding break
+invariants of the superclass, but it can also break type safety! Designs based
+on a trait-model with merging preserve the behavior of inherited classes and
+avoid the issues due to (implicit) overriding.

@@ -1,0 +1,570 @@
+\section{Dynamic Inheritance, Overriding, and Type Safety} \label{sec:background}
+
+There are only a few statically typed languages that support first-class classes
+and dynamic inheritance, among which are \texttt{gbeta}~\citep{ernst2000gbeta},
+TypeScript~\citep{typescript}, Typed Racket~\citep{takikawa2012gradual}, and
+Wyvern~\citep{lee2015theory}. Here we take the most popular one, TypeScript, as
+the main example to illustrate the challenges of type-safe dynamic inheritance
+and reveal significant limitations of TypeScript's type system. We will also
+briefly mention JavaScript and Java to further illustrate concepts related to
+first-class classes and dynamic inheritance. Discussions about \texttt{gbeta},
+Typed Racket, and Wyvern can be found in \autoref{sec:related}.
+
+\subsection{Class Inheritance and Structural Typing} \label{sec:bivariant}
+Classes are the reusable building blocks in most OOP languages. They are reused
+by inheritance, a mechanism to create a new class (called a \emph{subclass})
+based on an existing class (called a \emph{superclass}). Inheritance enables the
+reuse of implementations of methods or properties that are already provided in
+the superclass. Furthermore, it is possible to override methods of the
+superclass with new implementations that are more suitable for the subclass.
+
+To make sure that instances of the subclass can be used in any context where its
+superclass is expected, there is usually a requirement that the subclass has a
+\emph{subtype} with respect to its superclass. While inheritance is related to
+implementations, subtyping is a relation between types. In many programming
+languages, class definitions
+\lstinline[language=TypeScript]|class B extends A {...}| introduce both
+relations between \lstinline{A} and \lstinline{B}: class \lstinline{B} inherits
+the implementation from class \lstinline{A}, and it also introduces a subtyping
+relation between the types of the two classes. For example, type \lstinline{B}
+is required to be a subtype of type \lstinline{A} in TypeScript:
+
+\noindent
+\begin{minipage}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class A {}
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class B extends A {
+  m(): number { return 0; }
+}
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+Owing to the same reason, when a method in the superclass is overridden, the new
+method in the subclass must have a subtype. For example, the method
+\lstinline{f} in \lstinline{C} is overridden by the one in \lstinline{D} below:
+
+\noindent
+\begin{minipage}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class C {
+  f(x: B): number { return x.m(); }
+}
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class D extends C {
+  f(x: A): number { return 48; }
+}
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+The overriding is type-safe because the latter method has a subtype of the
+former's. According to the standard subtyping rule for functions, the parameter
+type is \emph{contravariant}, and the return type is \emph{covariant}. Since
+\lstinline{A} is a supertype of \lstinline{B}, the function type
+\lstinline[language=TypeScript]{(x: A) => number} is a subtype of
+\lstinline[language=TypeScript]{(x: B) => number}.
+
+\paragraph{Bivariant subtyping in TypeScript.}
+Perhaps surprisingly, the following code also type-checks:
+
+\noindent
+\begin{minipage}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class E {
+  f(x: A): number { return 48; }
+}
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript]
+class F extends E {
+  f(x: B): number { return x.m(); }
+}
+\end{lstlisting}
+\end{minipage}
+
+\noindent
+The parameter type of method \lstinline{f} becomes a subtype of that in the
+superclass, but it still passes the subtyping check. In other words, TypeScript
+does \emph{not} follow the standard type-theoretic treatment of function
+subtyping. Instead, TypeScript allows \emph{bivariant} subtyping for method
+parameters, where the type of method parameters being overridden can either be a
+subtype or a supertype of the corresponding type in the superclass method.
+Bivariant subtyping is a well-known source of type unsoundness. It would lead to
+a runtime error that could have been prevented statically:
+\begin{lstlisting}[language=TypeScript]
+const o: E = new F;
+o.f(new A)  // Runtime Error!
+\end{lstlisting}
+TypeScript developers are aware of this, but they motivate the use of bivariant
+subtyping by large numbers of use cases in the libraries that require this
+functionality.\footnote{\url{https://www.typescriptlang.org/tsconfig\#strictFunctionTypes}}
+In essence, TypeScript trades type soundness for flexibility and thus supports a
+more flexible model of inheritance in some cases.
+
+\paragraph{A type-safe alternative model for structural typing.}
+TypeScript's class model adopts the approach that subclasses always generate
+subtypes of the superclass. Thus, it retains the familiar model that is common
+in mainstream nominally typed languages like Java, C\#, or Scala, which can be
+seen as an advantage for attracting programmers from those languages.
+
+However, unlike these mainstream programming languages, TypeScript is
+\emph{structurally} typed. With structural typing, there is a well-known
+alternative that would enable the overriding in class \lstinline{F} to be
+type-safe. As observed by \citet{cook1990inheritance}, inheritance is not
+subtyping. In the context of a language of classes, this means that sometimes
+subclasses may not be subtypes of the superclass. In particular, the parameter
+of a \emph{binary method}~\citep{bruce1995binary} is supposed to be an object of
+the class being defined. In this case, the subclass will covariantly refine the
+type of the method parameters, and thus detaching inheritance from subtyping can
+be helpful. Since there is no subtyping relation between subclasses and
+superclasses in an inheritance-is-not-subtyping approach, the standard
+contravariant subtyping rule, instead of bivariant subtyping, can be used for
+function parameters, thus preventing type-safety issues that arise from
+bivariant subtyping.
+
+If TypeScript adopted an inheritance-is-not-subtyping approach instead, then the
+code for \lstinline{F} could still type-check, but the subclass \lstinline{F}
+would not be a subtype of its superclass \lstinline{E}. Therefore, the runtime
+error would be prevented because the line would be rejected with a type error:
+\begin{lstlisting}[language=TypeScript]
+// Invalid upcast in an inheritance-is-not-subtyping approach!
+const o: E = new F;
+\end{lstlisting}
+While type-safe, the inheritance-is-not-subtyping approach departs from the
+conventional model adopted by mainstream languages. So, it could be harder for
+programmers (especially those used to other mainstream OOP languages) to
+understand that sometimes subclasses cannot be subtypes. This is perhaps a
+reason (among others) for TypeScript not adopting this approach. Nevertheless,
+we adopt a model based on inheritance-is-not-subtyping because it allows a more
+\emph{flexible} but still \emph{type-safe} form of inheritance.
+
+\subsection{Unsafe Overriding with Dynamic Inheritance} \label{sec:override}
+
+TypeScript differs from other mainstream OOP languages in that it also supports
+dynamic inheritance. Dynamic inheritance brings new type-safety considerations
+with respect to overriding. These issues are not due to the use of bivariant
+subtyping and appear to be unknown or undocumented by the TypeScript
+implementers. Nevertheless, in order to obtain a type-safe design, we must be
+able to address the type-safety issues that may arise from dynamic inheritance.
+Thus, the purpose of this subsection is to identify such a problem in
+TypeScript. We call this problem the \textbf{inexact superclass problem},
+because it arises from a mismatch between the statically expected type of the
+superclass and the actual (exact) type of the superclass. In
+\autoref{sec:dynamic}, we will show how this problem can be addressed in a
+type-safe manner.
+
+\paragraph{Dynamic inheritance in TypeScript.}
+While JavaScript accepts the unsafe overriding in \autoref{fig:override},
+TypeScript detects the type mismatch between the two methods and rejects the
+code. For top-level classes and static inheritance, TypeScript's type system is
+quite standard and rejects many unsafe examples. However, the checks that
+TypeScript does are insufficient for \emph{dynamic inheritance}, which is
+recommended by the TypeScript documentation to implement
+mixins.\footnote{\url{https://www.typescriptlang.org/docs/handbook/mixins.html}}
+We illustrate the issue in the program in \autoref{fig:dynamic}.
+
+\begin{figure}
+\begin{lstlisting}[language=TypeScript]
+type Constructor = new (...args: any[]) => {};
+
+function Mixin<TBase extends Constructor>(Base: TBase) {
+  return class extends Base {
+    m(): number { return 48; }  // If m() exists in Base, that one will be overridden.
+  };
+}
+
+class A {
+  m(): string { return "foobar"; }
+  n(): string { return this.m().toUpperCase(); }
+}
+
+const B = Mixin(A);     // We use A as Base, which contains m() with a different type.
+(new B).n()             // Runtime Error!
+\end{lstlisting}
+\caption{\textbf{Inexact Superclass Problem:} Dynamic inheritance is type-unsafe in TypeScript.} \label{fig:dynamic}
+\end{figure}
+
+Our example follows the guidelines in the TypeScript documentation to type
+mixins and first-class classes. First of all, a type \lstinline{Constructor} is
+declared to represent a class. Since its return type is an empty object type,
+the type of every class is a subtype of \lstinline{Constructor}. In other words,
+every class can be used as \lstinline{Base}. The function \lstinline{Mixin}
+takes a base class of type \lstinline{TBase} and returns a new class that
+extends (or overrides) the base class with the method \lstinline{m}. Then we
+obtain class \lstinline{B} by applying \lstinline{Mixin} to class \lstinline{A}.
+Note that \lstinline{A} already has a method \lstinline{m} with a different
+type, and the other method \lstinline{n} relies on \lstinline{m} returning a
+\emph{string}. However, the subclass returned by \lstinline{Mixin} overrides
+\lstinline{m} with a method that returns a \emph{number} instead. Finally, we
+instantiate the class \lstinline{B} and call the method \lstinline{n}. A runtime
+error occurs because the method \lstinline{m} is unexpectedly overridden. In
+essence, we cannot predict the exact type of the superclass at compile time, so
+we cannot prevent the unsafe overriding as statically typed languages do for
+second-class classes and static inheritance.
+
+\paragraph{Constrained mixins.}
+The TypeScript documentation also mentions \emph{constrained mixins}, which
+provide finer control on the base class. In a constrained mixin, the base class
+is known to have some methods, which is useful for the subclass to safely rely
+on those methods being present in the superclass. Constrained mixins are modeled
+with a generic version of \lstinline{Constructor}:
+\begin{lstlisting}[language=TypeScript]
+type GConstructor<T = {}> = new (...args: any[]) => T;
+\end{lstlisting}
+The generic parameter \lstinline{T} represents the interface of the base class
+and defaults to an empty object type. For example, we can define another mixin
+that relies on a method called \lstinline{pow}:
+\begin{lstlisting}[language=TypeScript]
+type Exponentiatable = GConstructor<{ pow: (x: number, y: number) => number }>;
+
+function AnotherMixin<TBase extends Exponentiatable>(Base: TBase) {
+  return class extends Base {
+    cube(x: number) { return this.pow(x, 3); }
+  };
+}
+\end{lstlisting}
+In \lstinline{AnotherMixin}, the method \lstinline{cube} relies on
+\lstinline[language=TypeScript]{this.pow}, which is declared to be present by
+the interface \lstinline{Exponentiatable}. Similarly, in the definition of
+\lstinline{Mixin} in \autoref{fig:dynamic}, we could declare that
+\lstinline{TBase} extends some type like \lstinline|GConstructor<AInterface>|.
+Although the base class is constrained by the interface now, it still does not
+help with the issue of unsafe overriding. The problem here is that the base
+class may contain more methods than the expected interface. For instance, the
+base class could contain another method called \lstinline{cube} that would
+return a \emph{string}, and would be called in the base class by some other
+method \lstinline{rubik}. Then we could still run into the same problem, if
+\lstinline{rubik} is called from an object that combines both classes. There is
+no way in TypeScript to express the constraint that \lstinline{cube} is
+\emph{absent} in the base class. Such absence constraints are key to preventing
+unsafe overriding in dynamic inheritance while retaining flexibility.
+
+\paragraph{From static to dynamic inheritance.}
+The crucial point in our examples is that dynamic inheritance has the
+flexibility to pass a class with a \emph{subtype} of the expected type for the
+base class in \lstinline{Mixin}. Languages with static inheritance and
+second-class classes, like Java or C\#, do not have this flexibility.
+Subclassing is usually modeled with a construct like
+\lstinline[language=TypeScript]|class B extends A {...}|. In languages with
+first-class classes, \lstinline{A} can be an arbitrary expression; but in
+languages with static inheritance, it can only be a concrete class name. In
+Java, for instance, a class \lstinline{A} is associated both to a type
+\lstinline{A}, which is the \emph{exact} interface (or type) of the class, and a
+corresponding implementation of type \lstinline{A}. In other words, a class
+declaration has two roles in these languages: declaring an interface and
+providing an implementation with exactly that interface. Thus, we can never
+inherit from an implementation that has a subtype of the superclass type. This
+avoids the inexact superclass problem that we have to face with dynamic
+inheritance in our TypeScript example, at the cost of flexibility.
+
+\subsection{Nested Classes via First-Class Classes}
+
+Both JavaScript and TypeScript support first-class classes: a class can be
+defined in various places including within another class, or even a method.
+Thus, \emph{nested classes} come (almost) for free once a language supports
+first-class classes. In contrast, some other OOP languages, such as Java, do not
+support first-class classes, but they still add support for nested classes as a
+separate feature.
+
+Nested classes are useful for encapsulation, and usually, they can make use of
+the definitions from the outer class. For example, \autoref{fig:string_it} shows
+how to model a string-specific iterator as a nested class in JavaScript. The
+constructor for the \lstinline{Iterator} class is modeled by a \emph{factory}
+method. The method \lstinline{print} relies on the nested iterator class to
+iterate over the characters in the string.
+
+\begin{figure}
+\begin{lstlisting}[language=TypeScript]
+class ANSIString {
+  constructor(str) {
+    this.length = str.length;
+    this.chars = str.split('');
+  }
+  Iterator() {
+    const outer = this;
+    return class {
+      index = 0;
+      hasNext() { return this.index < outer.length; }
+      next() { return outer.chars[this.index++]; }
+    };
+  }
+  print() {
+    const it = new (this.Iterator());  // Iterator is dynamically bound.
+    while (it.hasNext()) alert(it.next());
+  }
+}
+\end{lstlisting}
+\caption{A string iterator in JavaScript using nested classes.}
+\label{fig:string_it}
+\end{figure}
+
+\paragraph{Why not a class field?}
+In JavaScript, the use of the factory method is important to provide access to
+\lstinline[language=TypeScript]{this} of the outer class. If we declare a class
+field directly with \lstinline[language=TypeScript]|Iterator = class {...}|, we
+would not be able to access the properties and methods of \lstinline{ANSIString}
+within \lstinline{Iterator}. JavaScript does not provide a direct way to refer
+to the outer \lstinline[language=TypeScript]{this} from the nested class. That
+is why we have to capture the reference to the outer
+\lstinline[language=TypeScript]{this} in a variable \lstinline{outer} before
+using it in the nested class. Then, the properties declared in the outer class,
+\lstinline{length} for example, can be accessed via \lstinline{outer.length}.
+The second reason for using a factory method is to make access to
+\lstinline[language=TypeScript]{super.Iterator} possible in a subclass of
+\lstinline{ANSIString}. In JavaScript, a class field defined by the superclass
+is not accessible in the subclass via \lstinline[language=TypeScript]{super}.
+Declaring \lstinline{Iterator} as a factory method bypasses the restriction.
+Although we do not use \lstinline[language=TypeScript]{super.Iterator} in the
+current example, \autoref{sec:family} will show some use cases.
+
+\paragraph{Overriding nested classes.}
+In JavaScript, the inheritance behavior for nested classes is consistent with
+that for methods: they both employ an overriding semantics. This is partly
+because nested classes must always be accessed via a property or a method, and
+then we just use the default overriding semantics for them. The ability to
+override nested classes allows some useful forms of family polymorphism, as we
+shall discuss in \autoref{sec:family}. However, it is also a problem for type
+safety since we can override a class with another class that has an entirely (or
+partially) different set of methods. For example, the following code is allowed
+in JavaScript:
+\begin{lstlisting}[language=TypeScript]
+class UTF8String extends ANSIString {
+  Iterator() { return class {
+    forEach(callback) { /* ... */ }
+  }; }
+}
+(new UTF8String("Hi")).print();  // Runtime Error!
+\end{lstlisting}
+The class \lstinline{Iterator} nested in \lstinline{ANSIString} contains two
+methods \lstinline{hasNext} and \lstinline{next}, while the one nested in
+\lstinline{UTF8String} only contains a different method \lstinline{forEach}.
+After overriding, \lstinline{print} triggers a runtime error since it depends on
+the aforementioned two methods. Therefore, code relying on nested classes having
+a certain interface can be completely broken by an override that replaces the
+class with some other incompatible class.
+
+\paragraph{Nested classes in TypeScript.}
+TypeScript also attempts to prevent type-unsafe overriding for nested classes.
+Similar code will be rejected by TypeScript because of the type incompatibility
+between the two nested classes. However, with dynamic inheritance, the type
+system still suffers from similar issues to those shown in
+\autoref{fig:dynamic}:
+\begin{lstlisting}[language=TypeScript]
+function Mixin<TBase extends Constructor>(Base: TBase) {
+  return class extends Base {
+    Iterator() { return class {
+      forEach(callback: (_: string) => void) { /* ... */ }
+    }; }
+  };
+}
+const UTF8String = Mixin(ANSIString);
+(new UTF8String("Hi")).print();  // Runtime Error!
+\end{lstlisting}
+\noindent Therefore, TypeScript's support for nested classes is also affected by
+the inexact superclass problem. Thus, nested classes can have type-soundness
+issues as well.
+
+\begin{figure}
+\begin{lstlisting}[language=Java]
+class ANSIString {
+    int length;
+    char[] chars;
+    ANSIString(String str) {
+        length = str.length();
+        chars = str.toCharArray();
+    }
+    class Iterator {
+        int index;
+        boolean hasNext() { return index < length; }
+        char next() { return chars[index++]; }
+    }
+    void print() {
+        Iterator it = new Iterator();  // Iterator is statically bound.
+        while (it.hasNext()) System.out.print(it.next());
+    }
+}
+class UTF8String extends ANSIString {
+    // We trivially call super's constructor.
+    UTF8String(String str) { super(str); }
+
+    class Iterator {  // This class shadows ANSIString.Iterator.
+        void forEach(Consumer<? super Character> action) { /* ... */ }
+    }
+}
+\end{lstlisting}
+\caption{Nested classes in Java, with a shadowing semantics.}
+\label{fig:nested_shadow}
+\end{figure}
+
+\paragraph{Nested classes with shadowing in Java.}
+Finally, let us make a small digression to see how nested classes are treated in
+Java. \autoref{fig:nested_shadow} illustrates a variant of our example in Java.
+Similarly to the example in JavaScript, we create a new class
+\lstinline{UTF8String} that inherits from \lstinline{ANSIString} and define a
+different set of methods in the nested class \lstinline{Iterator}. The code
+type-checks in Java and is still type-safe. The key to the type safety is that,
+unlike methods, nested classes are not implicitly overridden in Java. Instead,
+the \lstinline{Iterator} in \lstinline{UTF8String} \emph{shadows} the one in
+\lstinline{ANSIString}. In other words, \lstinline{new Iterator()} in
+\lstinline{print} is statically bound and is always instantiating
+\lstinline{ANSIString.Iterator}. Nested classes are not dynamically dispatched
+in Java, which is inconsistent with the inheritance behavior for methods. The
+shadowing approach has the advantage of type safety, but this comes at the cost
+of flexibility, since the ability to override and dynamically bind nested
+classes is useful, as we shall see next.
+
+\subsection{Virtual Classes and Family Polymorphism} \label{sec:family}
+
+The ability to override or refine nested classes provides a considerable amount
+of flexibility, and is a key idea behind concepts such as \emph{virtual
+classes}~\citep{madsen1989virtual,ernst2006virtual,clarke2007tribe} and
+\emph{family
+polymorphism}~\citep{ernst2001family,saito2008lightweight,zhang2017familia}.
+Thus, as we shall argue in this subsection, both JavaScript and TypeScript
+support virtual classes to a large extent, which can be useful for writing
+highly modular and reusable code.
+
+\paragraph{Virtual classes.}
+As we have seen before, a method in a superclass can be overridden in a subclass
+to refine its behavior. A call to the method is dynamically dispatched according
+to the runtime type of the object. Such a late-bound method is called a
+\emph{virtual method}. In the same way, the power of dynamic dispatching can be
+extended to nested classes. \emph{Virtual classes} are nested classes that can
+be overridden (or rather refined) in subclasses, and the reference to the
+virtual class is determined by the runtime type of the object of the outer
+class. Virtual classes were originally introduced in the BETA programming
+language~\citep{madsen1993object}, and they are also essentially supported in
+JavaScript and TypeScript via first-class classes and the overriding semantics.
+
+
+\paragraph{Family polymorphism.}
+Virtual classes enable \emph{family polymorphism}, which naturally solves the
+long-standing dilemma of modularity and extensibility -- \emph{the expression
+problem}~\citep{wadler1998expression} -- in a Scandinavian
+style~\citep{ernst2004expression}. In the expression problem, the challenge is
+to provide various operations (evaluation, pretty-printing, etc.) over various
+expressions (numbers, addition, negation, etc.) in a modular fashion. A
+satisfactory solution should allow modular, type-safe extension to both
+expressions and operations.
+
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript,basicstyle=\ttfamily\footnotesize]
+type Eval = { eval: () => number };
+
+class FamilyEval {
+  Lit(n: number) {
+    return class {
+      eval() { return n; }
+    };
+  }
+  Add(l: Eval, r: Eval) {
+    return class {
+      eval() { return l.eval() +
+                      r.eval(); }
+    };
+  }
+}
+\end{lstlisting}
+\caption{Initial family.}\label{fig:EP_initial}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\begin{lstlisting}[language=TypeScript,basicstyle=\ttfamily\footnotesize]
+type Print = { print: () => string };
+
+class FamilyPrint extends FamilyEval {
+  Lit(n: number) {
+    return class extends super.Lit(n) {
+      print() { return n.toString(); }
+    };
+  }
+  Add(l: Eval&Print, r: Eval&Print) {
+    return class extends super.Add(l, r) {
+      print() { return l.print() + " + " +
+                       r.print(); }
+    };
+  }
+}
+\end{lstlisting}
+\caption{Adding a new operation.}\label{fig:EP_operation}
+\end{subfigure}
+\par\bigskip
+\begin{subfigure}{\textwidth}
+\begin{lstlisting}[language=TypeScript,xleftmargin=.25\textwidth,basicstyle=\ttfamily\footnotesize]
+class FamilyNeg extends FamilyPrint {
+  Neg(e: Eval&Print) {
+    return class {
+      eval()  { return -e.eval(); }
+      print() { return "-(" + e.print() + ")"; }
+    };
+  }
+}
+\end{lstlisting}
+\caption{Adding a new expression.}\label{fig:EP_expression}
+\end{subfigure}
+\caption{Expression Problem in TypeScript.}
+\end{figure}
+
+We start the example with numeric literals and addition, as well as the
+evaluation operation in \autoref{fig:EP_initial}. \lstinline{Lit}, for numeric
+literals, and \lstinline{Add}, for addition, form the initial class family
+\lstinline{FamilyEval}. Since TypeScript is structurally typed, we do not need
+to declare an abstract class or interface \lstinline{Exp} together with
+\lstinline{Lit} and \lstinline{Add}. Instead, we can directly use type
+\lstinline{Eval} to annotate the parameters of \lstinline{Add}.
+
+To add a new operation, say pretty-printing, we can create a new class family
+\lstinline{FamilyPrint} that inherits from \lstinline{FamilyEval}.
+\autoref{fig:EP_operation} shows the code for the new family. In the new family,
+\lstinline{Lit} and \lstinline{Add} also inherit from
+\lstinline[language=TypeScript]{super.Lit} and
+\lstinline[language=TypeScript]{super.Add}, and a new method \lstinline{print}
+is added to both of them. The new operation is represented by type
+\lstinline{Print}, and the parameters of \lstinline{Add} are refined to have
+type \lstinline{Eval&Print}. As mentioned in \autoref{sec:bivariant}, TypeScript
+allows bivariant subtyping for parameters of class members, so the unusual
+refinement of \lstinline{Add} type-checks here. Note that the overriding of
+nested classes is a special case here: \lstinline{Lit} and \lstinline{Add} are
+simply extended with new methods, with no existing methods being overridden. In
+other words, the nested classes are being \emph{merged}, instead of overriding
+existing functionality.
+
+Similarly, we create a new family \lstinline{FamilyNeg} for a new expression,
+say negation in \autoref{fig:EP_expression}. Finally, we instantiate
+\lstinline{FamilyNeg} and build an expression using all three constructors
+(\lstinline{Lit}, \lstinline{Add}, and \lstinline{Neg}). Both operations
+(\lstinline{eval} and \lstinline{print}) are available for the expression:
+\begin{lstlisting}[language=TypeScript]
+const fam = new FamilyNeg();
+const e = new (fam.Add(new (fam.Lit(48)), new (fam.Neg(new (fam.Lit(2))))));
+e.print() + " = " + e.eval()  // "48 + -(2) = 46"
+\end{lstlisting}
+In this way, we can solve the expression problem in TypeScript (modulo the
+type-safety requirement). Although TypeScript does not fully ensure type safety,
+its support for a rather minimal encoding of virtual classes allows a lot of
+flexibility and reuse, which can be quite useful in practice.
+
+One final remark is that the solution in TypeScript is still not completely
+satisfactory because the order of extensions is fixed by the inheritance
+hierarchy (from \lstinline{FamilyEval} to \lstinline{FamilyPrint} to
+\lstinline{FamilyNeg}). In other words, the extension of \lstinline{Neg} is
+coupled to the extension of \lstinline{Print}, and we cannot use the extension
+of \lstinline{Neg} independently. This issue was not mentioned by
+\citeauthor{wadler1998expression} in the original expression problem, but it was
+later identified by \citet{zenger2005independently} as \emph{independent
+extensibility}. In TypeScript, a possibility to address the coupling issue is to
+adopt the mixin pattern, making class families such as \lstinline{FamilyPrint}
+and \lstinline{FamilyNeg} functions parametrized by the family superclass. For
+simplicity of presentation, we have just employed static inheritance here. We
+will also address this issue in CP's solution in \autoref{sec:ep}, which
+provides a simple and natural approach to avoid coupling and, additionally, is
+type-safe.

@@ -125,7 +125,26 @@
   breakatwhitespace
 }
 
+\lstdefinelanguage{TypeScript}{
+  keywords={abstract,any,as,asserts,async,await,bigint,boolean,break,case,catch,class,const,constructor,continue,debugger,declare,default,delete,do,else,enum,export,extends,false,finally,for,from,function,get,global,if,implements,import,in,instanceof,interface,is,keyof,let,module,namespace,never,new,null,number,object,of,out,package,private,protected,public,override,readonly,require,return,satisfies,set,static,string,super,switch,symbol,this,throw,true,try,type,typeof,undefined,unique,unknown,var,void,while,with,yield},
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  string=[b]",
+  morestring=[b]',
+  morestring=[b]`
+}
+
+\usepackage{bbold}
+\DeclareSymbolFont{bbsymbol}{U}{bbold}{m}{n}
+\DeclareMathSymbol{\bbcomma}{\mathbin}{bbsymbol}{"2C}
+
 \newcommand{\ExT}{\texorpdfstring{E\kern -.1em\lower .4ex\hbox {\footnotesize X}\kern -.2emT}{ExT}\xspace}
+\newcommand{\necolus}{\textsf{NeColus}\xspace}
+\newcommand{\lambdac}{$\lambda_c$\xspace}
+\newcommand{\lambdaiplus}{$\lambda_i^+$\xspace}
+\newcommand{\lambdar}{$\lambda_r$\xspace}
+\newcommand{\fiplus}{$F_i^+$\xspace}
+\newcommand{\fsub}{$F_{<:}$\xspace}
 
 %%----------------------------------------------------------------------------%%
 
