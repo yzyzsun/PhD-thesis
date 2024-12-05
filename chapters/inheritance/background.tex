@@ -156,11 +156,10 @@ subtyping and appear to be unknown or undocumented by the TypeScript
 implementers. Nevertheless, in order to obtain a type-safe design, we must be
 able to address the type-safety issues that may arise from dynamic inheritance.
 Thus, the purpose of this subsection is to identify such a problem in
-TypeScript. We call this problem the \textbf{inexact superclass problem},
-because it arises from a mismatch between the statically expected type of the
-superclass and the actual (exact) type of the superclass. In
-\autoref{sec:dynamic}, we will show how this problem can be addressed in a
-type-safe manner.
+TypeScript. We call this problem the \emph{inexact superclass problem}, because
+it arises from a mismatch between the statically expected type of the superclass
+and the actual (exact) type of the superclass. In \autoref{sec:dynamic}, we will
+show how this problem can be addressed in a type-safe manner.
 
 \paragraph{Dynamic inheritance in TypeScript.}
 While JavaScript accepts the unsafe overriding in \autoref{fig:override},
@@ -190,7 +189,7 @@ class A {
 const B = Mixin(A);     // We use A as Base, which contains m() with a different type.
 (new B).n()             // Runtime Error!
 \end{lstlisting}
-\caption{\textbf{Inexact Superclass Problem:} Dynamic inheritance is type-unsafe in TypeScript.} \label{fig:dynamic}
+\caption{\emph{Inexact Superclass Problem:} Dynamic inheritance is type-unsafe in TypeScript.} \label{fig:dynamic}
 \end{figure}
 
 Our example follows the guidelines in the TypeScript documentation to type

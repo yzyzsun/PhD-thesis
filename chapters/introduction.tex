@@ -1,1 +1,60 @@
-\chapter{Introduction}
+\chapter{Introduction} \label{ch:introduction}
+
+\section{Motivation}
+
+\section{Organization}
+
+\begin{description}
+\item[\autoref{pt:prologue}] is the prologue. \autoref{ch:introduction}
+      introduces the motivation and the organization of this thesis.
+      \autoref{ch:background} provides background information on intersection
+      and union types, traits, and the CP language, which implements the
+      compositional programming paradigm.
+\item[\autoref{pt:why}] explains why compositional programming matters. We
+      illustrate the reasons with two applications of compositional programming
+      in this part: \autoref{ch:embedding} proposes a new embedding of
+      domain-specific languages; \autoref{ch:inheritance} presents a type-safe
+      approach to dynamic inheritance via merging in CP.
+\item[\autoref{pt:compile}] focuses on the compilation of compositional
+      programming. \autoref{ch:key} describes the key ideas in our compilation
+      scheme and its implementation in the CP compiler. \autoref{ch:calculi}
+      formalizes a simplified version of the compilation scheme along some of
+      the key ideas. \autoref{ch:compilation} explains implementation details,
+      including the JavaScript code that is generated and some core
+      optimizations in the CP compiler. \autoref{ch:empirical} provides an
+      empirical evaluation.
+\item[\autoref{pt:union}] further extends the CP language with union types.
+      \autoref{ch:arguments} shows that this extension enables a type-safe
+      encoding of named and optional arguments.
+\item[\autoref{pt:epilogue}] is the epilogue. \autoref{ch:related} discusses
+      related work, while \autoref{ch:conclusion} concludes this thesis and
+      outlines future work.
+\end{description}
+
+The main content of this thesis is based on three of my published papers.
+Specifically, \autoref{ch:embedding} is based on:
+\begin{itemize}
+\item Yaozhu Sun, Utkarsh Dhandhania, and Bruno C.~d.~S.~Oliveira. 2022.
+\textbf{Compositional Embeddings of Domain-Specific Languages}. In OOPSLA
+\textit{(ACM SIGPLAN International Conference on Object-Oriented Programming
+Systems, Languages, and Applications)}.
+\end{itemize}
+\autoref{ch:inheritance} and the whole \autoref{pt:compile} are based on:
+\begin{itemize}
+\item Yaozhu Sun, Xuejing Huang, and Bruno C.~d.~S.~Oliveira. 2025.
+\textbf{Type-Safe Compilation of Dynamic Inheritance via Merging}.
+\textit{ACM Transactions on Programming Languages and Systems}.
+\end{itemize}
+\autoref{ch:arguments} is based on:
+\begin{itemize}
+\item Yaozhu Sun and Bruno C.~d.~S.~Oliveira. 2025.
+\textbf{Named Arguments as Intersections, Optional Arguments as Unions}.
+In ESOP \textit{(European Symposium on Programming)}.
+\end{itemize}
+In addition, the background part (i.e. \autoref{ch:background}) also adapts some
+material from my co-authored paper:
+\begin{itemize}
+\item Weixin Zhang, Yaozhu Sun, and Bruno C.~d.~S.~Oliveira. 2021.
+\textbf{Compositional Programming}. \textit{ACM Transactions on Programming
+Languages and Systems}.
+\end{itemize}

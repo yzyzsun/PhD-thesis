@@ -52,22 +52,21 @@ ability to define complex interpretations and the use of (nested) pattern
 matching to express semantic interpretations and transformations easily and
 modularly.
 
-In this chapter, we show that the \emph{compositional programming}
-paradigm~\citep{zhang2021compositional} and the CP language provide improved
-programming language support for embedded DSLs. Compositional programming
-provides an alternative way to define data structures compared to algebraic data
-types in functional programming or class hierarchies in object-oriented
-programming. Compositional interfaces and traits play a role similar to
-algebraic data types and definitions by pattern matching in functional programs.
-However, unlike algebraic data types and definitions by pattern matching,
-compositional interfaces and traits are modularly extensible. \emph{Intersection
-types}~\citep{oliveira2016disjoint} enable the composition of interfaces, while
-\emph{nested composition}~\citep{bi2018essence} enables the composition of
-traits with pattern matching definitions.  Thus, the CP language does not suffer
-from the infamous \emph{expression problem}~\citep{wadler1998expression}. In
-addition, CP comes with several mechanisms to express \emph{modular
-dependencies}, allowing powerful forms of dependency injection and complex
-semantic interpretations.
+In this chapter, we show that the \emph{compositional programming} paradigm and
+the CP language provide improved programming language support for embedded DSLs.
+Compositional programming provides an alternative way to define data structures
+compared to algebraic data types in functional programming or class hierarchies
+in object-oriented programming. Compositional interfaces and traits play a role
+similar to algebraic data types and definitions by pattern matching in
+functional programs. However, unlike algebraic data types and definitions by
+pattern matching, compositional interfaces and traits are modularly extensible.
+\emph{Intersection types}~\citep{oliveira2016disjoint} enable the composition of
+interfaces, while \emph{nested composition}~\citep{bi2018essence} enables the
+composition of traits with pattern matching definitions.  Thus, the CP language
+does not suffer from the infamous \emph{expression
+problem}~\citep{wadler1998expression}. In addition, CP comes with several
+mechanisms to express \emph{modular dependencies}, allowing powerful forms of
+dependency injection and complex semantic interpretations.
 
 With those programming language features, we obtain a new form of embedding
 called a \emph{compositional embedding}, with nearly all of the advantages of
