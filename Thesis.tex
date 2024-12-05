@@ -24,7 +24,13 @@
   linkcolor  = NavyBlue,
   urlcolor   = NavyBlue,
   backref    = page
-  ]{hyperref}
+]{hyperref}
+
+\renewcommand{\chapterautorefname}{Chapter}
+\renewcommand{\sectionautorefname}{Section}
+\renewcommand{\subsectionautorefname}{Section}
+\renewcommand{\subsubsectionautorefname}{Section}
+\renewcommand{\paragraphautorefname}{Section}
 
 \renewcommand*{\backref}[1]{}
 \renewcommand*{\backrefalt}[4]{%
@@ -213,9 +219,8 @@
 %%    Environment for Declaration                                             %%
 %%----------------------------------------------------------------------------%%
 
-
 \makeatletter
-\newcommand{\makedeclaration}
+\newcommand{\makedecl}
 {
 \chapter*{Declaration}
 \addcontentsline{toc}{chapter}{Declaration}
@@ -240,17 +245,13 @@ diploma, or other qualifications.
 %%----------------------------------------------------------------------------%%
 
 \makeatletter
-\newcommand{\makeAck}
+\newcommand{\makeack}
 {
 \chapter*{Acknowledgments}
 \addcontentsline{toc}{chapter}{Acknowledgments}
 \input{chapters/acknowledgments}
 }
 \makeatother
-
-
-\KOMAoptions{listof=totoc}
-% \setkomafont{sectioning}{\normalfont\bfseries}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Incipit
@@ -268,8 +269,8 @@ diploma, or other qualifications.
 %%---------------------%%
 \frontmatter
 %%---------------------%%
-\makedeclaration
-\makeAck
+\makedecl
+\makeack
 \tableofcontents
 \listoffigures
 \listoftables
