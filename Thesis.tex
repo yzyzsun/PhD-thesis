@@ -91,6 +91,34 @@
 \renewcommand{\th}{\textsuperscript{\textup{th}}\xspace}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Theorems
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newtheoremstyle{acm}%
+  {.5\baselineskip\@plus.2\baselineskip
+    \@minus.2\baselineskip}% space above
+  {.5\baselineskip\@plus.2\baselineskip
+    \@minus.2\baselineskip}% space below
+  {\itshape}% body font
+  {\parindent}% indent amount
+  {\scshape}% head font
+  {.}% punctuation after head
+  {.5em}% spacing after head
+  {}% head spec
+
+\theoremstyle{acm}
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{conjecture}[theorem]{Conjecture}
+\newtheorem{definition}{Definition}
+\newtheorem{example}{Example}
+\newtheorem{observation}{Observation}
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Load my packages
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -99,12 +127,7 @@
 \usepackage{wasysym}
 
 \usepackage{ottalt}
-
-\renewcommand\ottaltinferrule[4]{
-  \inferrule*[narrower=0.6,lab=#1,#2]
-    {#3}
-    {#4}
-}
+\inputott{ott/lambda-r}
 
 \usepackage{listings}
 \lstset{
@@ -124,7 +147,6 @@
   breaklines,
   breakatwhitespace
 }
-
 \lstdefinelanguage{TypeScript}{
   keywords={abstract,any,as,asserts,async,await,bigint,boolean,break,case,catch,class,const,constructor,continue,debugger,declare,default,delete,do,else,enum,export,extends,false,finally,for,from,function,get,global,if,implements,import,in,instanceof,interface,is,keyof,let,module,namespace,never,new,null,number,object,of,out,package,private,protected,public,override,readonly,require,return,satisfies,set,static,string,super,switch,symbol,this,throw,true,try,type,typeof,undefined,unique,unknown,var,void,while,with,yield},
   comment=[l]{//},
@@ -137,6 +159,8 @@
 \usepackage{bbold}
 \DeclareSymbolFont{bbsymbol}{U}{bbold}{m}{n}
 \DeclareMathSymbol{\bbcomma}{\mathbin}{bbsymbol}{"2C}
+
+\newcommand{\highlight}[1]{\colorbox{lightgray}{#1}}
 
 \newcommand{\ExT}{\texorpdfstring{E\kern -.1em\lower .4ex\hbox {\footnotesize X}\kern -.2emT}{ExT}\xspace}
 \newcommand{\necolus}{\textsf{NeColus}\xspace}

@@ -1,0 +1,392 @@
+\chapter{Key Ideas of the CP Compiler} \label{ch:key}
+
+In this part, we propose an efficient compilation scheme that translates merges
+in CP to extensible records, where types are used as record labels to perform
+lookup on merges. We first introduce the key ideas under the hood of the CP
+compiler and describe why and how to compile CP in this way. We also discuss the
+major challenges that we had to overcome. Although our implementation targets
+JavaScript, the design can be adapted to any other language that supports some
+kind of extensible records. We refer the reader to \autoref{ch:calculi} for a
+formal description of our compilation scheme and \autoref{ch:compilation} for
+the details of our implementation targeting JavaScript.
+
+\section{Dunfield's Elaboration Semantics} \label{sec:dunfield}
+
+In previous work by \citet{dunfield2014elaborating} and its follow-up work by
+\citet{oliveira2016disjoint}, the semantics of the merge operator is well
+studied. According to the \emph{non-deterministic} operational semantics given
+by \citeauthor{dunfield2014elaborating}, a merge $[[48,,true]]$ may reduce to
+$[[48]]$ or $[[true]]$; both are valid reductions. However, such reductions may
+not preserve types. For instance, in a context like $[[(48,,true)-2]]$, the
+merge should reduce to an integer. Alternatively,
+\citeauthor{dunfield2014elaborating} proposes an elaboration semantics into a
+target calculus with pairs, which is also used by
+\citeauthor{oliveira2016disjoint} Within this framework, an intersection type
+$[[A&B]]$ is elaborated into a product type $[[A**B]]$, and a merge $[[e1,,e2]]$
+is elaborated into a pair $[[(e1,e2)]]$. While an elaboration to pairs offers a
+simple model for merges, it also imposes significant runtime overhead. We
+identify three limitations in previous work. 
+
+\paragraph{Indirect coercions.} \label{sec:coercive}
+Following the elaboration model to pairs, $[[(48,,true)-2]]$ should be
+elaborated into $[[(48,true).fst-2]]$. That is, we need to select the first
+element from the elaborated pair to obtain a well-typed expression. Merges, due
+to their flexible nature, do not have an explicit elimination form. Then how can
+we determine where to insert ``\textsf{.fst}''? In a type-directed elaboration,
+we can generate coercion functions according to subtyping judgments in the
+typing derivation. A \rref{DTyp-Sub} can be found in previous work.
+\begin{mathpar}
+\drule{DTypXXSub}
+\drule{ElaXXSub}
+\end{mathpar}
+The \rref{DTyp-Sub} means that if a source term $[[e]]$ is inferred to have type
+$[[A]]$ and elaborated into a target term $[[t]]$, and the subtyping judgment
+$[[A<:B]]$ implies the coercion function $c$, then $[[e]]$ can be checked
+against type $[[B]]$ and elaborated into $[[c t]]$. In the aforementioned
+example, the merge of type $[[Int&Bool]]$ is cast to type $[[Int]]$. Therefore,
+a coercion function should be implicitly inserted for the subtyping relation
+$[[Int&Bool <: Int]]$. Since the latter is the first half of the former, the
+coercion $[[\x.x.fst]]$ is inserted.
+
+A careful reader may notice that \rref{DTyp-Sub} does not produce
+$[[(48,true).fst-2]]$ as we expect. Instead, it produces
+$[[((\x.x.fst)(48,true))-2]]$, which is less efficient as it introduces a
+spurious application. To fill the gap, we propose an alternative \rref{Ela-Sub}
+in our work and a novel coercive subtyping judgment, which directly coerces
+$[[t1]]$ into $[[t2]]$. In the aforementioned example, the subtyping relation
+$[[Int&Bool <: Int]]$ will coerce $[[(48,true)]]$ to produce the more efficient
+$[[(48,true).fst]]$. Although we only avoid one step of beta reduction in this
+case, a more complicated subtyping judgment will lead to many coercion functions
+composed together and introduce many spurious applications.
+
+\paragraph{Linear merge lookup.}
+A second important drawback of \citeauthor{dunfield2014elaborating}'s approach
+is the representation of merges as nested pairs. The merge operator composes
+expressions in a binary manner, so extracting one component from nested merges
+of $n$ components requires $n-1$ projections in the worst case. For example,
+when adding one more element to the previous merge, $[[48,,true,,a]]$ for
+example, one more projection must be added to the elaborated result as well:
+$[[((48,true),a).fst.fst-2]]$. Note that we have simplified the coercion
+application from $([[(\x.x.fst)]]\circ[[(\x.x.fst)]])[[((48,true),a)]]$ to
+$[[((48,true),a).fst.fst]]$. Compared with array access or dictionary lookup,
+such projections are more expensive in terms of both code length and runtime
+performance.
+
+\paragraph{Pairs are order-sensitive.}
+What is worse, a representation based on pairs has another disadvantage:
+unnecessary coercions are never optimized. Consider $[[48,,true]]$ and
+$[[true,,48]]$. These two merges are equivalent in any context. Although they
+lead to a different order in the elaborated pairs, permutation of components
+does not matter as long as it is consistent with the projection. For example,
+$[[(48,true).fst-2]]$ is the same as $[[(true,48).snd-2]]$. However, permutation
+can lead to expensive coercions. To cast $[[48,,true,,a]]$ to type
+$[[Char&Int&Bool]]$, every single component needs to be extracted and
+rearranged:
+\[
+\textbf{let } e = [[((48,true),a)]] \textbf{ in }
+[[(( e.snd , e.fst.fst), e.fst.snd )]]
+\]
+Thus, it is desirable to replace nested pairs with other representations that
+support more efficient merge lookup and avoid conversions between equivalent
+types.
+
+\section{Our Representation of Merges}
+
+\paragraph{Prologue: compiling overloaded functions.}
+In programming languages that support function overloading, C++ for example, the
+compiler generates different names for overloaded functions. This process is
+usually called \emph{name mangling}. If we have a function \lstinline{f} with
+two overloaded versions:
+\begin{lstlisting}[language=C++]
+void f(int x)  { ... }  // f -> __Z1fi
+void f(bool x) { ... }  // f -> __Z1fb
+\end{lstlisting}
+Two different names are generated based on the parameter types: the postfix
+\lstinline{i} in \lstinline{__Z1fi} is short for \lstinline[language=C++]{int}
+and \lstinline{b} in \lstinline{__Z1fb} for \lstinline[language=C++]{bool}.
+After name mangling, the overloaded versions are disambiguated, and the linker
+can easily associate each call site with a specific version.
+
+\paragraph{Key idea: compiling merges to type-indexed records.}
+When it comes to merging, the situation is similar: a merge contains
+``overloaded'' terms of different types. For example, the merge $[[48,,true]]$
+contains both an integer and a boolean value. When compiling the merge, we adopt
+a similar technique to name mangling. We generate a unique name for every type,
+which is used to look up the corresponding component. More specifically, a merge
+is compiled to a record, and the components of the merge become its fields. For
+example, $[[48,,true]]$ will compile to $[[{int|=>48; bool|=>true}]]$. The
+labels in the record, which we call \emph{type indices}, are generated from the
+type of each term. As for nested merges, we also flatten them in one record.
+Instead of the nested pairs $[[((48,true),a)]]$, $[[48,,true,,a]]$ is translated
+into a record of three fields: $[[{int|=>48; bool|=>true; char|=>a}]]$. The
+disjointness constraint on merging ensures that the components of a merge have
+non-overlapping types, hence the fields of the elaborated record are
+conflict-free (e.g. a merge cannot contain both \textsf{48} and \textsf{46}).
+The idea of using labels based on types is similar to \emph{type-indexed
+rows}~\citep{shields2001type}, though their type system does not involve
+subtyping at all.
+
+The record design significantly reduces the cost of projections. For
+$[[48,,true,,a]]$, we would not need to project twice to find the exact position
+when selecting the integer. With a single projection, a component in a $n$-level
+merge can be extracted. Besides, record fields are order-irrelevant, which
+allows us to treat permuted intersection types equivalently. Using our approach,
+coercing a term from type $[[Int&Bool&Char]]$ to type $[[Char&Int&Bool]]$ has
+\emph{no cost}, because the elaborated record does not change. In other words,
+$[[{int|=>48; bool|=>true; char|=>a}]]$ and $[[{char|=>a; int|=>48;
+bool|=>true}]]$ are equivalent. In CP, multi-field record types are also
+represented as intersection types. For example, $[[{l1:Int; l2:Int}]]$ is
+syntactic sugar for $[[{l1:Int}&{l2:Int}]]$. Therefore, the order of fields in a
+record type does not matter either. We will develop a comprehensive theory that
+accounts for type equivalence and handles all possible cases next.
+
+\section{Reducing Coercions for Equivalent Types} \label{sec:eqty}
+
+Coercive subtyping is inevitable in CP, so the performance penalties caused by
+coercions cannot be neglected. Following the line of discussion above, an
+important optimization that we identify is to avoid coercions for subtyping
+between equivalent types, whose impact will be benchmarked in
+\autoref{sec:optimization}. In our translation scheme, some syntactically
+different types are translated to the same type index. These types that are
+treated equivalently after compilation are called \emph{equivalent types}
+(denoted by $[[A~~B]]$). The design of equivalent types is inherently determined
+by the fact that we represent merges as records. We do not need to distinguish
+two types after compilation if their terms are compiled to records of exactly
+the same shape. The most interesting types in our compilation scheme are:
+\begin{itemize}
+\item \emph{Top-like types}~\citep{oliveira2016disjoint}, which correspond to
+empty records because they do not convey any information.
+\item \emph{Intersection types}, which correspond to multi-field records.
+Generally speaking, records are order-irrelevant and contain no duplicate labels
+(or duplicate labels are allowed but fields with the same label have equivalent
+values).
+\end{itemize}
+Considering the characteristics of our record-based representation, we can first
+derive that all top-like types are equivalent. In addition, two intersection
+types are considered equivalent if and only if they are formed using any
+combination of the following three criteria:
+\begin{itemize}
+\item They are permutations of the same set of types, or
+\item They are equivalent after deduplicating type components, or
+\item They are equivalent after removing top-like components.
+\end{itemize}
+The rules for other types are structural, ensuring that the type equivalence is
+a congruence.
+
+Although we work hard to reduce the number of coercions, coercions cannot be
+fully eliminated. Next, we will explain the reason why they are still necessary
+to CP.
+
+\section{Necessity of Coercions}
+
+In CP, our interpretation of subtyping is
+\emph{coercive}~\citep{luo2013coercive}, in contrast to the inclusive (also
+called subsumptive) view of subtyping. That is, a value of a subtype is not a
+value of a supertype directly, but it contains sufficient information so that it
+can be converted into a value of a supertype. Such conversions are generated by
+subtyping derivations and are inserted by the subsumption rule during type
+checking.
+
+The need for coercive subtyping in CP mainly comes from the unambiguity
+constraint on merging, for which the redundant information in expressions could
+be harmful. For example,
+\[
+\textbf{let } [[x]] = [[48,,true]] \textbf{ in } [[not (x:Int,,false)]]
+\]
+can evaluate to both $[[true]]$ and $[[false]]$ if the boolean component in
+$[[x]]$ is kept. During typing, we use disjointness checks to ensure the static
+types of the components to be merged ($[[Int]]$ and $[[Bool]]$ in this example)
+do not overlap. But the soundness of such checks is based on the assumption that
+any expression's dynamic type corresponds to its static type. That is,
+$[[x:Int]]$ should contain nothing other than an integer at run time. So we have
+to coerce $[[x]]$ from $[[{int|=>48; bool|=>true}]]$ to a record that only
+contains the integer field. With some simplification, the whole expression
+should compile to:
+\[
+\textbf{let } [[x]] = [[{int|=>48; bool|=>true}]] \textbf{ in } [[not ({int|=> x.int} ;; {bool|=> false}).bool]]
+\]
+where $[[;;]]$ denotes runtime record concatenation, which is a key feature of
+extensible records. In summary, there is a strong correspondence between the
+value and its static type in CP. So we can directly tell from the declared type
+how many fields the compiled record has and what the labels are. This design
+resolves the issue of interaction between merging and subtyping in
+\autoref{sec:merge} and is key to the type safety of dynamic trait inheritance.
+
+\paragraph{Distributive subtyping.}
+Normally, coercions are just removing redundant fields from a compiled record.
+For example, we coerce $[[x]]$ from $[[{int|=>48;bool|=>true}]]$ to
+$[[{int|=>48}]]$ in the previous example. This is because a supertype of an
+intersection type consists of part of the component types, so the compiled
+record of the supertype contains a subset of the original fields. However, the
+situation becomes complicated in the presence of \emph{distributive} subtyping.
+For example, a function of type $[[(Top->Int)&(Top->Bool)]]$ can be coerced to
+type $[[Top->Int&Bool]]$ because the former is a subtype of the latter via
+distributivity. The coercion is not removing fields but merging two functions
+into a single one.
+
+Let us consider a more practical example based on the expression problem in
+\autoref{sec:ep}. Here is a \emph{simplified} version of what happens to the
+constructors for numeric literals when we compose the evaluation and
+pretty-printing operations:
+\begin{lstlisting}
+ep = { Lit = \n -> { eval = n } } , { Lit = \n -> { print = toString n } };
+-- : { Lit: Int -> Eval }         & { Lit: Int -> Print }
+\end{lstlisting}
+As the intersection type indicates, \lstinline{ep} should compile to a two-field
+record: one field stores the constructor for \lstinline{Eval} and the other for
+\lstinline{Print}. According to the subtyping relation, via distributivity, it
+can be used as if it has type \lstinline|{ Lit: Int -> Eval&Print }|:
+\begin{lstlisting}
+ep.Lit 48  --> { eval = 48; print = "48" }
+\end{lstlisting}
+However, such usage expects that the compiled record from \lstinline{ep} only
+has one field, whose label corresponds to \lstinline|{ Lit: Int -> Eval&Print }|.
+Unfortunately, as we showed before, the compiled record actually contains two
+different labels from the expected one, so the subtyping does not automatically
+work. That is why we need to insert a coercion here to convert the two-field
+record to a new one with one single field, which is similar to the previous
+example of merging two functions.
+
+Our compilation scheme is designed to avoid coercions as much as possible. The
+aforementioned coercion is not inserted for \emph{direct} usage of record
+projections or function applications. Instead, the compiled code will select the
+two functions from the two fields for \lstinline{ep.Lit} and apply both to 48.
+The results are then combined into a record so that both \lstinline{eval} and
+\lstinline{print} fields are present.
+
+\section{Implementation in JavaScript}
+
+The extensible records that we have been mentioning are an abstract data type
+that supports construction, concatenation, and projection. They do not imply any
+concrete data structure in any particular programming language. They can be
+implemented as hash tables, binary search trees, or even association lists, and
+most mainstream languages have built-in and highly optimized support for these
+data structures. In our implementation, extensible records are implemented as
+\emph{JavaScript objects}, whose underlying data structure still varies among
+JavaScript engines. Nevertheless, one thing we are certain of is that accessing
+properties of an object, which corresponds to record projection in our
+terminology, is highly optimized in the various engines.
+
+
+The CP compiler supports modular type checking and separate compilation. In
+other words, compiling a CP file does not require access to the source code of
+the libraries that it depends on. What is needed is only the header files of the
+libraries, which mainly contain type information. Separate compilation largely
+decreases the rebuilding time since it avoids recompiling its dependencies, and
+it allows closed-source distribution of libraries. More details about the
+implementation of separate compilation can be found in \autoref{sec:separate}.
+
+\paragraph{Type indices.} \label{sec:index}
+In our implementation, type indices are represented by JavaScript strings
+(hereinafter, \lstinline{"string"} is in violet and monospaced). Below is how we
+represent different types:
+\begin{itemize}
+\item Primitive types are simply represented by their names,
+      e.g. \lstinline{"int"} for $[[Int]]$.
+\item Functions are represented by their return types,
+      e.g. \lstinline{"func_int"} for $[[String -> Int]]$.
+\item Records are represented by both labels and field types,
+      e.g. \lstinline{"rcd_l:int"} for $[[{l:Int}]]$.
+\item Intersections are represented by joining the representations of their
+      components after alphabetical sorting, deduplication, and removal of
+      top-like types, e.g. \lstinline{"(bool&int)"} for $[[Int&Bool&Top&Bool]]$.
+      Note that such type indices only occur when intersection types are nested
+      within functions or records. A top-level intersection corresponds to a
+      multi-field record, which has separate type indices for each component.
+\end{itemize}
+The representation for function types may be a bit surprising. It originates
+from the disjointness rule for function types: two function types are disjoint
+if and only if their return types are disjoint (\rref{D-ArrowArrow}). This rule
+is derived from the specification of disjointness (\autoref{thm:disjoint}),
+which basically means that two disjoint types do not overlap on any meaningful
+types. For example, \lstinline{Int -> Int} and \lstinline{Bool -> Int} shares a
+common supertype \lstinline{Int&Bool -> Int}, so these two types are \emph{not}
+disjoint. If those types are considered to be disjoint, we could have the
+following application:
+\begin{lstlisting}
+((\(x: Int) -> x + 1),(\(x: Bool) -> if x then 1 else 0)) (1,false)
+\end{lstlisting}
+Note that both functions can be selected, and we get either 2 or 0 depending on
+which function we pick. The semantics would be ambiguous in this way. Thus,
+allowing such merges is unsafe. That is why \lstinline{Int -> Int} and
+\lstinline{Bool -> Int} are not disjoint, and \lstinline{"func_int"} cannot
+occur twice. The disjointness checks in CP rule out the possibility of type
+index conflicts between two functions in a merge. Our design that includes only
+return types also avoids very long property names in JavaScript, which may lead
+to performance issues.
+
+\begin{comment}
+However, there are some rare corner cases where this design causes trouble. Here
+is an example:
+\begin{lstlisting}
+type A = (Int -> Int&Bool) -> Int;
+type B = (Int -> Int&String) -> Int;
+f (g: Int -> Int) = g 0;
+f' = f : A&B;
+f'' = f' : A;
+f'' (\(x:Int) -> x,true)
+\end{lstlisting}
+Although the types of components of a merge are guaranteed to be disjoint, there
+is no rule guaranteeing components of an intersection type to be disjoint.
+Therefore, we can duplicate the function by casting \lstinline{f} to type
+\lstinline{A&B}. Since \lstinline{A} and \lstinline{B} are not disjoint and have
+the same return type, they would share the same type index
+\lstinline{"func_int"}. We could not distinguish them by type indices, and the
+field for \lstinline{f:B} would override that for \lstinline{f:A} in our
+implementation. At first sight, it somehow makes sense because they are
+essentially the same function so we do not need to keep two copies. However, the
+trouble here is that their parameters have different type indices:
+\lstinline{"func_(bool&int)"} for \lstinline{A}'s parameter and
+\lstinline{"func_(int&string)"} for \lstinline{B}'s. This subtle difference
+leads to slightly different compilation results for \lstinline{f:A} and
+\lstinline{f:B}. The code above would go wrong as we do not distinguish them and
+misuse \lstinline{f:B} as \lstinline{f:A}.
+
+The fix is easy. Our formalization in \autoref{ch:calculi} uses a more precise
+representation for function types: both the parameter and return types are
+included in the type indices. Nevertheless, the issue is really rare, and we
+have never encountered such a case in benchmarks. For performance reasons, we
+still use the shorter type indices that only include return types in our
+implementation. To make the compiled code more concise, we also use this
+representation in \autoref{ch:compilation}.
+\end{comment}
+
+\paragraph{Compiling parametric polymorphism.}
+As we have discussed previously, dynamic inheritance and family polymorphism are
+already difficult to handle. In those examples, parametric polymorphism also
+plays an important role, yet we have not mentioned the difficulty of compiling
+it. The reason why this feature is challenging to compile is a bit more
+technical: it relates to when to build type indices, namely the labels of the
+compiled records.
+
+For non-polymorphic types, the labels remain fixed throughout the program
+execution. However, for polymorphic types, we have to deal with \emph{type
+instantiation}. For example, we may have a source type \lstinline|{ f : A -> A }|,
+where the type \lstinline|A| is a type variable. After the instantiation of
+\lstinline|A|, we may have the type \lstinline|{ f : Int -> Int }| or perhaps
+the type \lstinline|{ f : Bool -> Bool }|. The problem is that different
+instantiations of polymorphic type variables will produce different labels. So
+for polymorphic types, the labels cannot be statically computed. To solve this
+problem, first-class labels~\citep{leijen2004first} are needed so that
+polymorphic instantiation can build a label at run time and propagate the label
+that corresponds to the instantiated type. A more detailed explanation with
+examples can be found in \autoref{sec:poly}.
+
+\paragraph{Important optimizations.}
+In our implementation, we have applied several optimizations to improve the
+performance of the generated JavaScript code. Besides the elimination of
+redundant coercions based on equivalent types in \autoref{sec:eqty}, some
+important optimizations are:
+\begin{enumerate}
+\item Reducing intermediate objects using destination-passing
+      style~\citep{shaikhha2017destination};
+\item Reducing object copying by detecting whether the compiled term is part of
+      a merge;
+\item Limiting lazy evaluation to certain trait fields to improve performance;
+\item Preventing primitive values from boxing/unboxing;
+\item Avoiding the insertion of coercions for record projections.
+\end{enumerate}
+These optimizations will be elaborated with examples in
+\autoref{ch:compilation}, and their impact on performance will be evaluated in
+\autoref{sec:optimization}. Among the five optimizations, the last one (5) is
+formalized.
