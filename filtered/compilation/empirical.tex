@@ -1,6 +1,6 @@
 \chapter{Empirical Evaluation} \label{ch:empirical}
 
-In this chapter, we conduct an empirical evaluation on the CP compiler. We
+In this chapter, we conduct an empirical evaluation of the CP compiler. We
 analyze the impact of various optimizations in the CP compiler. Furthermore, we
 compare the efficiency of dynamic inheritance in CP with that in handwritten
 JavaScript code. The key takeaway from our empirical evaluation is that using a
@@ -14,9 +14,8 @@ We performed experiments on a system featuring an Apple M1 Pro chip and 16GB
 RAM. JavaScript code was executed using Node.js 20.12.2 LTS. The outline of
 benchmark programs is presented in \autoref{tab:benchmark}. The initial four
 benchmarks focus on general-purpose computations, while the latter four are
-adapted from recent work on compositional
-embeddings~\citep{sun2022compositional}, showcasing CP's novel features. Among
-them, \textsf{chart} is the biggest program with around 300 lines of code.
+adapted from examples in \autoref{ch:embedding}, showcasing CP's novel features.
+Among them, \textsf{chart} is the biggest program with around 300 lines of code.
 Challenges discussed in \autoref{sec:overview}, including dynamic inheritance
 and family polymorphism, are prominent in the latter four benchmarks.
 
