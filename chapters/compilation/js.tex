@@ -1,0 +1,310 @@
+\begin{figure}
+\begin{multicols}{3}
+\begin{lstlisting}[language=TypeScript,basicstyle=\ttfamily\scriptsize,showlines=true]
+/* J-Nil */
+var z = {};
+J;
+
+/* J-Opt */
+var z = y || {};
+J;
+
+/* J-Int */
+z[T] = n;
+
+/* J-IntOpt */
+var z = n;
+if (y) y[T] = n;
+
+/* J-IntNil */
+var z = n;
+
+/* J-Var */
+copy(z, x);
+
+/* J-VarOpt */
+if (y) copy(y, x);
+
+/* J-Fix */
+var x = z;
+J;
+
+/* J-Abs */
+z[T] = (x, y) => {
+  J;  return y0;
+};
+
+/* J-TAbs */
+z[T] = (X, y) => {
+  J;  return y0;
+};
+
+/* J-Rcd */
+z.__defineGetter__(T, () => {
+  J;
+  delete this[T];
+  return this[T] = y;
+});
+
+/* J-Def */
+export var x = {};
+J1;  J2;
+
+/* JA-Nil */
+var z = {};
+J;
+
+/* JA-Opt */
+var z = y || {};
+J;
+
+/* JA-Arrow */
+var y0 = {};
+J1;  J2;
+
+/* JA-ArrowEquiv */
+x[T](y, z);
+
+/* JA-ArrowOpt */
+var z = x[T](y, z0);
+
+/* JA-ArrowNil */
+var z = x[T](y);
+
+/* JA-All */
+x[T](Ts, z);
+
+/* JA-AllOpt */
+var z = x[T](Ts, y);
+
+/* JA-All */
+var z = x[T](Ts);
+
+/* JP-RcdEq */
+var z = x[T];
+
+/* JS0-Int */
+J;
+y = y[T];
+
+/* JS0-Var */
+J;
+if (primitive(X)) y = y[T];
+
+/* JS-Equiv */
+copy(y, x);
+
+/* JS-Bot */
+y[T] = null;
+
+/* JS-Int */
+y[T] = x;
+
+/* JS-IntAnd */
+y[T] = x[T];
+
+/* JS-Var */
+copy(y, x);
+
+/* JS-Arrow */
+y[T2] = (x1, y2) => {
+  var y1 = {};  J1;
+  var x2 = x[T1](y1);
+  y2 = y2 || {};
+  J2;  return y2;
+};
+
+/* JS-All */
+y[T2] = (X, y0) => {
+  var x0 = x[T1](X);
+  y0 = y0 || {};
+  J;  return y0;
+};
+
+/* JS-Rcd */
+y.__defineGetter__(T2, () => {
+  var x0 = x[T1];
+  var y0 = {};  J;
+  delete this[T];
+  return this[T] = y0;
+});
+
+/* JS-Split */
+var y1 = {}; // if y1 != z
+var y2 = {}; // if y2 != z
+J1;  J2;  J3;
+
+/* JM-Arrow */
+z[T] = (p, y) => {
+  y = y || {};
+  var y1 = {}; // if y1 != y
+  var y2 = {}; // if y2 != y
+  x1[T1](p, y1);
+  x2[T2](p, y2);
+  J;  return y;
+};
+
+/* JM-All */
+z[T] = (X, y) => {
+  y = y || {};
+  var y1 = {}; // if y1 != y
+  var y2 = {}; // if y2 != y
+  x1[T1](X, y1);
+  x2[T2](X, y2);
+  J;  return y;
+};
+
+/* JM-Rcd */
+z.__defineGetter__(T, () => {
+  var y = {};
+  var y1 = {}; // if y1 != y
+  var y2 = {}; // if y2 != y
+  copy(y1, x1[T1]);
+  copy(y2, x2[T2]);
+  J;
+  delete this[T];
+  return this[T] = y;
+});
+
+
+\end{lstlisting}
+\end{multicols}
+\caption{Predefined JavaScript code.} \label{fig:code}
+\end{figure}
+
+\noindent
+The syntax of \fiplus is defined below, where the main differences from
+\lambdaiplus are the addition of parametric polymorphism and fixpoint
+expressions:
+\begin{align*}
+  &\text{Types}          &A,B ::=&~  \top  ~|~  \bot  ~|~  \mathbb{Z}  ~|~ \ottmv{X} ~|~ \ottnt{A}  \rightarrow  \ottnt{B} ~|~  \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}  ~|~ \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}} ~|~ \ottnt{A}  \, \& \,  \ottnt{B} \\
+  &\text{Expressions}    &  e ::=&~ \ottsym{\{\}} ~|~  n  ~|~ \ottmv{x} ~|~  \ottkw{fix} \, \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e}  ~|~  \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  ~|~ \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}} ~|~  \Lambda \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  ~|~ \ottnt{e} \, \ottnt{A} \\
+  &                      &      |&~ \ottsym{\{}  \ell  \ottsym{=}  \ottnt{e}  \ottsym{\}} ~|~ \ottnt{e}  \ottsym{.}  \ell ~|~  \ottnt{e_{{\mathrm{1}}}} \bbcomma \ottnt{e_{{\mathrm{2}}}}  ~|~ \ottnt{e}  \ottsym{:}  \ottnt{A}
+\end{align*}
+
+\noindent
+The compilation scheme we describe here directly generates JavaScript code
+instead of \lambdar terms, which is closer to the actual implementation. We
+denote the generated JavaScript code by $\ottnt{J}$, which can be empty
+($\varnothing$), concatenation of two pieces of code
+($\ottnt{J}_1;\ottnt{J}_2$), or some predefined \texttt{code} that is listed in
+\autoref{fig:code}. There are some notations for type indices, which are
+actually implemented as strings in JavaScript (as discussed in
+\autoref{sec:index}). Destinations~\citep{shaikhha2017destination} also play an
+important role in the compilation scheme, being part of the rules for
+type-directed compilation and distributive application. The key idea of
+destinations has been elaborated in \autoref{sec:dst}.
+\begin{align*}
+  &\text{JavaScript code}&\ottnt{J} ::=&~  \varnothing  ~|~ \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}} ~|~ \mathtt{code} \\
+  &\text{Type indices}&           T ::=&~  \mathbb{Z}  ~|~  \overrightarrow{ \ottnt{T} }  ~|~  \ottnt{T} ^\forall  ~|~ \ottsym{\{}  \ell  \ottsym{:}  \ottnt{T}  \ottsym{\}} ~|~ \ottnt{T_{{\mathrm{1}}}}  \, \& \,  \ottnt{T_{{\mathrm{2}}}} \\
+  &\text{Destinations}&\textit{dst} ::=&~ \ottkw{nil} ~|~ \ottmv{y}  \ottsym{\mbox{?}} ~|~ \ottmv{z}
+\end{align*}
+
+\subsubsection{Type-Directed Compilation}
+
+Similarly to the elaboration in \autoref{ch:calculi}, the compilation process
+is type-directed. Besides the typing context $[[G]]$, there is also a
+destination variable \textit{dst} that guides the code generation. A rule
+basically reads as: given a typing context $[[G]]$ and a destination
+$\ottnt{dst}$, the \fiplus term $[[e]]$ is checked/inferred to have type $[[A]]$
+and is compiled to variable $\ottmv{z}$ in JavaScript code $\ottnt{J}$. That is,
+after running $\ottnt{J}$, the result is stored in the JavaScript variable
+$\ottmv{z}$.
+
+\Rref{J-Int,J-Var} have three variants for different destinations, while
+\rref{J-App,J-TApp} only have one version each but delegate to three variants of
+application for different destinations, which helps to generate more optimized
+JavaScript code. Examples illustrating variants of \rref{J-Var} and
+\rref{JA-ArrowEquiv} (via \rref{J-App}) has been explained in \autoref{sec:dst}.
+\Rref{J-IntOpt,J-IntNil} are designed for the optimization of boxing/unboxing
+(see \autoref{sec:boxing}). Other rules assume that the destination is present
+and generate code accordingly. \Rref{J-Nil} serves as the bridge from empty
+destinations to non-empty ones, while \rref{J-Opt} is for optional ones.
+
+{\small\ottdefncompile{}}
+
+\subsubsection{Distributive Application and Projection}
+
+We have mentioned that function applications (and record projections) have to be
+specially handled because of distributive subtyping in \fiplus. To put it
+simply, we need to additionally consider the cases where functions (and records)
+have intersection types or top-like types. Similarly to previous rules,
+destinations also guide the code generation. A rule for function applications
+basically reads as: given a typing context $[[G]]$ and a destination
+$\ottnt{dst}$, applying the compiled function in $\ottmv{x}$ of type $[[A]]$ to
+the compiled argument $p$ yields variable $\ottmv{z}$ of type $[[B]]$ in
+JavaScript code $\ottnt{J}$. Depending on whether the function is $\lambda$- or
+$\Lambda$-bound, the argument $p$ can be either a value ($\ottmv{y} : [[C]]$) or
+a type ($[[C]]$).
+
+{\small\ottdefndapp{}}
+
+\noindent
+As explained in \autoref{sec:proj}, the rules for record projections are
+separated to reduce the number of coercions and improve the performance of
+generated JavaScript code, although they were combined with the rules for
+function applications in the latest formalization of \fiplus by
+\citet{fan2022direct}. A rule for record projections basically reads as:
+projecting the compiled records in $\ottmv{x}$ of type $[[A]]$ by label $[[l]]$
+yields variable $\ottmv{z}$ of type $[[B]]$ in JavaScript code $\ottnt{J}$.
+
+{\small\ottdefndproj{}}
+
+\subsubsection{Coercive Subtyping}
+
+In \rref{J-Sub}, we check an expression of type $A$ against its supertype $B$.
+Since the two types may correspond to compiled objects of different shapes, a
+coercion has to be inserted for each subtyping check. Such a form of subtyping
+is called \emph{coercive} subtyping~\citep{luo2013coercive}, in contrast to
+\emph{inclusive} subtyping. A rule for coercive subtyping basically reads as: to
+upcast a compiled object $\ottmv{x}$ of type $[[A]]$ to a compiled object
+$\ottmv{y}$ of type $[[B]]$, we need to insert a coercion in JavaScript code
+$\ottnt{J}$. The umbrella rule has three variants because of the optimization of
+boxing/unboxing (see \autoref{sec:boxing}).
+
+{\small\ottdefncsubZero{}}
+
+\noindent
+As explained in \autoref{sec:elim}, we add an extra flag to help optimize
+coercions for subtyping between equivalent types: $<:^+$ indicates that the
+optimization \rref{JS-Equiv} can apply, while $<:^-$ not.
+
+{\small\ottdefncsub{}}
+
+\noindent
+There are some auxiliary rules called \emph{coercive merging} for
+\rref{JS-Split}. These rules mean that if the splitting relation $[[split C A
+B]]$ holds, we can merge the compiled objects $\ottmv{x}$ of type $[[A]]$ and
+$\ottmv{y}$ of type $[[B]]$ back into a single object $\ottmv{z}$ of type
+$[[C]]$ in JavaScript code $\ottnt{J}$. Such merging is necessary after
+splitting the supertype distributively. For example, consider the following
+derivation of subtyping:
+\begin{mathpar}
+\inferrule
+  {[[split Top->Int&Bool Top->Int Top->Bool]] \\
+   [[Top -> Int & String & Bool <: Top -> Int]] \\
+   [[Top -> Int & String & Bool <: Top -> Bool]]}
+  {[[Top -> Int & String & Bool <: Top -> Int & Bool]]}
+\end{mathpar}
+After splitting, the compiled object would have two fields with labels
+\lstinline{"fun_int"} and \lstinline{"fun_bool"}, but we expect only one field
+with label \lstinline{"fun_(int&bool)"}. \Rref{JM-Arrow} handles this case and
+merge the two fields back into one.
+
+The notation may be misleading, but note that here only the variable name
+$\ottmv{z}$ is given (i.e. input) while variable names $\ottmv{x}$ and
+$\ottmv{y}$ are generated by the rules (i.e. output). This is because
+\rref{JM-And} reuses the variable name $\ottmv{z}$ to also serve as $\ottmv{x}$
+and $\ottmv{y}$, which makes the caller perform more efficient in-place updates.
+Not to make it more confusing but we have to emphasize that the discussion is
+only about the variable \emph{name} rather than the contents of the variable.
+Having a closer look at \rref{JS-Split} will help to better understand our
+design. Below the judgment of coercive merging, the generated variable names
+($[[y1]]$ and $[[y2]]$ in the case) are used to generate the coercions (in
+$\ottnt{J}_1$ and $\ottnt{J}_2$). The coercions are actually executed before the
+coercive merging (in $\ottnt{J}_3$) in generated JavaScript. To avoid $[[y1]]$
+and $[[y2]]$ from being initialized more than once, some extra checks are
+performed when generating JavaScript code for
+\rref{JS-Split,JM-Arrow,JM-All,JM-Rcd}.
+
+{\small\ottdefncmerge{}}

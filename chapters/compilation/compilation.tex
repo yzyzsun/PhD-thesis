@@ -111,6 +111,7 @@ function toIndex(tt) {
 \caption{Simplified JavaScript code for polymorphic terms.}
 \end{figure}
 
+\noindent
 The compilation of polymorphic terms is not formalized in \autoref{ch:calculi},
 so here we introduce our solution in more detail. The challenge posed by
 parametric polymorphism is mainly because type arguments are unknown until type
@@ -198,15 +199,16 @@ $1.__defineGetter__(
 \end{lstlisting}
 \caption{By memoized thunk.} \label{fig:call-by-need}
 \end{subfigure}
-\caption{Simplified JavaScript code for \texttt{\string{ x = self.y \string}}.}
+\caption{Simplified JavaScript code for \lstinline|\{ x = this.y \}|.}
 \end{figure}
 
+\noindent
 In the most recent work by \citet{fan2022direct}, \fiplus is formalized as a
 call-by-name calculus to correctly model trait instantiation. A simple example
 is as follows:
 \begin{lstlisting}
 type Rcd = { x: Int; y: Int };
-new (trait [this: Rcd] => { x = self.y; y = 48 })
+new (trait [this: Rcd] => { x = this.y; y = 48 })
 \end{lstlisting}
 The program will not terminate if evaluated using the call-by-value strategy.
 That is why \citeauthor{fan2022direct} go for a call-by-name semantics and
@@ -221,14 +223,14 @@ conventional OOP languages, which are call-by-value in terms of initializing
 fields and calling methods, except for lazy fields.
 
 To better illustrate different evaluation strategies for record fields, we show
-three code snippets generated for the field \lstinline|{ x = self.y }|.
+three code snippets generated for the field \lstinline|{ x = this.y }|.
 \autoref{fig:call-by-value} employs strict evaluation, but instead of
 non-termination, the issue here is that the field \lstinline{y} is not yet
 available, so field \lstinline{x} is unexpectedly assigned
 \lstinline{undefined}. This issue severely limits self-references, and the code
 in \autoref{fig:call-by-value} would be broken. Thus we need a better approach.
 \autoref{fig:call-by-name} resolves the issue by adding a \emph{thunk}. The
-field is wrapped in a getter, and thus the computation of \lstinline{self.y} is
+field is wrapped in a getter, and thus the computation of \lstinline{this.y} is
 delayed until the whole record is constructed with the field \lstinline{y}
 available. But note that the getter is called every time the field is accessed.
 This is undesirable as the computation in the thunk would be triggered on every

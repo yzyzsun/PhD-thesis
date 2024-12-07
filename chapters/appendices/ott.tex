@@ -1,0 +1,589 @@
+% defns Compilation
+%% defn compile
+\newcommand{\ottdruleJXXNil}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e} \, \Leftrightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}%
+}{
+\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e} \, \Leftrightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Nil}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXOpt}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e} \, \Leftrightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash  \ottnt{e} \, \Leftrightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Opt}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXTop}[1]{\ottdrule[#1]{%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottsym{\{\}} \, \Rightarrow \,  \top   \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Top}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXInt}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   |  \mathbb{Z}  | }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   n  \, \Rightarrow \,  \mathbb{Z}   \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Int}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXIntOpt}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   |  \mathbb{Z}  | }%
+}{
+\Gamma  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash   n  \, \Rightarrow \,  \mathbb{Z}   \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_IntOpt}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXIntNil}[1]{\ottdrule[#1]{%
+}{
+\Gamma  \ottsym{;}  \ottkw{nil}  \vdash   n  \, \Rightarrow \,  \mathbb{Z}   \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_IntNil}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXVar}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A} \, \in \, \Gamma}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Var}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXVarOpt}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A} \, \in \, \Gamma}%
+}{
+\Gamma  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash  \ottmv{x} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{x}}{%
+{\ottdrulename{J\_VarOpt}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXVarNil}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A} \, \in \, \Gamma}%
+}{
+\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottmv{x} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{x}}{%
+{\ottdrulename{J\_VarNil}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXFix}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \ottkw{fix} \, \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e}  \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Fix}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXTopAbs}[1]{\ottdrule[#1]{%
+\ottpremise{ \rceil  \ottnt{B}  \lceil }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  \, \Rightarrow \, \ottnt{A}  \rightarrow  \ottnt{B}  \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_TopAbs}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXAbs}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   \overrightarrow{  | \ottnt{B} |  } }%
+\ottpremise{\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{y_{{\mathrm{0}}}}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  \, \Rightarrow \, \ottnt{A}  \rightarrow  \ottnt{B}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Abs}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXApp}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{x}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e_{{\mathrm{2}}}} \, \Rightarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{y}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{3}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{C}}%
+}{
+\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \ottnt{e_{{\mathrm{2}}}} \, \Rightarrow \, \ottnt{C}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{3}}}}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_App}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXTopTAbs}[1]{\ottdrule[#1]{%
+\ottpremise{ \rceil  \ottnt{B}  \lceil }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \Lambda \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  \, \Rightarrow \,  \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}   \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_TopTAbs}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXTAbs}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}    | \ottnt{B} |  ^\forall }%
+\ottpremise{\Gamma  \ottsym{,}  \ottmv{X}  \ottsym{*}  \ottnt{A}  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{y_{{\mathrm{0}}}}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \Lambda \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  \, \Rightarrow \,  \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}   \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_TAbs}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXTApp}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e} \, \Rightarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{y}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \bullet \,  \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{C}}%
+}{
+\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e} \, \ottnt{A} \, \Rightarrow \, \ottnt{C}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_TApp}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXTopRcd}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash  \ottnt{e} \, \Rightarrow \, \ottnt{A}}%
+\ottpremise{ \rceil  \ottnt{A}  \lceil }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottsym{\{}  \ell  \ottsym{=}  \ottnt{e}  \ottsym{\}} \, \Rightarrow \, \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}}  \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_TopRcd}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXRcd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A} |   \ottsym{\}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{y}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottsym{\{}  \ell  \ottsym{=}  \ottnt{e}  \ottsym{\}} \, \Rightarrow \, \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Rcd}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXProj}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{y}}%
+\ottpremise{\ottmv{y}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e}  \ottsym{.}  \ell \, \Rightarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Proj}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXMerge}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{z}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e_{{\mathrm{2}}}} \, \Rightarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}}%
+\ottpremise{\Gamma  \vdash  \ottnt{A}  \ottsym{*}  \ottnt{B}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \ottnt{e_{{\mathrm{1}}}} \bbcomma \ottnt{e_{{\mathrm{2}}}}  \, \Rightarrow \, \ottnt{A}  \, \& \,  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Merge}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXAnno}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}%
+}{
+\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e}  \ottsym{:}  \ottnt{A} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Anno}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXDef}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{x}  \vdash  \ottnt{e_{{\mathrm{1}}}} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{x}}%
+\ottpremise{\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e_{{\mathrm{2}}}} \, \Rightarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{=}  \ottsym{e1;}  \ottnt{e_{{\mathrm{2}}}} \, \Rightarrow \, \ottnt{B}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_Def}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXSub}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{x}}%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{y}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{y}}{%
+{\ottdrulename{J\_Sub}}{}%
+}}
+
+
+\newcommand{\ottdruleJXXSubEquiv}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{A}  \fallingdotseq  \ottnt{B}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e} \, \Rightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}%
+}{
+\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}}{%
+{\ottdrulename{J\_SubEquiv}}{}%
+}}
+
+\newcommand{\ottdefncompile}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottnt{e} \, \Leftrightarrow \, \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}$}{\ottcom{Type-directed compilation}}
+\ottusedrule{\ottdruleJXXNil{}}
+\ottusedrule{\ottdruleJXXOpt{}}
+\ottusedrule{\ottdruleJXXTop{}}
+\ottusedrule{\ottdruleJXXInt{}}
+\ottusedrule{\ottdruleJXXIntOpt{}}
+\ottusedrule{\ottdruleJXXIntNil{}}
+\ottusedrule{\ottdruleJXXVar{}}
+\ottusedrule{\ottdruleJXXVarOpt{}}
+\ottusedrule{\ottdruleJXXVarNil{}}
+\ottusedrule{\ottdruleJXXFix{}}
+\ottusedrule{\ottdruleJXXTopAbs{}}
+\ottusedrule{\ottdruleJXXAbs{}}
+\ottusedrule{\ottdruleJXXApp{}}
+\ottusedrule{\ottdruleJXXTopTAbs{}}
+\ottusedrule{\ottdruleJXXTAbs{}}
+\ottusedrule{\ottdruleJXXTApp{}}
+\ottusedrule{\ottdruleJXXTopRcd{}}
+\ottusedrule{\ottdruleJXXRcd{}}
+\ottusedrule{\ottdruleJXXProj{}}
+\ottusedrule{\ottdruleJXXMerge{}}
+\ottusedrule{\ottdruleJXXAnno{}}
+\ottusedrule{\ottdruleJXXDef{}}
+\ottusedrule{\ottdruleJXXSub{}}
+\ottusedrule{\ottdruleJXXSubEquiv{}}
+\end{ottdefnblock}}
+
+%% defn dapp
+\newcommand{\ottdruleJAXXNil}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}%
+}{
+\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}{%
+{\ottdrulename{JA\_Nil}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXOpt}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}{%
+{\ottdrulename{JA\_Opt}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXTop}[1]{\ottdrule[#1]{%
+\ottpremise{ \rceil  \ottnt{A}  \lceil }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}  \ottsym{:}   \top }{%
+{\ottdrulename{JA\_Top}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXArrow}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   \overrightarrow{  | \ottnt{B} |  } }%
+\ottpremise{\ottmv{y}  \ottsym{:}  \ottnt{C}  \ottsym{<:}  \ottmv{y_{{\mathrm{0}}}}  \ottsym{:}  \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y_{{\mathrm{0}}}}  \ottsym{:}  \ottnt{A}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}%
+}{
+\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}{%
+{\ottdrulename{JA\_Arrow}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXArrowEquiv}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{A}  \fallingdotseq  \ottnt{C}}%
+\ottpremise{\ottnt{T}  \ottsym{=}   \overrightarrow{  | \ottnt{B} |  } }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}{%
+{\ottdrulename{JA\_ArrowEquiv}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXArrowOpt}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{A}  \fallingdotseq  \ottnt{C}}%
+\ottpremise{\ottnt{T}  \ottsym{=}   \overrightarrow{  | \ottnt{B} |  } }%
+}{
+\Gamma  \ottsym{;}  \ottmv{z_{{\mathrm{0}}}}  \ottsym{\mbox{?}}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}{%
+{\ottdrulename{JA\_ArrowOpt}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXArrowNil}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{A}  \fallingdotseq  \ottnt{C}}%
+\ottpremise{\ottnt{T}  \ottsym{=}   \overrightarrow{  | \ottnt{B} |  } }%
+}{
+\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}{%
+{\ottdrulename{JA\_ArrowNil}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXAll}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash  \ottnt{A}  \ottsym{*}  \ottnt{C}}%
+\ottpremise{\ottnt{T}  \ottsym{=}    | \ottnt{B} |  ^\forall }%
+\ottpremise{\ottnt{Ts}  \ottsym{=} \, \ottkw{itoa} \, \; | \;  \ottnt{C}  \; | \;}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}   \, \bullet \,  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}  \ottsym{[}  \ottmv{X}  \mapsto  \ottnt{C}  \ottsym{]}}{%
+{\ottdrulename{JA\_All}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXAllOpt}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash  \ottnt{A}  \ottsym{*}  \ottnt{C}}%
+\ottpremise{\ottnt{T}  \ottsym{=}    | \ottnt{B} |  ^\forall }%
+\ottpremise{\ottnt{Ts}  \ottsym{=} \, \ottkw{itoa} \, \; | \;  \ottnt{C}  \; | \;}%
+}{
+\Gamma  \ottsym{;}  \ottmv{y}  \ottsym{\mbox{?}}  \vdash  \ottmv{x}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}   \, \bullet \,  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}  \ottsym{[}  \ottmv{X}  \mapsto  \ottnt{C}  \ottsym{]}}{%
+{\ottdrulename{JA\_AllOpt}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXAllNil}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \vdash  \ottnt{A}  \ottsym{*}  \ottnt{C}}%
+\ottpremise{\ottnt{T}  \ottsym{=}    | \ottnt{B} |  ^\forall }%
+\ottpremise{\ottnt{Ts}  \ottsym{=} \, \ottkw{itoa} \, \; | \;  \ottnt{C}  \; | \;}%
+}{
+\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottmv{x}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}   \, \bullet \,  \ottnt{C}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}  \ottsym{[}  \ottmv{X}  \mapsto  \ottnt{C}  \ottsym{]}}{%
+{\ottdrulename{JA\_AllNil}}{}%
+}}
+
+
+\newcommand{\ottdruleJAXXAnd}[1]{\ottdrule[#1]{%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{A'}}%
+\ottpremise{\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{B}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B'}}%
+}{
+\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \& \,  \ottnt{B}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{A'}  \, \& \,  \ottnt{B'}}{%
+{\ottdrulename{JA\_And}}{}%
+}}
+
+\newcommand{\ottdefndapp}[1]{\begin{ottdefnblock}[#1]{$\Gamma  \ottsym{;}  \ottnt{dst}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottnt{p}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}$}{\ottcom{Distributive application}}
+\ottusedrule{\ottdruleJAXXNil{}}
+\ottusedrule{\ottdruleJAXXOpt{}}
+\ottusedrule{\ottdruleJAXXTop{}}
+\ottusedrule{\ottdruleJAXXArrow{}}
+\ottusedrule{\ottdruleJAXXArrowEquiv{}}
+\ottusedrule{\ottdruleJAXXArrowOpt{}}
+\ottusedrule{\ottdruleJAXXArrowNil{}}
+\ottusedrule{\ottdruleJAXXAll{}}
+\ottusedrule{\ottdruleJAXXAllOpt{}}
+\ottusedrule{\ottdruleJAXXAllNil{}}
+\ottusedrule{\ottdruleJAXXAnd{}}
+\end{ottdefnblock}}
+
+%% defn dproj
+\newcommand{\ottdruleJPXXTop}[1]{\ottdrule[#1]{%
+\ottpremise{ \rceil  \ottnt{A}  \lceil }%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}  \ottsym{:}   \top }{%
+{\ottdrulename{JP\_Top}}{}%
+}}
+
+
+\newcommand{\ottdruleJPXXRcdEq}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A} |   \ottsym{\}}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,  \mathtt{code}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{A}}{%
+{\ottdrulename{JP\_RcdEq}}{}%
+}}
+
+
+\newcommand{\ottdruleJPXXRcdNeq}[1]{\ottdrule[#1]{%
+\ottpremise{ \ell_{{\mathrm{1}}}  \neq  \ell_{{\mathrm{2}}} }%
+\ottpremise{\ottnt{T}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A} |   \ottsym{\}}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottsym{\{}  \ell_{{\mathrm{1}}}  \ottsym{:}  \ottnt{A}  \ottsym{\}}  \, \bullet \,  \ottsym{\{}  \ell_{{\mathrm{2}}}  \ottsym{\}}  \, \rightsquigarrow \,   \varnothing   \; | \;  \ottmv{z}  \ottsym{:}   \top }{%
+{\ottdrulename{JP\_RcdNeq}}{}%
+}}
+
+
+\newcommand{\ottdruleJPXXAnd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{A'}}%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{B}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B'}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \, \& \,  \ottnt{B}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}  \ottsym{;}  \ottnt{J_{{\mathrm{2}}}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{A'}  \, \& \,  \ottnt{B'}}{%
+{\ottdrulename{JP\_And}}{}%
+}}
+
+\newcommand{\ottdefndproj}[1]{\begin{ottdefnblock}[#1]{$\ottmv{x}  \ottsym{:}  \ottnt{A}  \, \bullet \,  \ottsym{\{}  \ell  \ottsym{\}}  \, \rightsquigarrow \,  \ottnt{J}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}$}{\ottcom{Distributive projection}}
+\ottusedrule{\ottdruleJPXXTop{}}
+\ottusedrule{\ottdruleJPXXRcdEq{}}
+\ottusedrule{\ottdruleJPXXRcdNeq{}}
+\ottusedrule{\ottdruleJPXXAnd{}}
+\end{ottdefnblock}}
+
+%% defn csub0
+\newcommand{\ottdruleJSZeroXXSub}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}   ^+  \, \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}}{%
+{\ottdrulename{JS0\_Sub}}{}%
+}}
+
+
+\newcommand{\ottdruleJSZeroXXInt}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   |  \mathbb{Z}  | }%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}   ^+  \, \ottmv{y}  \ottsym{:}   \mathbb{Z}   \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  \ottmv{y}  \ottsym{:}   \mathbb{Z}   \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS0\_Int}}{}%
+}}
+
+
+\newcommand{\ottdruleJSZeroXXVar}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   | \ottmv{X} | }%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}   ^+  \, \ottmv{y}  \ottsym{:}  \ottmv{X}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  \ottmv{y}  \ottsym{:}  \ottmv{X}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS0\_Var}}{}%
+}}
+
+\newcommand{\ottdefncsubZero}[1]{\begin{ottdefnblock}[#1]{$\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}$}{\ottcom{Coercive subtyping}}
+\ottusedrule{\ottdruleJSZeroXXSub{}}
+\ottusedrule{\ottdruleJSZeroXXInt{}}
+\ottusedrule{\ottdruleJSZeroXXVar{}}
+\end{ottdefnblock}}
+
+%% defn csub
+\newcommand{\ottdruleJSXXEquiv}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{A}  \fallingdotseq  \ottnt{B}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}   ^+  \, \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Equiv}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXTop}[1]{\ottdrule[#1]{%
+\ottpremise{ \rceil  \ottnt{B}  \lceil }%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,   \varnothing }{%
+{\ottdrulename{JS\_Top}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXBot}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   | \ottnt{A} | }%
+}{
+\ottmv{x}  \ottsym{:}   \bot   \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottnt{A}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Bot}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXInt}[1]{\ottdrule[#1]{%
+}{
+\ottmv{x}  \ottsym{:}   \mathbb{Z}   \ottsym{<:}   ^+  \, \ottmv{y}  \ottsym{:}   \mathbb{Z}   \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Int}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXIntAnd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   |  \mathbb{Z}  | }%
+}{
+\ottmv{x}  \ottsym{:}   \mathbb{Z}   \ottsym{<:}   ^-  \, \ottmv{y}  \ottsym{:}   \mathbb{Z}   \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_IntAnd}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXVar}[1]{\ottdrule[#1]{%
+}{
+\ottmv{x}  \ottsym{:}  \ottmv{X}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottmv{X}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Var}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXArrow}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T_{{\mathrm{1}}}}  \ottsym{=}   \overrightarrow{  | \ottnt{A_{{\mathrm{2}}}} |  } }%
+\ottpremise{\ottnt{T_{{\mathrm{2}}}}  \ottsym{=}   \overrightarrow{  | \ottnt{B_{{\mathrm{2}}}} |  } }%
+\ottpremise{\ottnt{Ts}  \ottsym{=} \, \ottkw{itoa} \, \; | \;  \ottnt{A_{{\mathrm{1}}}}  \; | \;}%
+\ottpremise{\ottmv{x_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{1}}}}  \ottsym{<:}  \ottmv{y_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{1}}}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}}%
+\ottpremise{\ottmv{x_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{2}}}}  \ottsym{<:}  \ottmv{y_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A_{{\mathrm{1}}}}  \rightarrow  \ottnt{A_{{\mathrm{2}}}}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottnt{B_{{\mathrm{1}}}}  \rightarrow  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Arrow}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXAll}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T_{{\mathrm{1}}}}  \ottsym{=}    | \ottnt{A_{{\mathrm{2}}}} |  ^\forall }%
+\ottpremise{\ottnt{T_{{\mathrm{2}}}}  \ottsym{=}    | \ottnt{B_{{\mathrm{2}}}} |  ^\forall }%
+\ottpremise{\ottnt{B_{{\mathrm{1}}}}  \ottsym{<:}  \ottnt{A_{{\mathrm{1}}}}}%
+\ottpremise{\ottmv{x_{{\mathrm{0}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{2}}}}  \ottsym{<:}  \ottmv{y_{{\mathrm{0}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A_{{\mathrm{1}}}} .\; \ottnt{A_{{\mathrm{2}}}}   \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{B_{{\mathrm{1}}}} .\; \ottnt{B_{{\mathrm{2}}}}   \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_All}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXRcd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T_{{\mathrm{1}}}}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A} |   \ottsym{\}}}%
+\ottpremise{\ottnt{T_{{\mathrm{2}}}}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{B} |   \ottsym{\}}}%
+\ottpremise{\ottmv{x_{{\mathrm{0}}}}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  \ottmv{y_{{\mathrm{0}}}}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{B}  \ottsym{\}}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Rcd}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXSplit}[1]{\ottdrule[#1]{%
+\ottpremise{ \ottnt{B_{{\mathrm{1}}}}  \lhd\, \ottnt{B} \,\rhd  \ottnt{B_{{\mathrm{2}}}} }%
+\ottpremise{\ottmv{y_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{1}}}}  \; \rhd \;  \ottmv{z}  \ottsym{:}  \ottnt{B}  \; \lhd \;  \ottmv{y_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{3}}}}}%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  ^\pm \, \ottmv{y_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{1}}}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{1}}}}}%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  ^\pm \, \ottmv{y_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J_{{\mathrm{2}}}}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  ^\pm \, \ottmv{z}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JS\_Split}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXAndL}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}   ^-  \, \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \, \& \,  \ottnt{B}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \ottnt{J}}{%
+{\ottdrulename{JS\_AndL}}{}%
+}}
+
+
+\newcommand{\ottdruleJSXXAndR}[1]{\ottdrule[#1]{%
+\ottpremise{\ottmv{x}  \ottsym{:}  \ottnt{B}  \ottsym{<:}   ^-  \, \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x}  \ottsym{:}  \ottnt{A}  \, \& \,  \ottnt{B}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \,  \ottnt{J}}{%
+{\ottdrulename{JS\_AndR}}{}%
+}}
+
+\newcommand{\ottdefncsub}[1]{\begin{ottdefnblock}[#1]{$\ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{<:}  ^\pm \, \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}$}{\ottcom{Coercive subtyping}}
+\ottusedrule{\ottdruleJSXXEquiv{}}
+\ottusedrule{\ottdruleJSXXTop{}}
+\ottusedrule{\ottdruleJSXXBot{}}
+\ottusedrule{\ottdruleJSXXInt{}}
+\ottusedrule{\ottdruleJSXXIntAnd{}}
+\ottusedrule{\ottdruleJSXXVar{}}
+\ottusedrule{\ottdruleJSXXArrow{}}
+\ottusedrule{\ottdruleJSXXAll{}}
+\ottusedrule{\ottdruleJSXXRcd{}}
+\ottusedrule{\ottdruleJSXXSplit{}}
+\ottusedrule{\ottdruleJSXXAndL{}}
+\ottusedrule{\ottdruleJSXXAndR{}}
+\end{ottdefnblock}}
+
+%% defn cmerge
+\newcommand{\ottdruleJMXXAnd}[1]{\ottdrule[#1]{%
+}{
+\ottmv{z}  \ottsym{:}  \ottnt{A}  \; \rhd \;  \ottmv{z}  \ottsym{:}  \ottnt{A}  \, \& \,  \ottnt{B}  \; \lhd \;  \ottmv{z}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,   \varnothing }{%
+{\ottdrulename{JM\_And}}{}%
+}}
+
+
+\newcommand{\ottdruleJMXXArrow}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}   \overrightarrow{  | \ottnt{B} |  } }%
+\ottpremise{\ottnt{T_{{\mathrm{1}}}}  \ottsym{=}   \overrightarrow{  | \ottnt{B_{{\mathrm{1}}}} |  } }%
+\ottpremise{\ottnt{T_{{\mathrm{2}}}}  \ottsym{=}   \overrightarrow{  | \ottnt{B_{{\mathrm{2}}}} |  } }%
+\ottpremise{\ottmv{y_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{1}}}}  \; \rhd \;  \ottmv{y}  \ottsym{:}  \ottnt{B}  \; \lhd \;  \ottmv{y_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B_{{\mathrm{1}}}}  \; \rhd \;  \ottmv{z}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \; \lhd \;  \ottmv{x_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JM\_Arrow}}{}%
+}}
+
+
+\newcommand{\ottdruleJMXXAll}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}    | \ottnt{B} |  ^\forall }%
+\ottpremise{\ottnt{T_{{\mathrm{1}}}}  \ottsym{=}    | \ottnt{B_{{\mathrm{1}}}} |  ^\forall }%
+\ottpremise{\ottnt{T_{{\mathrm{2}}}}  \ottsym{=}    | \ottnt{B_{{\mathrm{2}}}} |  ^\forall }%
+\ottpremise{\ottmv{y_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{1}}}}  \; \rhd \;  \ottmv{y}  \ottsym{:}  \ottnt{B}  \; \lhd \;  \ottmv{y_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{B_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x_{{\mathrm{1}}}}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B_{{\mathrm{1}}}}   \; \rhd \;  \ottmv{z}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B}   \; \lhd \;  \ottmv{x_{{\mathrm{2}}}}  \ottsym{:}   \forall  \ottmv{X} \!*\! \ottnt{A} .\; \ottnt{B_{{\mathrm{2}}}}   \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JM\_All}}{}%
+}}
+
+
+\newcommand{\ottdruleJMXXRcd}[1]{\ottdrule[#1]{%
+\ottpremise{\ottnt{T}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A} |   \ottsym{\}}}%
+\ottpremise{\ottnt{T_{{\mathrm{1}}}}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A_{{\mathrm{1}}}} |   \ottsym{\}}}%
+\ottpremise{\ottnt{T_{{\mathrm{2}}}}  \ottsym{=}  \ottsym{\{}  \ell  \ottsym{:}   | \ottnt{A_{{\mathrm{2}}}} |   \ottsym{\}}}%
+\ottpremise{\ottmv{y_{{\mathrm{1}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{1}}}}  \; \rhd \;  \ottmv{y}  \ottsym{:}  \ottnt{A}  \; \lhd \;  \ottmv{y_{{\mathrm{2}}}}  \ottsym{:}  \ottnt{A_{{\mathrm{2}}}}  \, \rightsquigarrow \,  \ottnt{J}}%
+}{
+\ottmv{x_{{\mathrm{1}}}}  \ottsym{:}  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A_{{\mathrm{1}}}}  \ottsym{\}}  \; \rhd \;  \ottmv{z}  \ottsym{:}  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}}  \; \lhd \;  \ottmv{x_{{\mathrm{2}}}}  \ottsym{:}  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A_{{\mathrm{2}}}}  \ottsym{\}}  \, \rightsquigarrow \,  \mathtt{code}}{%
+{\ottdrulename{JM\_Rcd}}{}%
+}}
+
+\newcommand{\ottdefncmerge}[1]{\begin{ottdefnblock}[#1]{$\ottmv{x}  \ottsym{:}  \ottnt{A}  \; \rhd \;  \ottmv{z}  \ottsym{:}  \ottnt{C}  \; \lhd \;  \ottmv{y}  \ottsym{:}  \ottnt{B}  \, \rightsquigarrow \,  \ottnt{J}$}{\ottcom{Coercive merging}}
+\ottusedrule{\ottdruleJMXXAnd{}}
+\ottusedrule{\ottdruleJMXXArrow{}}
+\ottusedrule{\ottdruleJMXXAll{}}
+\ottusedrule{\ottdruleJMXXRcd{}}
+\end{ottdefnblock}}
+
+
+\newcommand{\ottdefnsCompilation}{
+\ottdefncompile{}\ottdefndapp{}\ottdefndproj{}\ottdefncsubZero{}\ottdefncsub{}\ottdefncmerge{}}
