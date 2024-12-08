@@ -205,7 +205,7 @@ shapes = new repo @(Eval&Size) , eval , sz , sz';  -- nested trait composition
 --> "The elliptical region of size 2 contains the origin."
 \end{lstlisting}
 
-\begin{figure}
+\begin{figure}[b]
   \includegraphics[width=\textwidth]{merge.pdf}
   \caption{A visualization of nested trait composition.} \label{fig:compose}
 \end{figure}
@@ -383,10 +383,8 @@ DSL.
 
 \subsection{A Detailed Comparison between Different Embedding Approaches} \label{sec:comparison}
 
-% \newcommand\super[1]{\makebox[0pt]{$\;^#1$}}
-
-\begin{table}
-\caption{A comparison between different embedding approaches.} \label{tab:comparison}
+\begin{table}[b!]
+\caption{A detailed comparison between different embedding approaches.} \label{tab:comparison}
 \centering
 \begin{tabular}{*{6}{c}}
                                        &\textsc{Shallow}& \textsc{Deep} &\textsc{Hybrid}& \textsc{Poly.}& \textsc{Comp.}\\
@@ -525,7 +523,7 @@ they become non-modular with respect to dependencies, and programming with
 dependencies becomes significantly more awkward compared to conventional FP or
 OOP.
 
-\begin{table}
+\begin{table}[b]
 \caption{A briefer comparison regarding the three dimensions of the expression problem.} \label{tab:3d}
 \centering
 \begin{tabular}{*{5}{c}}

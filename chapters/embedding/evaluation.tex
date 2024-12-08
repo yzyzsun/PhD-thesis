@@ -105,11 +105,13 @@ open Database;
 
 sortedStates = sort states;
 doc T = trait [self: DocSig<T>&TableSig<T>] => {
-  table = letrec rows (i: Int): T = if i == 0 then `\Trow[
-      \Theader[No.]   \Theader[Country]      \Theader[Area (km^2)]
-    ]` else let state = sortedStates!!(i-1) in `\rows(i-1) \Trow[
-      \Tdata[\(i+1)]  \Tdata[\(state.name)]  \Tdata[\(state.area)]
-    ]` in `\Tbody[ \rows(#sortedStates) ]`;
+  table = letrec rows (i: Int): T =
+      if i == 0 then `\Trow[
+        \Theader[No.]   \Theader[Country]      \Theader[Area (km^2)]
+      ]` else let state = sortedStates!!(i-1) in `\rows(i-1) \Trow[
+        \Tdata[\(i+1)]  \Tdata[\(state.name)]  \Tdata[\(state.area)]
+      ]` in
+  `\Tbody[ \rows(#sortedStates) ]`;
 };
 document = new doc @HTML , html , table;
 document.table.html
@@ -159,24 +161,26 @@ Sierpiński carpet. For the sake of simplicity, we take the Sierpiński carpet a
 an example:
 
 \begin{lstlisting}
-fractal T C = trait [self: DocSig<T> & GraphicSig<T><C> & ColorSig<C> & Draw T C] implements Draw T C => {
-  draw {..} =
-    let center = Rect { x = x + width/3; y = y + height/3;
-                        width = width/3; height = height/3; color = White } in
-    if level == 0 then center else
-      let w = width/3 in let h = height/3 in let l = level-1 in
-      let shared = draw { x = x; y = y; width = w; height = h; level = l } in
-      `\Group(id)[
-         \shared
-           \Translate{x=w;y=0}(shared)
-             \Translate{x=2*w;y=0}(shared)
-         \Translate{x=0;y=h}(shared)
-           \center
-             \Translate{x=2*w;y=h}(shared)
-         \Translate{x=0;y=2*h}(shared)
-           \Translate{x=w;y=2*h}(shared)
-             \Translate{x=2*w;y=2*h}(shared)
-      ]`
+fractal T C =
+  trait [self: DocSig<T> & GraphicSig<T><C> & ColorSig<C> & Draw T C]
+  implements Draw T C => {
+    draw {..} =
+      let center = Rect { x = x + width/3; y = y + height/3;
+                          width = width/3; height = height/3; color = White} in
+      if level == 0 then center else
+        let w = width/3 in let h = height/3 in let l = level-1 in
+        let shared = draw { x = x; y = y; width = w; height = h; level = l } in
+        `\Group(id)[
+          \shared
+            \Translate{ x = w; y = 0 }(shared)
+              \Translate{ x = 2*w; y = 0 }(shared)
+          \Translate{ x = 0; y = h }(shared)
+            \center
+              \Translate{ x = 2*w; y = h }(shared)
+          \Translate{ x = 0; y = 2*h }(shared)
+            \Translate{ x = w; y = 2*h }(shared)
+              \Translate{ x = 2*w; y = 2*h }(shared)
+        ]`
 };
 \end{lstlisting}
 
@@ -280,10 +284,12 @@ inheritance} provided by CP:
 
 \begin{lstlisting}
 type Chart = Base & Render;
-borderDecorator (chart: Trait<Chart>) = trait [self: Chart] implements Chart inherits chart => {
+borderDecorator (chart: Trait<Chart>) = trait [self: Chart]
+                                        implements Chart inherits chart => {
   override render = let sr = super.render in let border = ... in `\sr \border`
 };
-legendDecorator (chart: Trait<Chart>) = trait [self: Chart] implements Chart inherits chart => {
+legendDecorator (chart: Trait<Chart>) = trait [self: Chart]
+                                        implements Chart inherits chart => {
   override caption = let legends = ... in `\legends`
 };
 chart' = if config.border then borderDecorator chart else chart;

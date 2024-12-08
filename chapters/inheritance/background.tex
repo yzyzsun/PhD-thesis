@@ -177,7 +177,8 @@ type Constructor = new (...args: any[]) => {};
 
 function Mixin<TBase extends Constructor>(Base: TBase) {
   return class extends Base {
-    m(): number { return 48; }  // If m() exists in Base, that one will be overridden.
+    // If m() exists in Base, that one will be overridden by this definition.
+    m(): number { return 48; }
   };
 }
 
@@ -186,8 +187,9 @@ class A {
   n(): string { return this.m().toUpperCase(); }
 }
 
-const B = Mixin(A);     // We use A as Base, which contains m() with a different type.
-(new B).n()             // Runtime Error!
+// Below we use A as Base, which contains m() with a different type.
+const B = Mixin(A);
+(new B).n()  // Runtime Error!
 \end{lstlisting}
 \caption{\emph{Inexact Superclass Problem:} Dynamic inheritance is type-unsafe in TypeScript.} \label{fig:dynamic}
 \end{figure}
@@ -288,6 +290,7 @@ class ANSIString {
     this.length = str.length;
     this.chars = str.split('');
   }
+
   Iterator() {
     const outer = this;
     return class {
@@ -296,6 +299,7 @@ class ANSIString {
       next() { return outer.chars[this.index++]; }
     };
   }
+
   print() {
     const it = new (this.Iterator());  // Iterator is dynamically bound.
     while (it.hasNext()) alert(it.next());
@@ -372,7 +376,7 @@ const UTF8String = Mixin(ANSIString);
 the inexact superclass problem. Thus, nested classes can have type-soundness
 issues as well.
 
-\begin{figure}
+\begin{figure}[b!]
 \begin{lstlisting}[language=Java]
 class ANSIString {
     int length;
@@ -455,7 +459,7 @@ expressions (numbers, addition, negation, etc.) in a modular fashion. A
 satisfactory solution should allow modular, type-safe extension to both
 expressions and operations.
 
-\begin{figure}
+\begin{figure}[t]
 \begin{subfigure}{.5\textwidth}
 \begin{lstlisting}[language=TypeScript,basicstyle=\ttfamily\footnotesize]
 type Eval = { eval: () => number };

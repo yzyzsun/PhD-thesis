@@ -248,7 +248,7 @@ desired. They are also powered by type difference under the hood.
 
 \subsection{Dynamic Inheritance in CP} \label{sec:dynamic}
 
-\begin{figure}
+\begin{figure}[b]
 \begin{lstlisting}[xleftmargin=.2\textwidth]
 mixin (TBase * { m: Int }) (base: Trait<TBase>) =
   trait [this: TBase] inherits base => { m = 48 };
