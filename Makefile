@@ -4,7 +4,8 @@ INPUTS1  = $(wildcard chapters/compilation/*.tex)
 OUTPUTS1 = $(patsubst chapters/compilation/%.tex,filtered/compilation/%.tex,$(INPUTS1))
 
 all: $(TEXFILE1) $(OUTPUTS1)
-	latexmk -interaction=nonstopmode -pdf Thesis
+	latexmk -interaction=nonstopmode -file-line-error -synctex=1 \
+		-pdf Thesis
 
 $(TEXFILE1): $(OTTFILE1)
 	ott $(OTTFILE1) -o $(TEXFILE1) \
