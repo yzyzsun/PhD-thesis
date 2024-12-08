@@ -89,7 +89,7 @@ with \lambdaiplus~\citep{bi2018essence}, which does not support these features.}
     \end{align*}
 }
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \ottdefnsTargetStep
 
@@ -132,7 +132,7 @@ field selection. It finds the first field type that matches the given label,
 just like the value-level one. We use $[[ lookup ll r =/> ]]$ to represent the
 case where no field in $[[r]]$ matches $[[ll]]$.
 
-\begin{figure}
+\begin{figure}[t!]
   \small
 
   \begin{align*}
@@ -200,7 +200,7 @@ record types to contain duplicate labels. The properties of the source calculus
 also ensure that the translated types are well-formed. With the well-formedness
 restriction, permuting any fields in a record type does not affect type safety.
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \ottdefnsConcatTypes
   \ottdefnsTargetTyping
@@ -272,7 +272,7 @@ $[[A&B]]$.
   [[ { l1 = e1; ...; ln = en } ]] \quad\triangleq\quad& [[ { l1 = e1 } ]] [[,,]] ... [[,,]] [[ { ln = en } ]]
 \end{align*}
 
-\begin{figure}
+\begin{figure}[b!]
   \small
   \ottdefnsTopLikeType
   \ottdefnsDisjoint
@@ -288,8 +288,7 @@ types, here we use $[[A<:B]]$ to represent the subtyping relation, ignoring the
 terms $[[t1]]$ and $[[t2]]$.
 
 \begin{theorem}[Coercion-erased subtyping]
-  $[[A <: B]]$ if and only if
-  $\forall [[t1]]$, $\exists [[t2]]$, $[[t1 : A <: B ~~> t2]]$.
+  $[[A <: B]] \iff \forall [[t1]], \exists [[t2]], [[t1 : A <: B ~~> t2]]$.
 \end{theorem}
 
 At the top of \autoref{fig:disj} is the algorithmic definition of top-like types
@@ -299,7 +298,7 @@ with a top-like field type. These types are thought to be vacuous and treated in
 a unified way.
 
 \begin{theorem}[Top-like types respect the specification]
-  $[[toplike A]]$ if and only if $[[Top<:A]]$.
+  $[[toplike A]] \iff [[Top<:A]]$.
 \end{theorem}
 
 At the bottom of \autoref{fig:disj} is the algorithmic definition of
@@ -311,11 +310,11 @@ return types are disjoint. Two record types with the same label are disjoint if
 and only if their field types are disjoint.
 
 \begin{theorem}[Type disjointness respects the specification]\label{thm:disjoint}
-  $[[A*B]]$ if and only if
+  $[[A*B]]$ $\iff$
   $\forall C$, if $[[A<:C]]$ and $[[B<:C]]$ then $[[toplike C]]$.
 \end{theorem}
 
-\begin{figure}
+\begin{figure}[b!]
   \small
   \begin{align*}
     &\text{Type indices}        &[[T]] ~\Coloneqq&~\, [[Base]] ~|~ [[Ts -> Ts]] ~|~ [[ {l:Ts} ]] \\
@@ -450,7 +449,7 @@ are well-formed.
   $\forall A$, $[[ |- ||A|| ]]$.
 \end{lemma}
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \begin{align*}
     &\text{Typing contexts} &\quad[[G]] &\Coloneqq \cdot ~|~ [[ G, x:A ]] \\
@@ -458,11 +457,19 @@ are well-formed.
   \end{align*}
 
   \ottdefnsElaboration
-  \ottdefnsDistributiveApplication
-  \ottdefnsProjection
 
   \caption{Type-directed elaboration of \lambdaiplus.}
   \label{fig:source-typing}
+\end{figure}
+
+\begin{figure}[t]
+  \small
+
+  \ottdefnsDistributiveApplication
+  \ottdefnsProjection
+
+  \caption{Distributive application and projection in \lambdaiplus.}
+  \label{fig:source-dist}
 \end{figure}
 
 \paragraph{Type-directed elaboration.}
@@ -484,7 +491,7 @@ merge has disjoint types. \Rref{Ela-Anno} allows upcasting expressions to any
 supertypes. The subtyping relation is checked in \rref{Ela-Sub} via the
 subtyping judgment $[[t1 : A <: B ~~> t2]]$, which also coerces the target term
 $[[t1]]$ to $[[t2]]$. \Rref{Ela-App} relies on \emph{distributive application},
-which is defined in the middle of \autoref{fig:source-typing}. It takes the
+which is defined in \autoref{fig:source-dist}. It takes the
 function type $[[A]]$ and the argument type $[[B]]$ and, if $[[A]]$ can be
 applied to $[[B]]$, produces the return type $[[C]]$. Distributive application
 additionally allows intersection types and top-like types (can be regarded as
@@ -505,7 +512,7 @@ types, \rref{Ela-Int,Ela-Abs,Ela-Rcd} produces records with a single label
 translated from the type directly. Consequently, all elaborated terms are either
 reducible or are in a record form.
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \begin{align*}
     &\text{Ordinary types} &[[Aord]], [[Bord]], [[Cord]]\Coloneqq&~\, [[Top]] ~|~ [[tBase]] ~|~ [[A -> Bord]]  ~|~ [[{l:Aord}]] \\
@@ -539,21 +546,11 @@ that relies on coercions. This idea has been discussed in
 \autoref{sec:coercive}, and it is further optimized in \autoref{sec:elim}.
 
 \Rref{S-Top} allows top-like types to be supertypes of any type and generates an
-empty record regardless of the input term. In other words, expressions with such
-types will be ignored. This ensures that the overlapping of disjoint types on
-the top-like part does not introduce ambiguity into the semantics.  Note that,
-according to our definition in \autoref{fig:disj}, function types like
-$[[A -> Top]]$ are considered to be top-like. This approach is not desirable if
-the language includes side effects, because side effects would be ignored as
-well. Even in our purely functional setting, this approach could mean that a
-non-terminating expression would not be executed, which could be surprising. One
-way to address this issue is to make the disjointness relation stricter,
-disallowing any two function types to be disjoint. By doing so, function types
-can be excluded from top-like types, and the computational effects in functions
-can be preserved. However, this approach is too restrictive as it prevents
-nested composition and our solution to the expression problem, which relies on
-merges of functions. Thus, to enable merges of functions while also supporting a
-deterministic or coherent semantics, we adopt this approach. It would be
+empty record regardless of the input term. This ensures that the overlapping of
+disjoint types on the top-like part does not introduce ambiguity into the
+semantics. However, this approach is not desirable if the language includes side
+effects, because side effects would be ignored. Even in our purely functional
+setting, a non-terminating expression would not be executed. It would be
 interesting to investigate a better approach in the future.
 
 To understand the subtyping check, we can ignore $[[t1]]$ and $[[t2]]$. In our

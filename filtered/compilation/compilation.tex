@@ -24,6 +24,26 @@ assignment} (SSA)~\citep{cytron1991efficiently}, and the other is based on
 eventually choose the latter due to performance reasons, which we will explain
 next.
 
+\paragraph{Reducing intermediate objects.}
+In our initial design based on the SSA form, every subterm in a merge creates a
+new object in the compiled JavaScript code. Consequently, there will be too many
+intermediate objects that are useless. For example, consider the merge
+$48  \bbcomma   \mathbf{true}   \bbcomma   \mathtt{chr}  \, 32$, where $ \mathtt{chr} $ is a function that converts an
+integer to a character, and the compiled function has been stored in
+\lstinline{$chr}. We need to create six JavaScript objects in the SSA-based
+form, as shown in \autoref{fig:six-objects}. As mitigation, we adopt a new
+design based on DPS. We just create one object for the merge (e.g.
+\lstinline{$1} in \autoref{fig:two-objects}) and pass the variable down to
+subterms to update their corresponding properties. To further prevent the
+function application (e.g. $ \mathtt{chr}  \, 32$) from creating any intermediate object,
+we add an extra parameter when compiling all functions, including $ \mathtt{chr} $. The
+destination object (e.g. \lstinline{$1}) is passed to the compiled function as
+the last argument, and the function body will directly write to that argument
+instead of creating a new object. In other words, \lstinline{$1} is an output
+parameter while \lstinline{$2} is an input. As a result, we reduce the creation
+of six objects to only two objects and avoid two object concatenations, as shown
+in \autoref{fig:two-objects}.
+
 \begin{figure}
 \centering
 \begin{subfigure}{.37\textwidth}
@@ -52,29 +72,9 @@ $chr.fun_char($2, $1);
 \caption{Simplified JavaScript code for $48  \bbcomma   \mathbf{true}   \bbcomma   \mathtt{chr}  \, 32$.}
 \end{figure}
 
-\paragraph{Reducing intermediate objects.}
-In our initial design based on the SSA form, every subterm in a merge creates a
-new object in the compiled JavaScript code. Consequently, there will be too many
-intermediate objects that are useless. For example, consider the merge
-$48  \bbcomma   \mathbf{true}   \bbcomma   \mathtt{chr}  \, 32$, where $ \mathtt{chr} $ is a function that converts an
-integer to a character, and the compiled function has been stored in
-\lstinline{$chr}. We need to create six JavaScript objects in the SSA-based
-form, as shown in \autoref{fig:six-objects}. As mitigation, we adopt a new
-design based on DPS. We just create one object for the merge (e.g.
-\lstinline{$1} in \autoref{fig:two-objects}) and pass the variable down to
-subterms to update their corresponding properties. To further prevent the
-function application (e.g. $ \mathtt{chr}  \, 32$) from creating any intermediate object,
-we add an extra parameter when compiling all functions, including $ \mathtt{chr} $. The
-destination object (e.g. \lstinline{$1}) is passed to the compiled function as
-the last argument, and the function body will directly write to that argument
-instead of creating a new object. In other words, \lstinline{$1} is an output
-parameter while \lstinline{$2} is an input. As a result, we reduce the creation
-of six objects to only two objects and avoid two object concatenations, as shown
-in \autoref{fig:two-objects}.
-
 \section{Parametric Polymorphism} \label{sec:poly}
 
-\begin{figure}
+\begin{figure}[t]
 \begin{subfigure}{\textwidth}
 \begin{lstlisting}[language=TypeScript]
 const $poly = {};
@@ -330,7 +330,7 @@ application for record projection. However, the semantics for distributive
 projection is slightly different: we do not require that every component of a
 record can be projected by the same label. Therefore, we add \rref{JP-RcdNeq} to
 safely ignore irrelevant fields. The complete rules have been formalized in
-\autoref{fig:source-typing}. By implementing the new rules for distributive
+\autoref{fig:source-dist}. By implementing the new rules for distributive
 projection, the compiled JavaScript can directly handle projection for
 multi-field records.
 

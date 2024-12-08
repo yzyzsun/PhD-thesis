@@ -88,7 +88,7 @@ with \lambdaiplus~\citep{bi2018essence}, which does not support these features.}
     \end{align*}
 }
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \ottdefnsTargetStep
 
@@ -131,7 +131,7 @@ field selection. It finds the first field type that matches the given label,
 just like the value-level one. We use $\ottkw{lookup} \, \ell \, \rho  \nRightarrow$ to represent the
 case where no field in $\rho$ matches $\ell$.
 
-\begin{figure}
+\begin{figure}[t!]
   \small
 
   \begin{align*}
@@ -199,7 +199,7 @@ record types to contain duplicate labels. The properties of the source calculus
 also ensure that the translated types are well-formed. With the well-formedness
 restriction, permuting any fields in a record type does not affect type safety.
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \ottdefnsConcatTypes
   \ottdefnsTargetTyping
@@ -271,7 +271,7 @@ $\ottnt{A}  \, {\&} \,  \ottnt{B}$.
   \ottsym{\{}  \ell_{{\mathrm{1}}}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}}  ; \, \, ... \, ; \,  \ell_{\ottmv{n}}  \ottsym{=}  \ottnt{e_{\ottmv{n}}}  \ottsym{\}} \quad\triangleq\quad& \ottsym{\{}  \ell_{{\mathrm{1}}}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}}  \ottsym{\}}  \bbcomma  ...  \bbcomma  \ottsym{\{}  \ell_{\ottmv{n}}  \ottsym{=}  \ottnt{e_{\ottmv{n}}}  \ottsym{\}}
 \end{align*}
 
-\begin{figure}
+\begin{figure}[b!]
   \small
   \ottdefnsTopLikeType
   \ottdefnsDisjoint
@@ -287,8 +287,7 @@ types, here we use $ \ottnt{A}   \ottsym{<:}   \ottnt{B} $ to represent the subt
 terms $\epsilon_{{\mathrm{1}}}$ and $\epsilon_{{\mathrm{2}}}$.
 
 \begin{theorem}[Coercion-erased subtyping]
-  $ \ottnt{A}   \ottsym{<:}   \ottnt{B} $ if and only if
-  $\forall \epsilon_{{\mathrm{1}}}$, $\exists \epsilon_{{\mathrm{2}}}$, $\epsilon_{{\mathrm{1}}}  :  \ottnt{A}  \ottsym{<:}  \ottnt{B}  \,\rightsquigarrow\,  \epsilon_{{\mathrm{2}}}$.
+  $ \ottnt{A}   \ottsym{<:}   \ottnt{B}  \iff \forall \epsilon_{{\mathrm{1}}}, \exists \epsilon_{{\mathrm{2}}}, \epsilon_{{\mathrm{1}}}  :  \ottnt{A}  \ottsym{<:}  \ottnt{B}  \,\rightsquigarrow\,  \epsilon_{{\mathrm{2}}}$.
 \end{theorem}
 
 At the top of \autoref{fig:disj} is the algorithmic definition of top-like types
@@ -298,7 +297,7 @@ with a top-like field type. These types are thought to be vacuous and treated in
 a unified way.
 
 \begin{theorem}[Top-like types respect the specification]
-  $ \rceil \ottnt{A} \lceil $ if and only if $  \top    \ottsym{<:}   \ottnt{A} $.
+  $ \rceil \ottnt{A} \lceil  \iff   \top    \ottsym{<:}   \ottnt{A} $.
 \end{theorem}
 
 At the bottom of \autoref{fig:disj} is the algorithmic definition of
@@ -310,11 +309,11 @@ return types are disjoint. Two record types with the same label are disjoint if
 and only if their field types are disjoint.
 
 \begin{theorem}[Type disjointness respects the specification]\label{thm:disjoint}
-  $\ottnt{A}  *  \ottnt{B}$ if and only if
+  $\ottnt{A}  *  \ottnt{B}$ $\iff$
   $\forall C$, if $ \ottnt{A}   \ottsym{<:}   \ottnt{C} $ and $ \ottnt{B}   \ottsym{<:}   \ottnt{C} $ then $ \rceil \ottnt{C} \lceil $.
 \end{theorem}
 
-\begin{figure}
+\begin{figure}[b!]
   \small
   \begin{align*}
     &\text{Type indices}        &\ottnt{T} ~\Coloneqq&~\,  \overline{\mathbb{Z} }  ~|~  \overline{ \ottnt{Ts} \rightarrow \ottnt{Ts} }  ~|~  \overline{  \ottsym{\{}   \ell   :   \ottnt{Ts}   \ottsym{\}}  }  \\
@@ -449,7 +448,7 @@ are well-formed.
   $\forall A$, $\vdash  \|  \ottnt{A}  \|$.
 \end{lemma}
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \begin{align*}
     &\text{Typing contexts} &\quad\Gamma &\Coloneqq \cdot ~|~ \Gamma  \ottsym{,}  \ottmv{x}  :  \ottnt{A} \\
@@ -457,11 +456,19 @@ are well-formed.
   \end{align*}
 
   \ottdefnsElaboration
-  \ottdefnsDistributiveApplication
-  \ottdefnsProjection
 
   \caption{Type-directed elaboration of \lambdaiplus.}
   \label{fig:source-typing}
+\end{figure}
+
+\begin{figure}[t]
+  \small
+
+  \ottdefnsDistributiveApplication
+  \ottdefnsProjection
+
+  \caption{Distributive application and projection in \lambdaiplus.}
+  \label{fig:source-dist}
 \end{figure}
 
 \paragraph{Type-directed elaboration.}
@@ -483,7 +490,7 @@ merge has disjoint types. \Rref{Ela-Anno} allows upcasting expressions to any
 supertypes. The subtyping relation is checked in \rref{Ela-Sub} via the
 subtyping judgment $\epsilon_{{\mathrm{1}}}  :  \ottnt{A}  \ottsym{<:}  \ottnt{B}  \,\rightsquigarrow\,  \epsilon_{{\mathrm{2}}}$, which also coerces the target term
 $\epsilon_{{\mathrm{1}}}$ to $\epsilon_{{\mathrm{2}}}$. \Rref{Ela-App} relies on \emph{distributive application},
-which is defined in the middle of \autoref{fig:source-typing}. It takes the
+which is defined in \autoref{fig:source-dist}. It takes the
 function type $\ottnt{A}$ and the argument type $\ottnt{B}$ and, if $\ottnt{A}$ can be
 applied to $\ottnt{B}$, produces the return type $\ottnt{C}$. Distributive application
 additionally allows intersection types and top-like types (can be regarded as
@@ -504,7 +511,7 @@ types, \rref{Ela-Int,Ela-Abs,Ela-Rcd} produces records with a single label
 translated from the type directly. Consequently, all elaborated terms are either
 reducible or are in a record form.
 
-\begin{figure}
+\begin{figure}[t]
   \small
   \begin{align*}
     &\text{Ordinary types} &A^\circ, B^\circ, C^\circ\Coloneqq&~\,  \top  ~|~  \mathbb{Z}  ~|~ \ottnt{A}  \rightarrow  B^\circ  ~|~ \ottsym{\{}  \ell  :  A^\circ  \ottsym{\}} \\
@@ -538,21 +545,11 @@ that relies on coercions. This idea has been discussed in
 \autoref{sec:coercive}, and it is further optimized in \autoref{sec:elim}.
 
 \Rref{S-Top} allows top-like types to be supertypes of any type and generates an
-empty record regardless of the input term. In other words, expressions with such
-types will be ignored. This ensures that the overlapping of disjoint types on
-the top-like part does not introduce ambiguity into the semantics.  Note that,
-according to our definition in \autoref{fig:disj}, function types like
-$\ottnt{A}  \rightarrow   \top $ are considered to be top-like. This approach is not desirable if
-the language includes side effects, because side effects would be ignored as
-well. Even in our purely functional setting, this approach could mean that a
-non-terminating expression would not be executed, which could be surprising. One
-way to address this issue is to make the disjointness relation stricter,
-disallowing any two function types to be disjoint. By doing so, function types
-can be excluded from top-like types, and the computational effects in functions
-can be preserved. However, this approach is too restrictive as it prevents
-nested composition and our solution to the expression problem, which relies on
-merges of functions. Thus, to enable merges of functions while also supporting a
-deterministic or coherent semantics, we adopt this approach. It would be
+empty record regardless of the input term. This ensures that the overlapping of
+disjoint types on the top-like part does not introduce ambiguity into the
+semantics. However, this approach is not desirable if the language includes side
+effects, because side effects would be ignored. Even in our purely functional
+setting, a non-terminating expression would not be executed. It would be
 interesting to investigate a better approach in the future.
 
 To understand the subtyping check, we can ignore $\epsilon_{{\mathrm{1}}}$ and $\epsilon_{{\mathrm{2}}}$. In our

@@ -68,19 +68,19 @@ of $n$ components requires $n-1$ projections in the worst case. For example,
 when adding one more element to the previous merge, $[[48,,true,,a]]$ for
 example, one more projection must be added to the elaborated result as well:
 $[[((48,true),a).fst.fst-2]]$. Note that we have simplified the coercion
-application from $([[(\x.x.fst)]]\circ[[(\x.x.fst)]])[[((48,true),a)]]$ to
+application from $([[(\x.x.fst)]]\circ[[(\x.x.fst)]])\,[[((48,true),a)]]$ to
 $[[((48,true),a).fst.fst]]$. Compared with array access or dictionary lookup,
 such projections are more expensive in terms of both code length and runtime
 performance.
 
 \paragraph{Pairs are order-sensitive.}
 What is worse, a representation based on pairs has another disadvantage:
-unnecessary coercions are never optimized. Consider $[[48,,true]]$ and
-$[[true,,48]]$. These two merges are equivalent in any context. Although they
-lead to a different order in the elaborated pairs, permutation of components
-does not matter as long as it is consistent with the projection. For example,
-$[[(48,true).fst-2]]$ is the same as $[[(true,48).snd-2]]$. However, permutation
-can lead to expensive coercions. To cast $[[48,,true,,a]]$ to type
+unnecessary coercions are never optimized. Consider two merges $[[48,,true]]$
+and $[[true,,48]]$. These two merges are equivalent in any context. Although
+they lead to a different order in the elaborated pairs, permutation of
+components does not matter as long as it is consistent with the projection. For
+example, $[[(48,true).fst-2]]$ is the same as $[[(true,48).snd-2]]$. However,
+permutation can lead to expensive coercions. To cast $[[48,,true,,a]]$ to type
 $[[Char&Int&Bool]]$, every single component needs to be extracted and
 rearranged:
 \[
@@ -129,7 +129,7 @@ subtyping at all.
 
 The record design significantly reduces the cost of projections. For
 $[[48,,true,,a]]$, we would not need to project twice to find the exact position
-when selecting the integer. With a single projection, a component in a $n$-level
+when selecting the integer. With a single projection, a component in an $n$-level
 merge can be extracted. Besides, record fields are order-irrelevant, which
 allows us to treat permuted intersection types equivalently. Using our approach,
 coercing a term from type $[[Int&Bool&Char]]$ to type $[[Char&Int&Bool]]$ has
@@ -362,10 +362,10 @@ compiled records.
 
 For non-polymorphic types, the labels remain fixed throughout the program
 execution. However, for polymorphic types, we have to deal with \emph{type
-instantiation}. For example, we may have a source type \lstinline|{ f : A -> A }|,
+instantiation}. For example, we may have a source type \lstinline|{ f: A -> A }|,
 where the type \lstinline|A| is a type variable. After the instantiation of
-\lstinline|A|, we may have the type \lstinline|{ f : Int -> Int }| or perhaps
-the type \lstinline|{ f : Bool -> Bool }|. The problem is that different
+\lstinline|A|, we may have the type \lstinline|{ f: Int -> Int }| or perhaps
+the type \lstinline|{ f: Bool -> Bool }|. The problem is that different
 instantiations of polymorphic type variables will produce different labels. So
 for polymorphic types, the labels cannot be statically computed. To solve this
 problem, first-class labels~\citep{leijen2004first} are needed so that
