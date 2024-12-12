@@ -1,15 +1,126 @@
 \chapter{Introduction} \label{ch:introduction}
 
+This thesis focuses on the practical aspects of \emph{compositional
+programming}, which is a statically typed programming paradigm that emphasizes
+modularity and extensibility, proposed by Zhang, Sun, and Oliveira
+\citeyearpar{zhang2021compositional}...
+
 \section{Motivation}
+
+Compositionality is an important principle in software engineering. It means
+that a complex system can be built by composing simpler parts. However, it is
+non-trivial to achieve compositionality in practice. During the evolution of a
+software system, we often need to add new features, including extending the
+current system with both new data types and new operations. The \emph{expression
+problem}~\citep{wadler1998expression} illustrates the difficulty of such
+two-dimensional extensibility in a modular way.
+
+This is not only a theoretic problem, but also a practical issue, for example,
+in the development of domain-specific languages (DSLs). A common approach to
+defining DSLs is via a direct embedding into a host language. There are several
+well-known techniques to do such embeddings, including \emph{shallow} and
+\emph{deep} embeddings. However, it is hard to modularly extend language
+constructs (data types) in deep embeddings or to modularly extend
+interpretations (operations) in shallow embeddings. This two-dimensional dillema
+corresponds to the aforementioned expression problem. Polymorphic
+embeddings~\citep{hofer2008polymorphic}, tagless-final
+embeddings~\citep{carette2009finally}, and object
+algebras~\citep{oliveira2012extensibility} are some of the techniques that have
+been proposed to address this issue, yet they all have drawbacks, such as
+requiring boilerplate code and lacking a mechanism to modularly handle
+dependencies between interpretations. In contrast, the CP language provides
+native support for compositional embeddings, which is a modular paradigm to
+support two-dimensional extensibility as well as dependent interpretations.
+
+In general-purpose programming languages, compositionality often requires
+mechanisms of code reuse. Object-oriented programming languages usually employs
+inheritance, which allows code reuse by defining new classes that inherit from
+existing ones. However, traditional inheritance mechanisms have limitations. For
+example, multiple inheritance can lead to the diamond problem, where a class
+inherits from two classes that have a common ancestor. This can cause ambiguity
+when resolving method calls. Traits are a mechanism that addresses the diamond
+problem by detecting ambiguous compositions and requiring the programmer to
+resolve the conflicts explicitly. However, the detection of conflicts becomes
+more challenging when dealing with dynamic inheritance, where classes (or
+traits) can be composed at run time. Most statically typed languages only
+provide static inheritance to achieve type safety at the cost of flexibility.
+
+\paragraph{A three-fold challenge: achieving flexibility, efficiency, and type safety.}
+Ideally, programming languages with dynamic inheritance and first-class classes
+should have three properties:
+
+\begin{enumerate}
+
+\item \textbf{Flexibility:} The language should be flexible so that highly
+      dynamic patterns of inheritance are allowed. Thus, it should be possible
+      to support dynamic forms of mixins or traits, as well as nested classes or
+      even virtual classes and family polymorphism.
+
+\item \textbf{Reasonable efficiency and separate compilation:} For practical
+      implementations, it is desirable to have a compilation model that is
+      reasonably efficient and supports good software engineering properties,
+      such as separate compilation.
+
+\item \textbf{Type safety:} The language should be type-safe, so that type
+      errors can be prevented statically.
+
+\end{enumerate}
+
+\noindent
+Both JavaScript and TypeScript support points (1) and (2) well. As we have seen,
+with first-class classes, we can model dynamic inheritance, mixins, nested
+classes, and even virtual classes and family polymorphism. Therefore, the
+inheritance model provided by JavaScript and TypeScript is expressive and
+flexible. Furthermore, there has been a lot of work on optimizing JavaScript
+implementations, so JavaScript and TypeScript's inheritance and class model are
+reasonably efficient.
+
+Unfortunately, for point (3), TypeScript's support for type-checking first-class
+classes has a few type-soundness holes. Some of these holes, such as the use of
+bivariant subtyping, are known and documented. First-class classes bring new
+issues, such as the inexact superclass problem. The inexact superclass problem
+can be avoided by moving into a model based on static inheritance, which is the
+option widely adopted by most mainstream languages. However, this trades
+flexibility for type safety. Ideally, we want to avoid this trade-off. Retaining
+flexibility and type safety while addressing the inexact superclass problem is
+non-trivial. In particular, it seems to be hard with the overriding semantics of
+JavaScript, which simply overrides properties that have the same name. Thus, to
+achieve the three goals together, a new compilation scheme seems desirable.
+
+Previous work on compositional programming has addressed points (1) and (3).
+However, that work has not studied practical implementability questions, such as
+how to have a reasonably efficient compilation model with separate compilation.
+Although there is an implementation of the CP language, this implementation is
+based on an interpreter. Moreover, the semantics for compositional programming
+languages is based on \emph{coercive subtyping}~\citep{luo2013coercive}, which
+raises immediate questions in terms of efficiency, since upcasts have a
+computational cost. A naive implementation that inserts coercions every time
+upcasting is needed has a prohibitive cost, which can be \emph{orders of
+magnitude} slower than JavaScript programs.
+
+\paragraph{Solving the three-fold challenge: efficient compilation for CP.}
+The problem that this paper solves is how to compile compositional programming
+much more efficiently while also supporting separate compilation. Therefore, we
+obtain property (2), which was missing on previous work on CP. Thus, we can
+solve the three-fold challenge. We should emphasize that our work lacks various
+features supported by JavaScript and TypeScript, and the semantics we employ for
+inheritance has some important differences from JavaScript. Thus, our work does
+not offer an immediate solution that TypeScript can adopt as a type-safe
+replacement for their current class model. Nevertheless, our compilation model
+can be useful for new languages that aim to have highly expressive models of
+inheritance while ensuring type safety. Moreover, it can inform existing
+language designers, who may be able to borrow some ideas to improve their
+language designs.
 
 \section{Organization}
 
 \begin{description}
 \item[\autoref{pt:prologue}] is the prologue. \autoref{ch:introduction}
-      introduces the motivation and the organization of this thesis.
-      \autoref{ch:background} provides background information on intersection
-      and union types, traits, and the CP language, which implements the
-      compositional programming paradigm.
+      motivates this thesis and outlines its organization.
+\item[\autoref{pt:background}] provides background information.
+      \autoref{ch:background} introduces intersection and union types, merges,
+      disjointness, and traits. \autoref{ch:cp} gives a crash course in the CP
+      language, which implements the compositional programming paradigm.
 \item[\autoref{pt:why}] explains why compositional programming matters. We
       illustrate the reasons with two applications of compositional programming
       in this part: \autoref{ch:embedding} proposes a new embedding of
@@ -31,6 +142,9 @@
       outlines future work.
 \end{description}
 
+\noindent\hrulefill
+
+\paragraph{Prior publications.}
 The main content of this thesis is based on three of my published papers.
 Specifically, \autoref{ch:embedding} is based on:
 \begin{itemize}
@@ -51,8 +165,8 @@ Systems, Languages, and Applications)}.
 \textbf{Named Arguments as Intersections, Optional Arguments as Unions}.
 In ESOP \textit{(European Symposium on Programming)}.
 \end{itemize}
-In addition, the background part (i.e. \autoref{ch:background}) also adapts some
-material from my co-authored paper:
+In addition, \autoref{ch:cp} in the background part also adapts some material
+from my co-authored paper:
 \begin{itemize}
 \item Weixin Zhang, Yaozhu Sun, and Bruno C.~d.~S.~Oliveira. 2021.
 \textbf{Compositional Programming}. \textit{ACM Transactions on Programming
