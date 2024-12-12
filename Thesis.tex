@@ -94,6 +94,8 @@
 % Theorems
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\usepackage{thmtools}
+
 \newtheoremstyle{acm}%
   {.5\baselineskip\@plus.2\baselineskip
     \@minus.2\baselineskip}% space above
@@ -112,9 +114,7 @@
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{conjecture}[theorem]{Conjecture}
-\newtheorem{definition}{Definition}
-\newtheorem{example}{Example}
-\newtheorem{observation}{Observation}
+\newtheorem{definition}[theorem]{Definition}
 \theoremstyle{remark}
 \newtheorem*{remark}{Remark}
 
@@ -316,10 +316,19 @@ diploma, or other qualifications.
 %%---------------------%%
 \makedecl
 \makeack
+
+\cleardoublepage
+\pdfbookmark{Contents}{contents}
 \tableofcontents
+
+\KOMAoption{listof}{totoc}
 \listoffigures
 \listoftables
-% \listoftheorems[ignoreall, show={theorem,lemma}]
+
+\cleardoublepage
+\phantomsection
+\pdfbookmark{List of Theorems}{theorems}
+\listoftheorems
 
 %%---------------------%%
 \mainmatter
