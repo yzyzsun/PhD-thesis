@@ -1,0 +1,180 @@
+\section{Introduction}
+
+The $\lambda$-calculus, introduced by \citet{church1941calculi}, shows how to
+model computation solely with function abstraction and application. For example,
+natural numbers, boolean values, pairs, and lists, as well as various operations
+on them, can be represented by higher-order functions via Church encoding. In
+the $\lambda$-calculus, a function only has one parameter and can only be
+applied to one argument. Many programming languages in the ML family inherit
+this feature. If more than one argument is desired in those languages, we need
+to create a sequence of functions, each with a single argument, and perform an
+iteration of applications. This idea is called \emph{currying}. Currying brings
+brevity to functional programming and naturally allows partial application, but
+it usually limits the flexibility of function application. For example, we
+cannot pass arguments in a different order nor omit some of them by providing
+default values. Both demands are not rare in practical programming and can be
+met in a language that supports \emph{named} and \emph{optional} arguments.
+Named arguments also largely improve the readability of function calls. For
+example, it is unclear which is the source and which is the destination in
+\lstinline{copy(x, y)}, while \lstinline{copy(to: x, from: y)} is
+self-explanatory.
+
+\begin{figure}
+\begin{subfigure}{0.5\textwidth}
+\begin{lstlisting}[language={[3]Python}]
+def exp(x, base=math.e):
+  return base ** x
+
+exp(10, 2)  #= exp(x=10, base=2) = 1024
+exp(base=2, x=10)               #= 1024
+exp(x=10)                       #= e^10
+
+args = { "base": 2, "x": 10 }
+exp(**args) #= exp(base=2, x=10) = 1024
+\end{lstlisting}
+\caption{The Python way.} \label{fig:python}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.35\textwidth}
+\begin{lstlisting}[language=Ruby]
+def exp(x:, base: Math::E)
+  base ** x
+end
+exp(10, 2) # ArgumentError!
+exp(base: 2, x: 10) #= 1024
+exp(x: 10)          #= e^10
+
+args = { base: 2, x: 10 }
+exp(**args)         #= 1024
+\end{lstlisting}
+\caption{The Ruby way.} \label{fig:ruby}
+\end{subfigure}
+\caption{Named arguments in Python and Ruby.} \label{fig:python-ruby}
+\end{figure}
+
+Named arguments are widely supported in mainstream programming languages, such
+as Python, Ruby, OCaml, C\#, and Scala, just to name a few. The earliest
+instance, to the best of our knowledge, is Smalltalk, where every method
+argument \emph{must} be associated with a \emph{keyword} (i.e. an external
+name). In other words, there are no positional arguments (i.e. arguments with no
+keywords) in Smalltalk. The syntax of modern languages is usually less rigid, so
+programmers can choose whether to attach keywords to arguments or not. There are
+two ways to reconcile positional and named arguments. One way, employed by
+Python and shown in \autoref{fig:python}, is to make parameter names in a
+function definition as non-mandatory keywords. Thus, every argument can be
+passed with or without keywords. As shown in the Python code,
+\lstinline{exp(10, 2)} is equivalent to \lstinline{exp(x=10, base=2)}. To
+reconcile the two forms in the same call, a restriction is imposed that all
+positional arguments must appear to the left of named ones. The other way, shown
+in \autoref{fig:ruby} and used in Ruby, is to strictly distinguish named
+arguments from positional ones. When defining a Ruby function, a named parameter
+should always end with a colon even if it does not have a default value. By this
+means, they are syntactically distinct from positional parameters, and their
+keywords cannot be omitted in a function call. The two kinds of arguments are
+usually used in different scenarios: positional arguments are used when the
+number of arguments is small and the order is clear, while named arguments are
+used in more complex cases especially when settings or configurations are
+involved.
+
+More interestingly, named arguments are \emph{first-class} values in Python and
+Ruby: they can be assigned to a variable. As shown at the bottom of
+\autoref{fig:python-ruby}, the variable \lstinline{args} stores the two
+arguments named \lstinline{base} and \lstinline{x}, and we can later pass it to
+\lstinline{exp} by unpacking it with \lstinline{**} (sometimes called the splat
+operator). In fact, \lstinline{args} is a dictionary in Python and similarly a
+hash in Ruby. Thus, first-class named arguments can be manipulated and passed
+around like standard data structures. This feature is widely used in Python and
+Ruby.
+
+\begin{table}
+\caption{Named arguments with different design choices in different languages.} \label{tab:survey}
+\centering
+\small
+\setlength{\tabcolsep}{1ex}
+\begin{tabular}{*{11}{c}}
+                    &Smalltalk&  Python &  Ruby   &  Racket     &  OCaml  &  C\#    &  Scala  &  Dart   &  Swift  &  CP     \\
+\midrule \midrule
+Commutativity       & \Circle & \CIRCLE & \CIRCLE & \CIRCLE     & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \Circle & \CIRCLE \\
+Optionality         & \Circle & \CIRCLE & \CIRCLE & \CIRCLE     & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE \\
+Currying            & \Circle & \Circle & \Circle & \Circle     & \CIRCLE & \Circle & \Circle & \Circle & \Circle & \Circle \\
+Distinctness        & \em n/a & \Circle & \CIRCLE & \CIRCLE     & \CIRCLE & \Circle & \Circle & \CIRCLE & \CIRCLE & \CIRCLE \\
+First-class value   & \Circle & \CIRCLE & \CIRCLE & \LEFTcircle & \Circle & \Circle & \Circle & \Circle & \Circle & \CIRCLE \\
+\midrule
+Static typing       & \Circle & \Circle & \Circle & \Circle     & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE & \CIRCLE \\
+Soundness proof     & \Circle & \Circle & \Circle & \Circle     & \CIRCLE & \Circle & \Circle & \Circle & \Circle & \CIRCLE \\
+\bottomrule
+\end{tabular}
+\vskip 1ex
+{\footnotesize
+  \emph{n/a}:  Smalltalk does not support positional arguments at all. \\
+  \LEFTcircle: Racket's support for first-class named arguments is limited and forbids commutativity.
+}
+\end{table}
+
+Including the distinctness and first-class values illustrated above, we have
+identified five important design choices found in existing languages that
+support named arguments:
+\begin{enumerate}
+\item \emph{Commutativity}: whether the order of (actual) arguments can be
+      different from that of (formal) parameters originally declared.
+\item \emph{Optionality}: whether some arguments can be omitted in a function
+      call if their default values are predefined.
+\item \emph{Currying}: whether a function that takes more than one argument is
+      always converted into a chain of functions that each take a single
+      argument.
+\item \emph{Distinctness}: whether named arguments are distinct from positional
+      ones in how they are defined and passed.
+\item \emph{First-class value}: whether named arguments are first-class values.
+\end{enumerate}
+As shown in \autoref{tab:survey}, the first two properties hold for most
+mainstream programming languages, with Smalltalk and Swift being two exceptions.
+Commutativity and optionality are so useful that we believe they should not be
+compromised. Concerning the third point, OCaml is the only language that manages
+to reconcile currying with commutativity, though at the cost of introducing a
+very complicated core calculus. We agree that currying is very useful when we
+use normal positional arguments, but we argue here that currying can be
+temporarily dropped when we use named arguments because the most common use case
+for named arguments is to represent a whole chunk of parameters like settings or
+configurations. The fourth design, distinctness, is endorsed by Ruby, Racket,
+OCaml, Dart, and Swift. It improves the readability of call sites to enforce
+keywords whenever arguments are defined to be named. We advocate distinctness in
+this work also because it simplifies the language design and allows us to focus
+on more important topics, especially type safety with first-class named
+arguments.
+
+Although named arguments are ubiquitous, they have not attracted enough
+attention in the research of programming languages. Among the few related
+papers, the work by \citet{garrigue1994label} formalizes a label-selective
+$\lambda$-calculus and eventually apply it to OCaml~\citep{garrigue2001labeled}.
+Another work by \citet{rytz2010named} discusses the design of named and optional
+arguments in Scala, but it mainly focuses on practical aspects. The core
+features of Scala are formalized in a family of DOT calculi, but named arguments
+are never included. The support for named arguments is implemented as macros in
+Racket~\citep{flatt2009keyword}. So their extension is more like userland
+syntactic sugar and requires no changes to the core compiler. Haskell does not
+support named arguments natively, but the paradigm of \emph{named arguments as
+records} is folklore. We will discuss OCaml, Scala, Racket, and Haskell in
+detail in \autoref{sec:related}. In short, named arguments are implemented in an
+ad-hoc manner and are not well founded from a type-theoretic perspective in most
+languages, especially object-oriented ones. Only OCaml and CP provide
+\emph{soundness proofs} for the feature of named arguments.
+
+An important issue that has not been explored in the literature is the
+interaction between subtyping and first-class named arguments. A naive design
+can easily lead to a type-safety issue. We will show in \autoref{sec:mypy} that
+the most widely used optional type checker for Python, mypy~\citep{mypy}, fails
+to detect a type-unsafe use of first-class named arguments. The same issue also
+exists in Ruby with Steep~\citep{steep} or Sorbet~\citep{sorbet}. It arises from
+subtyping hiding some arguments from their static type and bypassing the type
+checking for optional arguments. As a result, an optional argument may have an
+unexpected type at run time, which leads to a runtime error.
+
+In this chapter, we present a type-safe foundation for named and optional
+arguments. At the heart of our approach is the translation into a core calculus
+called \lambdaiu, which features \emph{intersection and union
+types}~\citep{barbanera1995intersection,frisch2008semantic,dunfield2014elaborating}.
+Our approach supports first-class named arguments like Python and Ruby, but the
+type-safety issue is addressed by us. The \lambdaiu calculus has been shown to
+be type-sound~\citep{rehman2023blend}, and we show that our translation from our
+source language into \lambdaiu is type-safe. Thus, we establish the type safety
+of our approach.

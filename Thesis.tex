@@ -130,24 +130,16 @@
 \usepackage{ottalt}
 \inputott{ott/lambda-r}
 \inputott{chapters/appendices/ott}
+\inputott[IU]{ott/lambda-iu}
 
 \usepackage{listings}
-\lstset{
-  columns=fullflexible,
-  basicstyle=\ttfamily\small,
-  commentstyle=\color{gray},
-  stringstyle=\color{violet},
-  keywords={else,extends,false,fix,forall,if,implements,inherits,interface,in,let,letrec,new,open,override,then,toString,trait,true,type,undefined,with,Bool,Bot,Double,Int,String,Top,Trait},
-  literate={->}{{$\rightarrow$}}1 {=>}{{$\Rightarrow$}}1 {<=}{{$\le$}}1 {>=}{{$\ge$}}1,
+\lstdefinelanguage{CP}{
+  keywords={case,else,extends,false,fix,forall,if,implements,inherits,interface,in,let,letrec,new,null,open,override,switch,then,toString,trait,true,type,undefined,with,Bool,Bot,Double,Int,Null,String,Top,Trait},
   alsoother={@},
   comment=[l]{--},
   morecomment=[n]{\{-}{-\}},
   string=[b]",
-  morestring=[b]`,
-  showstringspaces=false,
-  keepspaces=true,
-  breaklines,
-  breakatwhitespace
+  morestring=[b]`
 }
 \lstdefinelanguage{TypeScript}{
   keywords={abstract,any,as,asserts,async,await,bigint,boolean,break,case,catch,class,const,constructor,continue,debugger,declare,default,delete,do,else,enum,export,extends,false,finally,for,from,function,get,global,if,implements,import,in,instanceof,interface,is,keyof,let,module,namespace,never,new,null,number,object,of,out,package,private,protected,public,override,readonly,require,return,satisfies,set,static,string,super,switch,symbol,this,throw,true,try,type,typeof,undefined,unique,unknown,var,void,while,with,yield},
@@ -156,6 +148,18 @@
   string=[b]",
   morestring=[b]',
   morestring=[b]`
+}
+\lstset{
+  columns=fullflexible,
+  basicstyle=\ttfamily\small,
+  commentstyle=\itshape\color{gray},
+  stringstyle=\color{violet},
+  literate={->}{{$\rightarrow$}}1 {=>}{{$\Rightarrow$}}1 {<=}{{$\le$}}1 {>=}{{$\ge$}}1,
+  showstringspaces=false,
+  keepspaces=true,
+  breaklines,
+  breakatwhitespace,
+  language=CP
 }
 
 \usepackage{bbold}
@@ -171,6 +175,8 @@
 \newcommand{\lambdar}{$\lambda_r$\xspace}
 \newcommand{\fiplus}{$F_i^+$\xspace}
 \newcommand{\fsub}{$F_{<:}$\xspace}
+\newcommand{\lambdaiu}{\texorpdfstring{$\lambda_\mathsf{iu}$}{λᵢᵤ}\xspace}
+\newcommand{\uaena}{\textsc{Uaena}\xspace}
 
 %%----------------------------------------------------------------------------%%
 

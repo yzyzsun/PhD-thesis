@@ -1,1 +1,19 @@
 \chapter{Named Arguments as Intersections, Optional Arguments as Unions} \label{ch:arguments}
+
+Named and optional arguments are prevalent features in many mainstream
+programming languages, enhancing code readability and flexibility. Despite
+widespread use, their formalization has not been extensively studied.
+
+This part extends compositional programming with union types, enabling a
+type-safe foundation for named and optional arguments. We show how our encoding
+resolves a critical type-safety issue found in popular static type checkers for
+Python and Ruby, particularly in handling first-class named arguments in the
+presence of subtyping. Our approach is formalized through an elaboration from a
+functional language with named and optional arguments (\uaena) to a minimal core
+calculus with intersection and union types (\lambdaiu).
+
+\input{filtered/arguments/introduction}
+\input{filtered/arguments/background}
+\input{filtered/arguments/overview}
+\input{filtered/arguments/formalization}
+\input{filtered/arguments/related}

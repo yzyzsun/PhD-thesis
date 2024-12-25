@@ -1,0 +1,142 @@
+\section{Named and Optional Arguments: The Bad Parts}
+
+Since named and optional arguments are not well studied in most languages, the
+ad-hoc mechanisms employed in those languages may sometimes surprise programmers
+or even cause safety issues.
+
+\subsection{Gotcha! Mutable Default Arguments in Python} \label{sec:mut}
+
+Let us consider a simple Python function that appends an element to a list. We
+provide a default value for the list, which is an empty list:
+
+\begin{multicols}{2}
+\begin{lstlisting}[language={[3]Python}]
+def append(x, xs=[]):
+  xs.append(x)
+  return xs
+append(1) #= [1]
+append(2) #= [1, 2]
+\end{lstlisting}
+\end{multicols}
+
+\noindent
+After calling \lstinline{append(1)} above, we get the expected result
+\lstinline{[1]}. However, continuing to call \lstinline{append(2)} gives us
+\lstinline{[1, 2]} instead of \lstinline{[2]}. This is because Python only
+evaluates the default value once when the function is defined, so the same list
+initialized for \lstinline{xs} is shared across different calls to
+\lstinline{append}. When calling \lstinline{append(2)}, the default value for
+\lstinline{xs} is no longer an empty list but the list that has been modified by
+the previous call \lstinline{append(1)}.
+
+This issue, while seemingly minor, highlights the importance of understanding
+the semantics of default arguments. Our design strives to avoid such surprises,
+following the principle of least astonishment, yet this is not our main focus.
+We will discuss the more critical issue about type safety next.
+
+\subsection{Caution! Type Safety with First-Class Named Arguments} \label{sec:mypy}
+
+As we have shown in \autoref{fig:python-ruby}, quite a few languages, especially
+dynamically typed ones like Python and Ruby, treat named arguments as
+first-class values. This feature is particularly helpful for passing settings
+because they are usually stored in a separate configuration file. We can read
+the settings from the file and pass them as named arguments using the
+\lstinline{**} operator. For example, we can find such code in Python to run a
+web server:
+\begin{lstlisting}[language={[3]Python}]
+class App: # from a web server library
+  def run(self, host: str, port: int, debug: bool = False):
+    assert isinstance(debug, bool) # actual code omitted...
+
+args = { "host": "0.0.0.0", "port": 80, "debug": True }
+app.run(**args) #= app.run(host="0.0.0.0", port=80, debug=True)
+\end{lstlisting}
+Although Python is dynamically typed, there is continuous effort in the Python
+community to improve the detection of type errors earlier in the development
+process, primarily through static analysis. There is an optional static type
+checker for Python called mypy~\citep{mypy}.\footnote{We are using the latest
+version of mypy 1.11.2.} In the example above, we make use of \emph{type hints},
+introduced in Python 3.5, to specify the types of the parameters and the return
+value of the \lstinline{run} method. The type hints have no effect at run time
+but can be used by external tools like mypy to statically check if the code is
+well-typed. Perhaps surprisingly, the code above cannot pass mypy's type
+checking, because the type inferred for \lstinline{args} (i.e.
+\lstinline{dict[str,object]}) is not precise enough. The type checker needs to
+know what keys \lstinline{args} exactly has and what types the values associated
+with those keys have, in order to make sure that \lstinline{**args} is
+compatible with the parameters of \lstinline{app.run}.
+
+Fortunately, \lstinline{TypedDict} is added in Python 3.8 to represent a
+specific set of keys and their associated types. By default, every specified key
+is required, except when it is marked as \lstinline{NotRequired}, which is a
+type qualifier added later in Python 3.11. With \lstinline{TypedDict} and
+\lstinline{NotRequired}, we can now define a precise dictionary type for
+\lstinline{args} that passes mypy's type checking:
+\begin{lstlisting}[language={[3]Python}]
+class Args(TypedDict):
+  host: str
+  port: int
+  debug: NotRequired[bool]
+
+args0: Args = { "host": "0.0.0.0", "port": 80, "debug": True }
+app.run(**args0) # type-checks in mypy
+args1: Args = { "host": "0.0.0.0", "port": 80 }
+app.run(**args1) # type-checks in mypy, too
+\end{lstlisting}
+The mypy type checker will raise an error if we provide an argument with an
+incompatible type, such as a string for the \lstinline{debug} key:
+\begin{lstlisting}[language={[3]Python}]
+class In(TypedDict):
+  host: str
+  port: int
+  debug: str
+
+args2: In = { "host": "0.0.0.0", "port": 80, "debug": "Oops!" }
+app.run(**args2) # TypeError: Argument "debug"
+# has incompatible type "str"; expected "bool"  [arg-type]
+\end{lstlisting}
+However, mypy's type system is not completely type-safe. We can create a
+function \lstinline{f} that takes a dictionary with three keys specified in type
+\lstinline{In} and returns a dictionary with only two keys specified in type
+\lstinline{Out}. The function type-checks in mypy because type \lstinline{In} is
+compatible whenever type \lstinline{Out} is expected. Roughly speaking, it means
+that \lstinline{In} is a subtype of \lstinline{Out}. Then we can use
+\lstinline{f} to forget the \lstinline{debug} key in the static type:
+\begin{lstlisting}[language={[3]Python}]
+class Out(TypedDict):
+  host: str
+  port: int
+
+def f(args: In) -> Out: return args
+
+args3 = f(args2) # still contains { "debug": "Oops!" }
+app.run(**args3) # type-checks in mypy, but has a runtime error!
+\end{lstlisting}
+Here \lstinline{args3} has type \lstinline{Out} without the \lstinline{debug}
+key specified. From a static viewpoint, \lstinline{args3} only has two keys
+\lstinline{host} and \lstinline{port}, which are compatible with the parameters
+of \lstinline{app.run} since \lstinline{debug} is optional and has a default
+value. That is why \lstinline{app.run(**args3)} type-checks in mypy. However, at
+run time, the \lstinline{debug} key is still present in \lstinline{args3}, so
+the string \lstinline{"Oops!"} is passed as a named argument to
+\lstinline{app.run}, which originally expects a boolean value. This results in a
+runtime error since there is an assertion in \lstinline{app.run} to ensure that
+\lstinline{debug} is boolean.
+
+This issue is not unique to Python and mypy. We have reproduced nearly the same
+issue in Ruby with two popular type checkers, namely Steep~\citep{steep} and
+Sorbet~\citep{sorbet}, which is illustrated in \hyperref[sec:ruby]{Appendices
+A\&B}.\footnote{Our code is tested against the latest versions of Steep 1.8.1
+and Sorbet 0.5.11600.}
+
+In conclusion, subtyping can lead to a fundamental type-safety issue when
+dealing with first-class named and optional arguments. In essence, the following
+subsumption chain is questionable:
+\begin{lstlisting}[language={[3]Python}]
+   { host: str, port: int, debug: str }
+<: { host: str, port: int }
+<: { host: str, port: int, debug?: bool }
+\end{lstlisting}
+Following this chain bypasses mypy's type compatibility checking for the
+\lstinline{debug} key. Next we will show how to break the chain and address the
+type-safety issue.

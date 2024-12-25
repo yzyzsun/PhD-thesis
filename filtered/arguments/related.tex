@@ -1,0 +1,370 @@
+\section{Discussion} \label{sec:related}
+
+In this section, we first discuss OCaml, the only language we know of that has
+well-studied support for named and optional arguments, though its mechanism does
+not go well with higher-order functions. Then we briefly show how named
+arguments are handled very differently in Scala and Racket. After that, we
+illustrate how named arguments can be encoded as records in Haskell while not
+natively supported. Finally, we discuss two more approaches we find in record
+calculi~\citep{ohori1995polymorphic,osinski2006polymorphic}. We will also
+explain why all these approaches have drawbacks.
+
+\subsection{OCaml}
+
+OCaml did not support named arguments originally. Nevertheless,
+\citet{garrigue1994label} conducted research on the label-selective
+$\lambda$-calculus and implemented it in OLabl~\citep{olabl}, which extends
+OCaml with labeled and optional arguments, among others. All features of OLabl
+were merged into OCaml 3, despite subtle
+differences~\citep{garrigue2001labeled}.
+
+Here is an example of the exponential function defined in a labeled style:
+
+\begin{lstlisting}[language={[Objective]Caml}]
+let exp ?(base = Float.exp 1.0) x = base ** x
+(* val exp : ?base:float -> float -> float *)
+exp 10.0              (*= e^10. *)
+exp 10.0 ~base:2.0    (*= 1024. *)
+(exp 10.0) ~base:2.0  (* TypeError! *)
+\end{lstlisting}
+
+\noindent In the definition of \lstinline{exp}, \lstinline{base} is an optional
+labeled parameter while \lstinline{x} is a positional parameter. Changing
+\lstinline{x} into a second labeled parameter will trigger an
+unerasable-optional-argument warning because OCaml expects that there should be
+a positional parameter after all optional parameters. This expectation is at the
+heart of how OCaml resolves the ambiguity introduced by currying.
+
+For example, consider the function application \lstinline{exp 10.0}. Is it a
+partially applied function or a fully applied one using the default value of
+\lstinline{base}? Both interpretations are possible, but OCaml considers it to
+be a full application because the trailing positional argument \lstinline{x} is
+given. The presence of the positional argument is used to indicate that the
+optional arguments before it can be replaced by their default values. However,
+this design may confuse users since \lstinline{(exp 10.0) ~base:2.0} will raise
+a type error but \lstinline{exp 10.0 ~base:2.0} will not. Partial application
+does not lead to an equivalent program in such situations.
+
+\paragraph{Option Types.}
+In OCaml, an optional argument is internally represented as an \lstinline{option}
+type, which comprises two constructors: \lstinline{None} and \lstinline{Some}.
+Here is an equivalent definition for \lstinline{exp}:
+
+\begin{lstlisting}[language={[Objective]Caml}]
+let exp ?(base : float option) x =
+  let base = match base with
+             | None -> Float.exp 1.0
+             | Some b -> b in
+  base ** x
+(* val exp : ?base:float -> float -> float *)
+exp 10.0            (*> exp 10.0 ~base:None *)
+exp 10.0 ~base:2.0  (*> exp 10.0 ~base:(Some 2.0) *)
+\end{lstlisting}
+
+\noindent This encoding is similar to union types, but it depends on the
+\lstinline{option} type in the standard library. Unfortunately, this specific
+kind of \lstinline{option} is not a built-in type in many mainstream languages,
+especially in those languages that do not support algebraic data types.
+
+\paragraph{Higher-Order Functions.}
+A surprising gotcha in OCaml is that the commutativity breaks down when we pass
+a function with labeled arguments to another function. \emph{Real World
+OCaml}~\citep{madhavapeddy2022real} gives the following example:
+\begin{lstlisting}[language={[Objective]Caml}]
+let apply1 f (fst,snd) = f ~fst ~snd
+(* val apply1 : (fst:'a -> snd:'b -> 'c) -> 'a * 'b -> 'c *)
+let apply2 f (fst,snd) = f ~snd ~fst
+(* val apply2 : (snd:'a -> fst:'b -> 'c) -> 'b * 'a -> 'c *)
+let divide ~fst ~snd = fst / snd
+(* val divide : fst:int -> snd:int -> int *)
+apply1 divide (48,3)  (*= 16 *)
+apply2 divide (48,3)
+(* TypeError: "divide" has type fst:int -> snd:int -> int
+       but was expected of type snd:'a -> fst:'b -> 'c *)
+\end{lstlisting}
+Normally, the order of named arguments does not matter in OCaml, so it
+type-checks whether we call \lstinline{divide ~fst ~snd} or
+\lstinline{divide ~snd ~fst}. However, order matters when we pass
+\lstinline{divide} to a higher-order function. That is why
+\lstinline{apply1 divide} type-checks while \lstinline{apply2 divide} does not.
+It turns out that the OCaml way of handling labeled arguments does not go well
+with other features like higher-order functions. Our approach scales better in
+this regard and the commutativity still holds in higher-order contexts via
+intersection subtyping.
+
+In short, OCaml has a very powerful label-selective core calculus that
+reconciles commutativity and currying, but it is quite complicated and may
+hinder its integration with other language features. Another thing worth
+mentioning is that labeled arguments in OCaml are not first-class values, so
+they cannot be assigned to a variable or passed around by functions. In contrast
+to OCaml, our approach supports first-class named arguments and targets a
+minimal core calculus with intersection and union types, which is compatible
+with many popular languages like Python, Ruby, JavaScript, etc.
+
+\subsection{Scala}
+
+\citet{rytz2010named} described the design of named and default arguments in
+Scala. Like in Python, parameter names in a method definition are non-mandatory
+keywords in Scala, and thus every argument can be passed with or without
+keywords. Furthermore, the parameter names are not part of the public interface
+of a method. This design is partly due to the backward compatibility with
+earlier versions of Scala, so the addition of named arguments will not break any
+existing code. As a result of the conservative treatment, named arguments are
+not first-class values in Scala and cannot be defined in an anonymous function.
+In short, named arguments are more like syntactic sugar in Scala and do not
+interact with the type system.
+
+Below we show an example in Scala. In order to let the default value of
+\lstinline{c} depend on \lstinline{a} and \lstinline{b}, we make the function
+partly curried:
+\begin{lstlisting}[language=Scala]
+def f(a: Int, b: Int)(c: Int = a+b) = c
+f(b = 1+1, a = 1)()
+\end{lstlisting}
+The code will be translated to equivalent code without keywords or defaults:
+\begin{lstlisting}[language=Scala]
+def f(a: Int, b: Int)(c: Int) = c
+def f$default$3(a: Int, b: Int): Int = a+b
+{
+  val x$1 = 1+1
+  val x$2 = 1
+  val x$3 = f$default$3(x$2, x$1)
+  f(x$2, x$1)(x$3)
+}
+\end{lstlisting}
+There are two things to note here. First, a new function \lstinline{f$default$3}
+is generated for the default value of \lstinline{c}, taking two parameters
+\lstinline{a} and \lstinline{b}. Second, the call site is translated to a series
+of variable assignments for each argument and a keyword-free call to
+\lstinline{f} with arguments reordered. The whole call site is wrapped in a
+block to avoid polluting the namespace.
+
+In conclusion, named arguments in Scala are handled in a very different way from
+OCaml and our approach. The Scala way is more syntactic than type-theoretic, so
+it is hard to do an apples-to-apples comparison with our approach.
+
+\subsection{Racket}
+
+\lstdefinelanguage{Racket}[]{Lisp}{
+  morekeywords={define,lambda,keyword-apply,Number},
+  literate={\#:a}{{\textbf{\color{darkgray}\#:a}}}1 {\#:b}{{\textbf{\color{darkgray}\#:b}}}1 {\#:c}{{\textbf{\color{darkgray}\#:c}}}1
+           {->*}{{$\rightarrow^*$}}1
+}
+
+\citet{flatt2009keyword} introduced keyword and optional arguments into Racket,
+which was known as PLT Scheme at that time. A keyword is prefixed with
+{\color{gray}\lstinline{#:}} in syntax and is implemented as a new built-in type
+in Racket. Keyword arguments are supported by replacing
+\lstinline[language=Racket]{define}, \lstinline[language=Racket]{lambda}, and
+the core application form with newly defined macros that recognize
+keyword-argument forms. Here is an example of a function \lstinline{f} with
+three keyword arguments \lstinline{a}, \lstinline{b}, and \lstinline{c}, among
+which \lstinline{c} is optional and defaults to \lstinline{a+b}:
+\begin{lstlisting}[language=Racket]
+(define (f #:a a #:b b #:c [c (+ a b)]) c)
+(f #:b (+ 1 1) #:a 1)
+\end{lstlisting}
+The function call with keywords seems hard to implement because it just lists
+the function and arguments in juxtaposition. In fact, an application form in
+Racket implicitly calls \lstinline{#%app} in its lexical scope, so the support
+for keyword arguments is done by supplying an \lstinline{#%app} macro. A new
+\lstinline[language=Racket]{keyword-apply} function is also defined to accept
+keyword arguments as first-class values. For example, we can rewrite the
+function call above as follows\footnote{\lstinline[language=Racket]{'} is
+\lstinline{quote}, \lstinline[language=Racket]{`} is \lstinline{quasiquote}, and
+\lstinline[language=Racket]{,} is \lstinline{unquote} in Racket.}:
+\begin{lstlisting}[language=Racket]
+(keyword-apply f '(#:a #:b) `(1 ,(+ 1 1)) '()) ; OK!
+(keyword-apply f '(#:b #:a) `(,(+ 1 1) 1) '()) ; Contract violation!
+\end{lstlisting}
+Note that we need to separate keywords and corresponding arguments into two
+lists. The third list is for positional arguments, so it is empty in this case.
+We cannot list keywords in arbitrary order: a contract violation will be
+signaled unless the keywords are sorted in alphabetical order. In other words,
+commutativity is lost for first-class keyword arguments in Racket.
+
+In Typed Racket~\citep{typedracket}, Racket's gradually typed sister language,
+\lstinline{f} can be typed as
+\lstinline[language=Racket]{(->* (#:a Number #:b Number) (#:c Number) Number)}.
+The first list contains the required arguments
+(\lstinline[language=Racket]{#:a} and \lstinline[language=Racket]{#:b}), and the
+second list contains the optional ones (\lstinline[language=Racket]{#:c}). However,
+Typed Racket does not provide a typed version of
+\lstinline[language=Racket]{keyword-apply}, and it is unclear how to properly type it.
+
+In conclusion, Racket supports keyword and optional arguments in a unique way
+via its powerful macro system. However, the support for first-class keyword arguments
+is very limited and cannot easily transfer to a type-safe setting.
+
+\subsection{Haskell}
+
+\begin{figure}[b!]
+\begin{subfigure}{0.45\textwidth}
+\begin{lstlisting}[language=Haskell]
+data Settings = Settings
+  { settingsPort :: Port
+  , settingsHost :: HostPreference
+  , settingsTimeOut :: Int
+  , ...
+  }
+\end{lstlisting}
+\caption{Record type.} \label{fig:settings}
+\end{subfigure}
+\hfill
+\begin{subfigure}{0.35\textwidth}
+\begin{lstlisting}[language=Haskell]
+defaultSettings = Settings
+  { settingsPort = 3000
+  , settingsHost = "*4"
+  , settingsTimeout = 30
+  , ...
+  }
+\end{lstlisting}
+\caption{Default values.} \label{fig:default}
+\end{subfigure}
+\par\bigskip
+\begin{subfigure}{\textwidth}
+\begin{lstlisting}[language=Haskell]
+runSettings :: Settings -> Application -> IO ()
+runSettings = ...
+
+main :: IO ()
+main = runSettings settings app
+  where settings = defaultSettings { settingsPort = 4000, settingsHost = "*6" }
+\end{lstlisting}
+\caption{Updating some settings before running a server application.} \label{fig:update}
+\end{subfigure}
+\caption{Named arguments as records in Haskell.}
+\end{figure}
+
+Unlike the aforementioned languages, Haskell does not support named arguments
+natively. However, the paradigm of \emph{named arguments as records} has long
+existed in the Haskell community. Although we have to uncurry a function to have
+all parameters labeled in a record, it is clearer and more human-readable,
+especially when different parameters have the same type. For example, in the web
+server library \emph{warp}~\citep{warp}, various server settings are bundled in
+the data type \lstinline{Settings}, as shown in \autoref{fig:settings}. It is
+obvious how named arguments correspond to record fields, but it needs some
+thought on how to encode default values for optional arguments. The simplest
+approach, also used by \emph{warp}, is to define a record
+\lstinline{defaultSettings}, as shown in \autoref{fig:default}. Users can update
+whatever fields they want to change while keeping others. For example, we update
+\lstinline{settingsPort} and \lstinline{settingsHost} while keeping the rest
+unchanged in \autoref{fig:update}. Finally, we call the library function
+\lstinline{runSettings} with the updated \lstinline{settings} to run a server.
+
+Such an approach works fine here but still has two drawbacks. The first issue is
+the dependency on \lstinline{defaultSettings}. It is awkward for users to look
+for a record containing particular default values, especially when there are a
+few similar records in a library. A better solution is to change the parameter
+of \lstinline{runSettings} from a complete \lstinline{Settings} to a function
+that updates \lstinline{Settings}:
+
+\begin{lstlisting}[language=Haskell]
+runSettings' :: (Settings -> Settings) -> Application -> IO ()
+runSettings' update = runSettings (update defaultSettings)
+
+main :: IO ()
+main = runSettings' update app
+  where update settings = settings { settingsPort = 4000, settingsHost = "*6" }
+\end{lstlisting}
+
+\noindent With the new interface, users do not need to look for default values
+anymore. However, this design still has a second drawback: all arguments must
+have default values. Usually, we do not consider every argument to be optional.
+For example, we may want to require users to fill in \lstinline{settingsPort}. A
+workaround employed by \lstinline{SqlBackend} in the library
+\emph{persistent}~\citep{persistent} is to have another function that asks for
+required arguments and supplements default values for optional arguments:
+
+\begin{lstlisting}[language=Haskell]
+{-# language DuplicateRecordFields, RecordWildCards #-}
+
+data ReqSettings = ReqSettings { settingsPort :: Port }
+
+mkSettings :: ReqSettings -> Settings
+mkSettings ReqSettings {..} =
+              Settings { settingsHost = "*4", settingsTimeout = 30, .. }
+\end{lstlisting}
+
+\paragraph{Best Practice.}
+Although \lstinline{mkSettings} resolves the second issue, there is a regression
+concerning the first issue: users have to look for \lstinline{mk*} functions
+now. Fortunately, we can harmonize both design patterns to develop a third
+approach:
+
+\begin{lstlisting}[language=Haskell]
+{-# language DuplicateRecordFields, RecordWildCards #-}
+
+data OptSettings = OptSettings { settingsHost :: HostPreference
+                               , settingsTimeOut :: Int }
+
+runSettings'' :: (OptSettings -> Settings) -> Application -> IO ()
+runSettings'' update = runSettings (update defaultSettings)
+  where defaultSettings = OptSettings { settingsHost = "*4"
+                                      , settingsTimeout = 30 }
+
+main :: IO ()
+main = runSettings'' update app
+  where update OptSettings {..} =
+                  Settings { settingsPort = 4000, settingsHost = "*6", .. }
+\end{lstlisting}
+
+\noindent This last approach is probably the best practice in Haskell, though it
+is already quite complicated and requires two GHC language extensions. Of
+course, there could be other approaches to encoding named and optional arguments
+in Haskell. Users could get confused about the various available design
+patterns. This is largely due to lack of language-level support. We believe it
+is better for a language to natively support named and optional arguments.
+
+\paragraph{Sidenote.}
+The design pattern of \emph{named arguments as records} can also be found in
+other functional languages like Standard ML, Elm, and PureScript, just to name a
+few. It is worth mentioning that these languages have first-class support for
+record types, so no separate type declarations are needed like in
+\autoref{fig:settings}. However, they still suffer from lack of native support
+for optional arguments.
+
+\subsection{Record Calculi}
+
+\citet{ohori1995polymorphic} discussed how to model optional arguments in the
+future work of his seminal paper on compiling a polymorphic record calculus. He
+proposed to extend a record calculus with optional-field selection
+($e.\ell\;?\;d$) which behaves like $e.\ell$ if $\ell$ is present in the record
+$e$ or evaluates to $d$ otherwise. However, his proposal is subject to a similar
+type-safety issue as mypy. The static type of $e$ can easily lose track of the
+optional field $\ell$ and fail to ensure that $e.\ell$ has the same type as $d$
+at run time. Since \citeauthor{ohori1995polymorphic} did not explicitly mention
+how to type-check optional-field selection, we cannot make any firm conclusion
+about the type safety of his proposal.
+
+\citet{osinski2006polymorphic} also discussed the support for optional arguments
+in Section 3.5 of his dissertation on compiling record concatenation. His
+approach is based on row polymorphism and makes use of a sort of predicate on
+rows: $\mathit{row}_1\blacktriangleright\mathit{row}_2$, which means that
+$\mathit{row}_1$ consists of all the fields in $\mathit{row}_2$. With this
+predicate, a function has type
+$\forall\rho.\;\mathit{row}_o\blacktriangleright\rho\Rightarrow\{\mathit{row}_r,\rho\}\to\tau$
+if the required and optional arguments are denoted by $\mathit{row}_r$ and
+$\mathit{row}_o$, respectively. Roughly speaking, it means the parameter has a
+type between $\{\mathit{row}_r\}$ and $\{\mathit{row}_r,\mathit{row}_o\}$. At
+the term level, he introduced a compatible concatenation operator
+\lstinline{|&|}, which allows overlapping fields with the same types and prefers
+the fields on the right-hand side when overlapping occurs. An example of their
+translation is as follows:
+\begin{lstlisting}[language=Caml]
+fun add { x, y = 0 } = ...
+(* is translated to *)
+fun add r = let r' = { y = 0 } |&| r in
+            let x = r'.x in
+            let y = r'.y in ...
+\end{lstlisting}
+His approach is free from the type-safety issue, though based on a more
+sophisticated row-polymorphic system. There are two sorts of predicates and
+three variants of record concatenation operators in his calculus, for example,
+demonstrating some sophistication of his calculus.
+
+It is worth noting that neither \citeauthor{ohori1995polymorphic}'s nor
+\citeauthor{osinski2006polymorphic}'s calculus supports subtyping. This is a
+significant limitation since subtyping is a common feature in many popular
+languages, especially object-oriented languages.

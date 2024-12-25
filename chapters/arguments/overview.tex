@@ -1,0 +1,288 @@
+\section{Our Type-Safe Approach}
+
+In this section, we informally present how we translate named and optional
+arguments into a core language with intersection and union types, while
+retaining type safety. We start by introducing the core language constructs that
+we need. Then we illustrate our translation scheme by example and demonstrate
+how it recovers type safety. After that, we showcase a practical example in the
+CP language, which has incorporated our approach to support named and optional
+arguments. Finally, we discuss how our translation scheme can be applied to
+other languages.
+
+\subsection{Core Language} \label{sec:core}
+
+The core language features intersection and union types, which establish an
+elegant duality in the type system. Intersection and union types correspond to
+the logical conjunction and disjunction respectively. Intersections are used to
+combine multiple types, while unions are used to express alternatives. Similar
+calculi are widely
+studied~\citep{barbanera1995intersection,frisch2008semantic,dunfield2014elaborating}
+and provide a well-understood foundation for named and optional arguments.
+
+\paragraph{Named Arguments as Intersections.}
+Named arguments are translated to multi-field records. However, the core
+language does not support multi-field records directly. There are only
+single-field records in the core language, and multiple fields are represented
+as intersections of single-field record types. For example,
+$[[{x:Int}&{y:Int}]]$ represents a record type with two integer fields $x$ and
+$y$. With intersection types, width subtyping for record types comes for free,
+and permutations of record fields are naturally
+allowed~\citep{reynolds1997design}.
+
+At the term level, a merge
+operator~\citep{dunfield2014elaborating,rehman2023blend} is used to concatenate
+multiple single-field records to form multi-field records, reminiscent of
+Forsythe~\citep{reynolds1997design}. For example, $[[{x=1},,{y=2}]]$ forms a
+two-field record from two single-field records.
+
+\paragraph{Optional Arguments as Unions.}
+Optional arguments are translated to nullable types. A nullable type is not
+implicit in the core language but is represented as a union with the null
+type~\citep{nieto2020scala}. For example, an optional integer argument named $z$
+is translated to $[[{z:Int|Null}]]$.
+
+At the term level, a type-based switch
+expression~\citep{frisch2008semantic,rehman2023blend} is used to scrutinize a
+term of a union type, reminiscent of ALGOL~68~\citep{van1975revised}. For
+example, $[[switch z case Int => e1 case Null => e2]]$ returns $[[e1]]$ if $z$
+is an integer or $[[e2]]$ if $[[null]]$.
+
+\subsection{Translation by Example} \label{sec:example}
+
+Let us review the previous Python function in \autoref{sec:mut} that appends an
+element to a list, which defaults to an empty list:
+\begin{lstlisting}[language={[3]Python}]
+def append(x: int, xs: list[int] = []): ...
+\end{lstlisting}
+The function will be translated to a core function as follows:
+\begin{align*}
+\mathtt{append} =~& [[ \args: {x:Int}&{xs:[Int]|Null}. nothing]] \\
+                  & [[ let x = args.x in ]] \\
+                  & [[ let xs = switch args.xs as xs case Int => xs case Null => [||] in ]] \\
+                  & \cdots
+\end{align*}
+Here we can see that the default value (i.e. the empty list) is not shared
+across different calls to \lstinline{append} because the default value is
+evaluated within the function body. Therefore, calling \lstinline{append(x=1)}
+will consistently return \lstinline{[1]} instead of surprisingly modifying the
+default value. This design leads to less astonishment and more predictable
+behavior.
+
+Since we translate named parameter types to record types, we correspondingly
+translate named arguments to records. For example, the function call
+\lstinline{append(x=1, xs=[0])} will be translated to {\small
+$\mathtt{append}\,[[({x=1},,{xs=[0]})]]$}.
+
+\paragraph{Rewriting Call Sites.}
+More importantly, we also rewrite call sites to add null values for absent
+optional arguments. For example, the function call \lstinline{append(x=1)} will
+be rewritten and translated to {\small
+$\mathtt{append}\,[[({x=1},,{y=null})]]$}.
+
+\paragraph{Dependent Default Values.}
+Another advantage of our translation scheme is that it naturally allows default
+values to depend on earlier arguments. Python and Ruby do not support dependent
+default values, but this feature can be useful in some practical scenarios. For
+example, when setting up I/O, we may want to output error messages to the same
+stream as \lstinline{out} by default:
+\begin{lstlisting}[language={[3]Python}]
+def setIO(in_, out, err = out): ...
+\end{lstlisting}
+The variable \lstinline{out} can be used in the default value of \lstinline{err}
+because it has been brought into scope by the previous let-in binding:
+\begin{align*}
+& [[ let out = args.out in]] \\
+& [[ let err = switch args.err as err case IO => err case Null => out in ]]
+\end{align*}
+
+\subsection{Recovering Type Safety}
+
+The type safety of our translation scheme is essentially guaranteed by call site
+rewriting. Besides adding null values for absent optional arguments, we also
+sanitize arguments to ensure that they are expected from the parameter list.
+Since named arguments are first-class and can be passed as a variable, we may
+not have literals like \lstinline{append(x=1, xs=[0])} but splats like
+\lstinline{append(**args)}. So the matching between (formal) parameters and
+(actual) arguments is performed based on their static types:
+\begin{itemize}
+\item If \lstinline{args} has type $[[{x:Int}&{xs:[Int]}]]$, the call site will be
+      rewritten to something equivalent to \lstinline{append(x=args.x, xs=args.xs)}.
+\item If \lstinline{args} only has type $[[{x:Int}]]$, the call site will be
+      rewritten to something equivalent to \lstinline{append(x=args.x, xs=null)}.
+\end{itemize}
+For the \lstinline{append} function, no other cases can pass the sanitization process.
+
+Let us review the previous type-unsafe Python example in \autoref{sec:mypy}:
+\begin{lstlisting}[language={[3]Python}]
+def f(args: In) -> Out: return args
+args = f({ "host": "0.0.0.0", "port": 80, "debug": "Oops!" })
+app.run(**args) #= app.run(host="0.0.0.0", port=80, debug="Oops!")
+\end{lstlisting}
+Recall that \lstinline{args} has type \lstinline{Out}, which is similar to
+\lstinline|{ host: str, port: int }|. The \lstinline{debug} key is forgotten in
+the static type but is still present at run time. It passes mypy's type checking
+but raises a runtime error. In our translation scheme, the call site will be
+rewritten to the following form based on the type of \lstinline{args} (i.e.
+\lstinline{Out}):
+\begin{lstlisting}[language={[3]Python}]
+app.run(host=args.host, port=args.port, debug=null)
+\end{lstlisting}
+Therefore, type safety is recovered in our translation scheme.
+
+\paragraph{Takeaways.}
+There are two important observations from our translation scheme:
+\begin{enumerate}
+\item \lstinline|{ required: A, optional?: B }| is not equivalent to
+      \lstinline|{ required: A }| because the former contains more information
+      that prevents \lstinline{optional} from being associated with other types
+      than \lstinline{B}. In other words, the \lstinline{optional} argument can
+      be absent, but if it is present, it must have type \lstinline{B}.
+\item Corresponding to the above observation at the type level, we explicitly
+      pass a null value as an optional argument if it is statically missing. The
+      null value fills the position of a potentially forgotten argument that may
+      have a wrong type. In other words, we implement the splat operator as per
+      the static type of named arguments.
+\end{enumerate}
+
+\subsection{Implementation in the CP Language}
+
+Our approach to named and optional arguments has been implemented in the CP
+language. CP supports not only intersection and union types but also the merge
+operator and type-based switch expression. The implementation of named and
+optional arguments in CP is a direct application of our translation scheme.
+
+More interestingly, the sanitization process during call site rewriting comes
+for free because CP employs a \emph{coercive} semantics for
+subtyping~\citep{luo2013coercive}. For example, a subtyping relation between
+\lstinline[language={[3]Python}]|{ host: str, port: int, debug: str }| and
+\lstinline[language={[3]Python}]|{ host: str, port: int }| implies a coercion
+function from subtype to supertype. In CP, such coercions are implicitly
+inserted to remove the forgotten fields (e.g. \lstinline{debug} in this case).
+Therefore, the only remaining work is to add null values for absent optional
+arguments.
+
+\begin{figure}[b!]
+\begin{lstlisting}[language=CP]
+-- from a SVG library in CP
+SVG: { width: Int; height: Int } -> [Element] -> Graphic;  -- <svg>
+Rect: { x: Int; y: Int; width: Int; height: Int
+      ; rx?: Int; ry?: Int; color?: String } -> Element;   -- <rect>
+......
+-- client code
+fractal { level = 4; x: Int; y: Int; width: Int; height: Int } =
+  let args = { level = level-1; width = width/3; height = height/3 } in
+  let center = Rect (args,{ x = x + width/3; y = y + height/3
+                          ; color = "white" }) in
+  if level == 0 then [center]
+  else fractal (args,{ x = x;             y = y })
+    ++ fractal (args,{ x = x + width/3;   y = y })
+    ++ fractal (args,{ x = x + width*2/3; y = y })
+    ++ fractal (args,{ x = x;             y = y + height/3 })
+    ++ [center]
+    ++ fractal (args,{ x = x + width*2/3; y = y + height/3 })
+    ++ fractal (args,{ x = x;             y = y + height*2/3 })
+    ++ fractal (args,{ x = x + width/3;   y = y + height*2/3 })
+    ++ fractal (args,{ x = x + width*2/3; y = y + height*2/3 });
+init = { x = 0; y = 0; width = 600; height = 600; color = "black" };
+main = SVG init ([Rect init] ++ fractal init);
+\end{lstlisting}
+\caption{Sierpiński carpets implemented in the CP language.} \label{fig:fractal}
+\end{figure}
+
+To demonstrate the use of named and optional arguments in CP, we show a fractal
+example in \autoref{fig:fractal}, which is adapted from code in
+\autoref{sec:fractal}. The code makes use of named and optional arguments a lot,
+including both the \lstinline{SVG}/\lstinline{Rect} constructors from the
+library and the \lstinline{fractal} function defined by the client. For example,
+\lstinline{fractal} has five named arguments (\lstinline{level}, \lstinline{x},
+\lstinline{y}, \lstinline{width}, and \lstinline{height}), among which
+\lstinline{level} is optional with a default value of \lstinline{4}.
+
+It is worth noting that named arguments are used as first-class values in the CP
+code. On the first line of the \lstinline{fractal} body, we store three fields
+\lstinline{level}, \lstinline{width}, and \lstinline{height} in a variable
+\lstinline{args}, which are shared arguments for later calls. When constructing
+the center rectangle, we merge \lstinline{args} with three more fields
+\lstinline{x}, \lstinline{y}, and \lstinline{color} to form a full set of named
+arguments we need for the \lstinline{Rect} constructor. When recursively calling
+\lstinline{fractal}, we pass \lstinline{args} merged with different
+\lstinline{x} and \lstinline{y} values to draw the eight sub-copies. In the
+\lstinline{main} function, we also use a variable \lstinline{init} to avoid
+repeating the same set of arguments for \lstinline{SVG}, \lstinline{Rect}, and
+\lstinline{fractal} calls. The \lstinline{**} operator is not needed in CP when
+passing first-class named arguments. Note that the parameter lists of these
+three constructors/functions are not completely the same, but we can still use a
+larger set of named arguments to cover all the cases. This is possible because
+CP allows subtyping for named arguments while retaining type safety.
+
+\subsection{Applications to Other Languages}
+
+Although we base our translation scheme on a core language with intersection and
+union types for type-theoretic solidness and elegance, it can work for a wider
+range of languages. We discuss the alternatives to intersections and unions
+below.
+
+\paragraph{Alternative to Intersections.}
+Record types have existed long before intersection types were invented. In
+practice, multi-field records are rarely represented as intersections of
+single-field records. For example, \emph{Software Foundations}~\citep{plf}
+demonstrates how to directly model multi-field records and define depth, width,
+and permutation subtyping without intersections, though their formalization is
+more complex than ours.
+
+There is a merge operator in our translation scheme, but we only use it to
+construct multi-field records statically. Although the merge operator can be
+powerful if we want to construct first-class named arguments at run time like in
+CP, its absence does not disable our translation scheme. In other words, we only
+assume a simplified version that does not merge terms dynamically.
+
+\paragraph{Alternative to Unions.}
+Nullable types are rarely represented as unions with the null type too. For
+example, C\#, Kotlin, and Dart support nullable types as a primitive data
+structure. Putting a question mark behind any type makes it nullable in these
+languages (e.g. \lstinline{int?}).
+
+No matter how a nullable type is represented, there is usually some expression
+that can check whether a nullable value is null or not. For example, C\#
+provides the \lstinline[language={[Sharp]C}]{is} operator to examine the runtime
+type, which is generally known as type introspection and is similar to the
+type-based switch. C\# also provides the null coalescing operator \lstinline{??}
+and simplifies the common pattern $[[switch e as x case A => x case Null => d]]$
+as \lstinline{e??d} for nullable values.
+
+\subsubsection{Dynamically Typed Languages.}
+It may be surprising at first sight that dynamically typed languages can benefit
+from our work with static typing, but recall that the type-safety issue in
+\autoref{sec:mypy} was found in Python. Nowadays, popular dynamically typed
+languages have been retrofitted with gradual typing. For example, Python has
+type hints and mypy~\citep{mypy}, Ruby has RBS and Steep~\citep{steep},
+JavaScript gets typed by TypeScript~\citep{typescript}, and Lua gets typed by
+Luau~\citep{luau}. All of these typed versions support record-like and union
+types, and all except Python also support intersection types. Our translation
+scheme can almost directly apply to these languages. For a concrete example, we
+show how the aforementioned \lstinline{exp} function can be encoded in
+TypeScript:
+\begin{lstlisting}[language=TypeScript]
+function exp(args: { x: number } & { base: number|null }) {
+  let x = args.x;
+  let base = (typeof args.base === "number") ? args.base : Math.E;
+  return Math.pow(base, x);
+}
+exp({ base: 2, x: 10 })     //= 1024
+exp({ x: 10, base: null })  //= e^10
+\end{lstlisting}
+The code is almost the same as in \autoref{sec:example}. Note that the
+\lstinline[language=TypeScript]{typeof} operator is the standard way to perform
+type introspection in TypeScript, and the type of \lstinline{args.base} is
+refined from the \lstinline[language=TypeScript]{number|null} to
+\lstinline[language=TypeScript]{number} in the true-branch. We assume the call
+sites have been rewritten in the code above. In this manner, named and optional
+arguments can be added to TypeScript as syntactic sugar.
+
+Although we have discussed several alternatives to intersection and union types,
+we believe that if a language is designed from scratch, our approach is a good
+choice. Intersection and union types not only subsume multi-field record and
+nullable types but also provide a solid and elegant foundation for other
+advanced features, such as function overloading and heterogeneous data
+structures. The essay by \citet{castagna2023programming} is an excellent further
+reading on the beauty of programming with intersection and union types.
