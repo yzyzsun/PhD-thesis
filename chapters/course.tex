@@ -1,0 +1,246 @@
+\chapter{A Crash Course in the CP Language} \label{ch:cp}
+
+CP, short for \emph{compositional programming}, is a statically typed
+programming language that emphasizes modularity and extensibility. It
+incorporates a number of novel features in line with recent research on
+compositional programming. These features include:
+\begin{itemize}
+\item Disjoint intersection types~\citep{oliveira2016disjoint} and disjoint
+      polymorphism~\citep{alpuim2017disjoint,xie2020row};
+\item Distributive subtyping~\citep{bi2018essence,bi2019distributive} and its
+      interaction with mutable references~\citep{ye2024imperative};
+\item Iso-recursive types with nominal unfoldings~\citep{zhou2022calculus};
+\item Generalized record operations with type difference~\citep{xu2023making};
+\item Compositional embeddings of domain-specific languages
+      (\autoref{ch:embedding});
+\item Dynamic inheritance (\autoref{ch:inheritance}) of first-class
+      traits~\citep{bi2018typed};
+\item Named and optional arguments (\autoref{ch:arguments}) via a blend of
+      intersection and union types~\citep{rehman2023blend}.
+\end{itemize}
+Before diving into the novel features, we first introduce the basics of CP.
+
+\section{Overview}
+
+A CP program consists of a sequence of definitions, either for types or for
+terms, and ends with a main expression to be evaluated. For example, the
+following program defines a type alias \lstinline{I} and a term variable
+\lstinline{i}, and finally evaluates \lstinline{i + 1}:
+\begin{lstlisting}[xleftmargin=.3\textwidth]
+type I = Int;  -- type definition
+i: I = 1;      -- term definition
+i + 1          -- main expression
+\end{lstlisting}
+Anything after \lstinline{--} (or within \lstinline|{- block -}|) is a comment.
+Note that a type must start with an uppercase letter, while a term variable must
+start with a lowercase letter. The type annotation (\lstinline{: I}) is not
+required for term definitions as long as the type can be inferred.
+
+\begin{table}
+\caption{List of operations by precedence in CP.} \label{tab:op}
+\centering
+\begin{tabular}{*{4}{c}}
+\toprule
+\thead{Operators}        & \thead{Operands}                      & \thead{Arity} & \thead{Description} \\
+\midrule \midrule
+\texttt{-}               & \lstinline{Int} or \lstinline{Double} & Unary         & Neg. \\
+\midrule
+\texttt{\textsurd}       & \lstinline{Double}                    & Unary         & Sqrt. \\
+\midrule
+\texttt{\#}              & Arrays                                & Unary         & Length \\
+\midrule
+\texttt{!!}              & Arrays (lhs), \lstinline{Int} (rhs)   & Binary        & Index \\
+\midrule
+\texttt{* / \%}          & \lstinline{Int} or \lstinline{Double} & Binary        & Mul. \& Div. \& Mod. \\
+\midrule
+\texttt{+ -}             & \lstinline{Int} or \lstinline{Double} & Binary        & Add. \& Sub. \\
+\midrule
+\texttt{++}              & \lstinline{String} or Arrays          & Binary        & Concatenation \\
+\midrule
+\makecell{\texttt{== !=} \\ \texttt{< <= > >=}} & \makecell{\lstinline{Int} or \lstinline{Double} or \lstinline{String} or \lstinline{Bool} \\
+                           or References}                        & Binary        & Comparison \\
+                           \midrule
+\texttt{\&\&}            & \lstinline{Bool}                      & Binary        & Conjunction \\
+\midrule
+\texttt{||}              & \lstinline{Bool}                      & Binary        & Disjunction \\
+\midrule
+\texttt{\^}              & Traits (lhs)                          & Binary        & Forwarding \\
+\midrule
+\makecell{\texttt{,} \\ \texttt{+,  ,+}} & \dots                 & Binary        & \makecell{Merging (Neutral, \\ Leftist, or Rightist)} \\
+\midrule
+\texttt{\textbackslash-} & \dots                                 & Binary        & Diff. \\
+\midrule
+\texttt{:=}              & References (lhs)                      & Binary        & Assignment \\
+\midrule
+\texttt{>{}>}            & Unit (lhs)                            & Binary        & Sequencing \\
+\midrule
+\lstinline{if then else} & \lstinline{Bool} (1st operand)        & Ternary       & Conditional \\
+\bottomrule
+\end{tabular}
+\vskip 1ex
+{\footnotesize
+  lhs: left-hand side; rhs: right-hand side.
+}
+\end{table}
+
+\section{Primitive Types}
+
+CP supports five primitive types and their literal forms: 
+\begin{itemize}
+\item \lstinline{Int}: integers, e.g. \lstinline{48}, \lstinline{-2}, \lstinline{0o77} (octal), and \lstinline{0xFF} (hexadecimal);
+\item \lstinline{Double}: floating-point numbers, e.g. \lstinline{48.0} and \lstinline{-1e8} (scientific notation);
+\item \lstinline{String}: strings, e.g. \lstinline{"foo \n bar"};
+\item \lstinline{Bool}: booleans, either \lstinline{true} or \lstinline{false};
+\item \lstinline{()}: the unit type. The unit type has only one value, also
+      denoted by \lstinline{()}, and thus holds no information. It is used as
+      \lstinline{null} in \autoref{ch:arguments} and as the return value of
+      variable assignment.
+\end{itemize}
+Primitive operations on these types can be found in \autoref{tab:op}, which also
+lists other operations to be introduced later.
+
+There are also two special types originating from subtyping: \lstinline{Top} for
+the top type and \lstinline{Bot} for the bottom type. They are the maximal and
+minimal types in the type lattice respectively. The top type is a supertype of
+any type, and the bottom type is a subtype of any type. In other words, all
+terms can be annotated with the top type, while no term can be annotated with
+the bottom type theoretically. However, for practical convenience,
+\lstinline{undefined} can be used in any type context, including the bottom
+type.
+
+\section{Compound Types}
+
+Compound types in CP include arrays, references, records, intersections, and
+unions.
+
+\paragraph{Arrays.}
+An array type is written as \lstinline{[T]}, where \lstinline{T} is the element
+type. Since arrays are immutable in CP, array types are treated
+\emph{covariantly}. For example, \lstinline{[Int]} is a subtype of
+\lstinline{[Top]} because \lstinline{Int} is a subtype of \lstinline{Top}.
+
+An array literal can be conveniently written as \lstinline{[e1; e2]}. Note that
+we use semicolons to separate elements instead of commas because
+\lstinline{e1,e2} is parsed as a merge. Two arrays can be concatenated using the
+\lstinline{++} operator. The length of an array can be obtained like
+\lstinline{#arr}, and the \lstinline{i}-th element can be accessed like
+\lstinline{arr!!i}.
+
+\paragraph{References.}
+A reference type is written as \lstinline{Ref T}. A mutable array can be
+represented as an array of references, i.e. \lstinline{[Ref T]}. Reference types
+are \emph{invariant}, meaning that \lstinline{Ref Int} is neither a subtype nor
+a supertype of \lstinline{Ref Top}.
+
+A reference cell can be created using the \lstinline{ref} keyword. For example,
+\lstinline{ref 48} creates a cell of type \lstinline{Ref Int} with the initial
+value \lstinline{48}. The value in a reference cell can be accessed using the
+\lstinline{!} operator and updated using the \lstinline{:=} operator. For
+example, \lstinline{r := !r - 2} updates the value in \lstinline{r} by
+subtracting 2. The assignment is an expression that returns \lstinline{()}, i.e.
+the unit value. Finally, \lstinline{e1 >> e2} denotes sequential composition,
+which means that \lstinline{e2} is returned after \lstinline{e1} (required to
+have the unit type) is executed.
+
+\paragraph{Records.}
+A record type has the form \lstinline|{ l1: T1; l2: T2 }|, where \lstinline{l1}
+and \lstinline{l2} are labels, and \lstinline{T1} and \lstinline{T2} are field
+types. A record literal has the form \lstinline|{ l1 = e1; l2 = e2 }|, where
+\lstinline{e1} and \lstinline{e2} are field expressions. Since there is no tuple
+type in CP, a pair can be represented as a record with two fields. An empty
+record \lstinline|{}| is also allowed, which is inferred to have the top type.
+Note that \lstinline|{}| is different from the unit value \lstinline|()|, which
+has the unit type. Record fields can be accessed using the dot notation like
+\lstinline{rcd.l1}.
+
+\paragraph{Intersections and Unions.}
+See \autoref{ch:background}? Talk about multiple fields = intersection?
+
+\section{Functions}
+
+Functions are first-class values in CP, just like in other functional languages.
+A function type is written as \lstinline{T1 -> T2}, where \lstinline{T1} is the
+parameter type and \lstinline{T2} is the return type. A function literal is
+written as \lstinline|\(x: T1) -> e|, where \lstinline{x} is the parameter
+variable and \lstinline{e} is the body expression. CP employs curried functions
+to achieve multiple arguments. For example, a function of type
+\lstinline{Int -> Int -> Int} can be regarded as a function that takes two
+integers. For example, an addition function can be defined as follows:
+\begin{lstlisting}
+add (x: Int) (y: Int) = x + y;
+-- is equivalent to:
+add = \(x: Int) -> \(y: Int) -> x + y;
+\end{lstlisting}
+Calling \lstinline{add 1 2} will return \lstinline{3} as expected.
+Unfortunately, CP does not support type inference for parameter types, so they
+must be explicitly annotated. However, the return type can be inferred for
+non-recursive functions. For recursive functions, the return type must also be
+annotated. For example, a factorial function can be defined as follows:
+\begin{lstlisting}
+fact (n: Int): Int = if n == 0 then 1 else n * fact (n - 1);
+-- is equivalent to:
+fact = fix fact: Int -> Int.
+        \(n: Int) -> if n == 0 then 1 else n * fact (n - 1);
+\end{lstlisting}
+
+\section{Named and Optional Arguments}
+
+See \autoref{ch:arguments}?
+
+\section{Parametric Polymorphism}
+
+Unlike implicit polymorphism in ML-like languages, CP employs explicit
+polymorphism in System-F style. A polymorphic type is written as
+\lstinline{forall A. T}, where \lstinline{A} is the type variable (must start
+with an uppercase letter). A polymorphic term is written as \lstinline|/\A. e|,
+and instantiating a polymorphic term \lstinline{poly} with type \lstinline{Int}
+is written as \lstinline{poly @Int}.
+
+For example, a polymorphic identity function can be defined as follows:
+\begin{lstlisting}
+id A (x: A) = x;
+-- is equivalent to:
+id = /\A. \(x: A) -> x;
+\end{lstlisting}
+Calling \lstinline{id @Int 48} will return \lstinline{48} as expected.
+
+\section{Iso-Recursive Types}
+
+Recursive types are useful for defining dynamic data structures. For example,
+integer lists can be defined in Haskell as follows:
+\begin{lstlisting}[language=Haskell]
+data IntList = Nil | Cons Int IntList
+\end{lstlisting}
+This definition can be represented as $\mu \alpha.\: \mathbb{1} + \mathbb{Z}
+\times \alpha$ in type theory, where $\mu$ is the least fixpoint binder. There
+are two forms of recursive types in the literature: equi-recursive types and
+iso-recursive types. With equi-recursive types, a recursive type is equal to its
+unfolding. For example, $\mu \alpha.\: \mathbb{1} + \mathbb{Z} \times \alpha$ is
+equal to $\mathbb{1} + \mathbb{Z} \times (\mu \alpha.\: \mathbb{1} + \mathbb{Z}
+\times \alpha)$. However, they are distinct under iso-recursive types. Explicit
+language constructs (i.e. \lstinline{fold} and \lstinline{unfold}) form an
+isomorphism between the two types.
+
+\section{Traits}
+
+Mention a constructor name starts with an uppercase letter...
+Mention laziness...
+
+\section{Implementations}
+
+There are two implementations of the CP language:
+\begin{enumerate}
+\item A reference interpreter bundled with the original CP
+      paper~\citep{zhang2021compositional}, which is no longer maintained and is
+      archived at \url{https://github.com/wxzh/CP}.
+\item A new implementation including both an interpreter and a compiler to
+      JavaScript, which is under active development at
+      \url{https://github.com/yzyzsun/CP-next}.
+\end{enumerate}
+Both implementations first desugar CP source code into a core calculus called
+\fiplus, and then interpret or compile the \fiplus code. The main difference
+between the two interpreters is that the original one further elaborates \fiplus
+to a simpler calculus called \fco~\citep{bi2019distributive} before evaluation,
+while the new interpreter directly evaluates \fiplus code according to
+type-directed operational semantics~\citep{huang2021taming,fan2022direct}. The
+internals of the new compiler will be introduced in \autoref{pt:compile}.

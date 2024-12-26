@@ -127,6 +127,9 @@
 \usepackage[vskip=1em,font=itshape]{quoting}
 \usepackage{wasysym}
 
+\usepackage{makecell}
+\renewcommand{\theadfont}{\bfseries}
+
 \usepackage{ottalt}
 \inputott{ott/lambda-r}
 \inputott{chapters/appendices/ott}
@@ -134,7 +137,7 @@
 
 \usepackage{listings}
 \lstdefinelanguage{CP}{
-  keywords={case,else,extends,false,fix,forall,if,implements,inherits,interface,in,let,letrec,new,null,open,override,switch,then,toString,trait,true,type,undefined,with,Bool,Bot,Double,Int,Null,String,Top,Trait},
+  keywords={case,else,extends,false,fix,fold,forall,if,implements,inherits,interface,in,let,letrec,new,null,open,override,ref,switch,then,toString,trait,true,type,undefined,unfold,with,Bool,Bot,Double,Int,Null,Ref,String,Top,Trait},
   alsoother={@},
   comment=[l]{--},
   morecomment=[n]{\{-}{-\}},
@@ -168,15 +171,19 @@
 
 \newcommand{\highlight}[1]{\colorbox{lightgray}{#1}}
 
-\newcommand{\ExT}{\texorpdfstring{E\kern -.1em\lower .4ex\hbox {\footnotesize X}\kern -.2emT}{ExT}\xspace}
+\newcommand{\fsub}{$F_{<:}$\xspace}
 \newcommand{\necolus}{\textsf{NeColus}\xspace}
 \newcommand{\lambdac}{$\lambda_c$\xspace}
-\newcommand{\lambdaiplus}{$\lambda_i^+$\xspace}
 \newcommand{\lambdar}{$\lambda_r$\xspace}
-\newcommand{\fiplus}{$F_i^+$\xspace}
-\newcommand{\fsub}{$F_{<:}$\xspace}
-\newcommand{\lambdaiu}{\texorpdfstring{$\lambda_\mathsf{iu}$}{λᵢᵤ}\xspace}
+\newcommand{\fco}{$F_\textsf{co}$\xspace}
+\newcommand{\fiplus}{\texorpdfstring{$F_\mathsf{i}^+$}
+                                    {Fᵢ⁺}\xspace}
+\newcommand{\lambdaiplus}{\texorpdfstring{$\lambda_\mathsf{i}^+$}
+                                         {λᵢ⁺}\xspace}
+\newcommand{\lambdaiu}{\texorpdfstring{$\lambda_\mathsf{iu}$}
+                                      {λᵢᵤ}\xspace}
 \newcommand{\uaena}{\textsc{Uaena}\xspace}
+\newcommand{\ExT}{\texorpdfstring{E\kern -.1em\lower .4ex\hbox {\footnotesize X}\kern -.2emT}{ExT}\xspace}
 
 %%----------------------------------------------------------------------------%%
 
@@ -345,6 +352,7 @@ diploma, or other qualifications.
 
 \part{Background} \label{pt:background}
 \input{chapters/background}
+\input{chapters/course}
 
 \part{Why Compositional Programming Matters} \label{pt:why}
 \input{chapters/embedding}
