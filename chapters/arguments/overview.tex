@@ -162,11 +162,11 @@ Therefore, the only remaining work is to add null values for absent optional
 arguments.
 
 \begin{figure}[b!]
-\begin{lstlisting}[language=CP]
+\begin{lstlisting}[language=CP,xleftmargin=.05\textwidth]
 -- from a SVG library in CP
-SVG: { width: Int; height: Int } -> [Element] -> Graphic;  -- <svg>
+SVG: { width: Int; height: Int } -> [Element] -> Graphic;    -- <svg>
 Rect: { x: Int; y: Int; width: Int; height: Int
-      ; rx?: Int; ry?: Int; color?: String } -> Element;   -- <rect>
+      ; rx?: Int; ry?: Int; color?: String } -> Element;     -- <rect>
 ......
 -- client code
 fractal { level = 4; x: Int; y: Int; width: Int; height: Int } =
@@ -250,7 +250,7 @@ type-based switch. C\# also provides the null coalescing operator \lstinline{??}
 and simplifies the common pattern $[[switch e as x case A => x case Null => d]]$
 as \lstinline{e??d} for nullable values.
 
-\subsubsection{Dynamically Typed Languages.}
+\paragraph{Dynamically Typed Languages.}
 It may be surprising at first sight that dynamically typed languages can benefit
 from our work with static typing, but recall that the type-safety issue in
 \autoref{sec:mypy} was found in Python. Nowadays, popular dynamically typed

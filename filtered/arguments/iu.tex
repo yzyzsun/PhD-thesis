@@ -1,0 +1,41 @@
+\begin{align*}
+  &\text{Values}                &        \ottnt{v} ::=&~ \ottsym{\{\}} ~|~ \ottkw{null} ~|~  n  ~|~  \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  ~|~ \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{=}  \ottnt{v}  \ottsym{\}} ~|~ \ottnt{v_{{\mathrm{1}}}}  \bbcomma  \ottnt{v_{{\mathrm{2}}}} \\
+  &\text{Evaluation contexts}   &            E ::=&~ [\,\cdot\,] ~|~ \ottnt{E} \, \ottnt{e} ~|~ \ottnt{v} \, \ottnt{E} ~|~ \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{=}  \ottnt{E}  \ottsym{\}} ~|~ \ottnt{E}  \ottsym{.}  \ell ~|~ \ottnt{E}  \bbcomma  \ottnt{e} ~|~ \ottnt{v}  \bbcomma  \ottnt{E} \\
+  &                             &                |&~ \ottkw{switch} \, \ottnt{E} \, \ottkw{as} \, \ottmv{x} \, \ottkw{case} \, \ottnt{A}  \Rightarrow  \ottnt{e_{{\mathrm{1}}}} \, \ottkw{case} \, \ottnt{B}  \Rightarrow  \ottnt{e_{{\mathrm{2}}}} ~|~  \ottnt{E} : \ottnt{A}  \\
+\end{align*}
+
+\IUdefnstep{}
+
+\clearpage
+
+\begin{align*}
+&\text{Ordinary types}        &A^\circ,B^\circ ::=&~ \ottkw{Null} ~|~  \mathbb{Z}  ~|~ \ottnt{A}  \rightarrow  \ottnt{B} ~|~ \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}} \\
+\end{align*}
+
+\IUdefncast{}
+\IUdefnapp{}
+\IUdefnprj{}
+
+\framebox{$\lfloor  \ottnt{v}  \rfloor$} \quad Dynamic type
+\begin{mathpar}
+\lfloor  \ottsym{\{\}}  \rfloor \equiv  \top 
+
+\lfloor  \ottkw{null}  \rfloor \equiv \ottkw{Null}
+
+\lfloor   n   \rfloor \equiv  \mathbb{Z} 
+
+\lfloor   \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}   \rfloor \equiv \ottnt{A}  \rightarrow  \ottnt{B}
+
+\lfloor  \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{=}  \ottnt{v}  \ottsym{\}}  \rfloor \equiv \ottsym{\{}  \ell  \ottsym{:}  \ottnt{A}  \ottsym{\}}
+
+\lfloor  \ottnt{v_{{\mathrm{1}}}}  \bbcomma  \ottnt{v_{{\mathrm{2}}}}  \rfloor \equiv \lfloor  \ottnt{v_{{\mathrm{1}}}}  \rfloor  \land  \lfloor  \ottnt{v_{{\mathrm{2}}}}  \rfloor
+\end{mathpar}
+
+\framebox{$\lfloor  \ottnt{v}  \rfloor  ^\lambda$} \quad Input type
+\begin{mathpar}
+\lfloor   \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}   \rfloor  ^\lambda \equiv \ottnt{A}
+
+\lfloor  \ottnt{v_{{\mathrm{1}}}}  \bbcomma  \ottnt{v_{{\mathrm{2}}}}  \rfloor  ^\lambda \equiv \lfloor  \ottnt{v_{{\mathrm{1}}}}  \rfloor  ^\lambda  \lor  \lfloor  \ottnt{v_{{\mathrm{2}}}}  \rfloor  ^\lambda
+
+\lfloor   \ldots   \rfloor  ^\lambda \equiv  \bot 
+\end{mathpar}

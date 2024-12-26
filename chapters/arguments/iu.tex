@@ -1,0 +1,41 @@
+\begin{align*}
+  &\text{Values}                &        [[v]] ::=&~ [[{}]] ~|~ [[null]] ~|~ [[int]] ~|~ [[\x:A. e:B]] ~|~ [[{l : A = v}]] ~|~ [[v1 ,, v2]] \\
+  &\text{Evaluation contexts}   &            E ::=&~ [\,\cdot\,] ~|~ [[E e]] ~|~ [[v E]] ~|~ [[{l : A = E}]] ~|~ [[E.l]] ~|~ [[E ,, e]] ~|~ [[v ,, E]] \\
+  &                             &                |&~ [[switch E as x case A => e1 case B => e2]] ~|~ [[E :. A]] \\
+\end{align*}
+
+\IUdefnstep{}
+
+\clearpage
+
+\begin{align*}
+&\text{Ordinary types}        &[[Ao]],[[Bo]] ::=&~ [[Null]] ~|~ [[Int]] ~|~ [[A -> B]] ~|~ [[{l : A}]] \\
+\end{align*}
+
+\IUdefncast{}
+\IUdefnapp{}
+\IUdefnprj{}
+
+\framebox{$[[|.v.|]]$} \quad Dynamic type
+\begin{mathpar}
+[[|. {} .|]] \equiv [[Top]]
+
+[[|. null .|]] \equiv [[Null]]
+
+[[|. int .|]] \equiv [[Int]]
+
+[[|. \x:A.e:B .|]] \equiv [[A -> B]]
+
+[[|. {l:A=v} .|]] \equiv [[{l:A}]]
+
+[[|. v1,,v2 .|]] \equiv [[|. v1 .| & |. v2 .|]]
+\end{mathpar}
+
+\framebox{$[[|.v.|^\]]$} \quad Input type
+\begin{mathpar}
+[[|. \x:A.e:B .|^\]] \equiv [[A]]
+
+[[|. v1,,v2 .|^\]] \equiv [[|. v1 .|^\ | |. v2 .|^\]]
+
+[[|. etc .|^\]] \equiv [[Bot]]
+\end{mathpar}

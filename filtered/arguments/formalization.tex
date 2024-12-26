@@ -74,11 +74,12 @@ reflexive and transitive.
   If $\ottnt{A}  \ottsym{<:}  \ottnt{B}$ and $\ottnt{B}  \ottsym{<:}  \ottnt{C}$, then $\ottnt{A}  \ottsym{<:}  \ottnt{C}$.
 \end{theorem}
 
-\begin{figure}[t]
+\begin{figure}
 \begin{align*}
   &\text{Typing contexts}&\Gamma ::=&~  \cdot  ~|~ \Gamma  ,\,  \ottmv{x}  \ottsym{:}  \ottnt{A}
 \end{align*}
 \IUdefntyping{}
+\IUdefnletbind{}
 \caption{Typing of \lambdaiu.} \label{fig:typ}
 \end{figure}
 
@@ -93,10 +94,9 @@ types (i.e. $\ottnt{e_{{\mathrm{0}}}}:\ottnt{A}  \lor  \ottnt{B}$). This premise
 cases in the switch. The $\ottkw{as}$-variable $\ottmv{x}$ is refined to type
 $\ottnt{A}$ in $\ottnt{e_{{\mathrm{1}}}}$ and to type $\ottnt{B}$ in $\ottnt{e_{{\mathrm{2}}}}$.
 \Rref{Typ-Null,Typ-Rcd,Typ-Prj} added by us are straightforward. \Rref{Typ-Let}
-uses an auxiliary judgment $\Gamma  \,\vdash\,  \ottnt{letin}  \,\dashv\,  \Gamma'$ (defined in
-\hyperref[sec:appendix-let]{Appendix C}) to obtain the typing context for the
-body of the let-in binding. For example, if $\ottnt{e_{{\mathrm{1}}}}$ has type $\ottnt{A}$, then
-$\ottkw{let} \, \ottmv{x}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \ottkw{in} \, \ottnt{e_{{\mathrm{2}}}}$ adds $\ottmv{x}:\ottnt{A}$ to the typing context before
+uses an auxiliary judgment $\Gamma  \,\vdash\,  \ottnt{letin}  \,\dashv\,  \Gamma'$ to obtain the typing context
+for the body of the let-in binding. For example, if $\ottnt{e_{{\mathrm{1}}}}$ has type $\ottnt{A}$,
+then $\ottkw{let} \, \ottmv{x}  \ottsym{=}  \ottnt{e_{{\mathrm{1}}}} \, \ottkw{in} \, \ottnt{e_{{\mathrm{2}}}}$ adds $\ottmv{x}:\ottnt{A}$ to the typing context before
 type-checking $\ottnt{e_{{\mathrm{2}}}}$.
 
 \paragraph{Dynamic Semantics.}
@@ -111,10 +111,9 @@ projective dispatch to select the needed field.
 
 Since the dynamic semantics of \lambdaiu is independent of the elaboration from
 \uaena to \lambdaiu, we omit the rules here but leave them in
-\hyperref[sec:appendix-dynamics]{Appendix D}. Note that the operational
-semantics is not commonplace in that it is type-directed and non-deterministic.
-Please refer to the dissertation by \citet{rehman2023blend} for detailed
-explanations.
+\autoref{sec:iu-dyn}. Note that the operational semantics is not commonplace in
+that it is type-directed and non-deterministic. Please refer to the dissertation
+by \citet{rehman2023blend} for detailed explanations.
 
 \begin{theorem}[Progress]
   If $ \cdot   \,\vdash\,  \ottnt{e}  \ottsym{:}  \ottnt{A}$, then either $\ottnt{e}$ is a value or $\exists \ottnt{e'}, \ottnt{e} \longrightarrow \ottnt{e'}$.
@@ -200,13 +199,8 @@ in the second function.
 \caption{Type-directed elaboration from \uaena to \lambdaiu.} \label{fig:elab}
 \end{figure}
 
-\begin{figure}
-\IUdefnpmatch{}
-\caption{Type-directed call site rewriting in \uaena.} \label{fig:match}
-\end{figure}
-
 \paragraph{Elaboration.}
-The type-directed elaboration from \uaena to \lambdaiu is defined in
+The type-directed elaboration from \uaena to \lambdaiu is defined at the top of
 \autoref{fig:elab}. $\Delta  \,\vdash\,  \epsilon  \ottsym{:}  \mathcal{A}  \,\rightsquigarrow\,  \ottnt{e}$ means that the source
 expression $\epsilon$ has type $\mathcal{A}$ and elaborates to the target expression
 $\ottnt{e}$ under the typing context $\Delta$. \Rref{Ela-Abs,Ela-App} for normal
@@ -219,6 +213,7 @@ that rewrites call sites according to the parameter and argument types.
 \Rref{Ela-NEmpty,Ela-NField} are used to elaborate named arguments.
 
 \paragraph{Named Parameter Elaboration.}
+As shown at the bottom of \autoref{fig:elab},
 $ \Delta \,\vdash\, _{\!\!\!\! \ottmv{x} }\:\: \rho \ottsym{:} \mathcal{P} \,\rightsquigarrow\, \ottnt{letin} \,\dashv\, \Delta' $ means that the named parameter
 $\rho$ is inferred to have type $\mathcal{P}$ and elaborates to a series of let-in
 bindings $\ottnt{letin}$, given that the named parameters correspond to the target
@@ -229,7 +224,15 @@ simply generates $\ottkw{let} \, \ell  \ottsym{=}  \ottmv{x}  \ottsym{.}  \ell \
 $\ottkw{let} \, \ell  \ottsym{=}  \ottkw{switch} \, \ottmv{x}  \ottsym{.}  \ell \, \ottkw{as} \, \ottmv{y} \, \ottkw{case} \, |  \mathcal{A}  |  \Rightarrow  \ottmv{y} \, \ottkw{case} \, \ottkw{Null}  \Rightarrow  \ottnt{e} \, \ottkw{in}$ to provide a
 default value $\ottnt{e}$ for the $\ottkw{Null}$ case.
 
+\begin{figure}
+\IUdefnpmatch{}
+\IUdefnlookup{}
+\IUdefnlookdown{}
+\caption{Type-directed call site rewriting in \uaena.} \label{fig:match}
+\end{figure}
+
 \paragraph{Call Site Rewriting.}
+As shown in \autoref{fig:match},
 $ \Delta \,\vdash\, _{\!\!\!\! \ottnt{e} }\:\: \mathcal{P} \,\diamond\, \mathcal{K} \,\rightsquigarrow\, \ottnt{e'} $ means that if the parameter type
 $\mathcal{P}$ is compatible with the argument type $\mathcal{K}$, the target expression
 $\ottnt{e}$, which corresponds to the named arguments, will be rewritten to
@@ -241,15 +244,55 @@ respectively. The remaining case, where the optional argument is present but
 associated with a wrong type, is prohibited and cannot elaborate to any term.
 We have two more auxiliary judgments $ \mathcal{K} :: \ell \Rightarrow \mathcal{A} $ and
 $ \mathcal{K} :: \ell \nRightarrow $ to indicate that the argument type $\mathcal{K}$ contains a field $\ell$
-with type $\mathcal{A}$ or $\mathcal{K}$ does not contain $\ell$, whose definitions can be found in
-\hyperref[sec:appendix-lookup]{Appendix E}.
+with type $\mathcal{A}$ or $\mathcal{K}$ does not contain $\ell$.
 
 \paragraph{Type Translation.}
 As we have informally mentioned in \autoref{sec:core}, we translate named
 parameters to intersection types and optional parameters to union types. The
-rules for $|\cdot|$ can be found in \hyperref[sec:appendix-translate]{Appendix F}. Having
+rules for $|\cdot|$ can be found in \autoref{fig:trans-iu}. Having
 defined the translation, we can prove the soundness of call site rewriting and
 elaboration.
+
+\begin{figure}
+\framebox{$|  \mathcal{A}  |$} \quad Type translation
+\begin{mathpar}
+|   \mathbb{Z}   | \equiv  \mathbb{Z} 
+
+|   ( \mathcal{A} ) \rightarrow \mathcal{B}   | \equiv |  \mathcal{A}  |  \rightarrow  |  \mathcal{B}  |
+
+|  \ottsym{\{}  \mathcal{P}  \ottsym{\}}  \rightarrow  \mathcal{B}  | \equiv |  \mathcal{P}  |  \rightarrow  |  \mathcal{B}  |
+
+|  \ottsym{\{}  \mathcal{K}  \ottsym{\}}  | \equiv  | \mathcal{K} | 
+\end{mathpar}
+
+\noindent
+\framebox{$|  \mathcal{P}  |$} \quad Parameter type translation
+\begin{mathpar}
+|   \cdot   | \equiv  \top 
+
+|  \mathcal{P}  ;\,  \ell  \ottsym{:}  \mathcal{A}  | \equiv |  \mathcal{P}  |  \land  \ottsym{\{}  \ell  \ottsym{:}  |  \mathcal{A}  |  \ottsym{\}}
+
+|  \mathcal{P}  ;\,  \ell  \ottsym{\mbox{?}}  \ottsym{:}  \mathcal{A}  | \equiv |  \mathcal{P}  |  \land  \ottsym{\{}  \ell  \ottsym{:}  |  \mathcal{A}  |  \lor  \ottkw{Null}  \ottsym{\}}
+\end{mathpar}
+
+\noindent
+\framebox{$ | \mathcal{K} | $} \quad Argument type translation
+\begin{mathpar}
+ |  \cdot  |  \equiv  \top 
+
+ | \mathcal{K}  ;\,  \ell  \ottsym{:}  \mathcal{A} |  \equiv  | \mathcal{K} |   \land  \ottsym{\{}  \ell  \ottsym{:}  |  \mathcal{A}  |  \ottsym{\}}
+\end{mathpar}
+
+\noindent
+\framebox{$|  \Delta  |$} \quad Typing context translation
+\begin{mathpar}
+|   \cdot   | \equiv  \cdot 
+
+|  \Delta  ,\,  \ottmv{x}  \ottsym{:}  \mathcal{A}  | \equiv |  \Delta  |  ,\,  \ottmv{x}  \ottsym{:}  |  \mathcal{A}  |
+\end{mathpar}
+\caption{Type translation from \uaena to \lambdaiu.} \label{fig:trans-iu}
+\end{figure}
+
 
 \begin{theorem}[Soundness of Call Site Rewriting]
   If $ \Delta \,\vdash\, _{\!\!\!\! \ottnt{e} }\:\: \mathcal{P} \,\diamond\, \mathcal{K} \,\rightsquigarrow\, \ottnt{e'} $ and $|  \Delta  |  \,\vdash\,  \ottnt{e}  \ottsym{:}   | \mathcal{K} | $,

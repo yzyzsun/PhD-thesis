@@ -54,17 +54,17 @@ app.run(**args) #= app.run(host="0.0.0.0", port=80, debug=True)
 Although Python is dynamically typed, there is continuous effort in the Python
 community to improve the detection of type errors earlier in the development
 process, primarily through static analysis. There is an optional static type
-checker for Python called mypy~\citep{mypy}.\footnote{We are using the latest
-version of mypy 1.11.2.} In the example above, we make use of \emph{type hints},
-introduced in Python 3.5, to specify the types of the parameters and the return
-value of the \lstinline{run} method. The type hints have no effect at run time
-but can be used by external tools like mypy to statically check if the code is
-well-typed. Perhaps surprisingly, the code above cannot pass mypy's type
-checking, because the type inferred for \lstinline{args} (i.e.
-\lstinline{dict[str,object]}) is not precise enough. The type checker needs to
-know what keys \lstinline{args} exactly has and what types the values associated
-with those keys have, in order to make sure that \lstinline{**args} is
-compatible with the parameters of \lstinline{app.run}.
+checker for Python called mypy~\citep{mypy}.\footnote{Our code is tested against
+mypy 1.14.0 (released on 20 December 2024).} In the example above, we make use
+of \emph{type hints}, introduced in Python 3.5, to specify the types of the
+parameters and the return value of the \lstinline{run} method. The type hints
+have no effect at run time but can be used by external tools like mypy to
+statically check if the code is well-typed. Perhaps surprisingly, the code above
+cannot pass mypy's type checking, because the type inferred for \lstinline{args}
+(i.e. \lstinline{dict[str,object]}) is not precise enough. The type checker
+needs to know what keys \lstinline{args} exactly has and what types the values
+associated with those keys have, in order to make sure that \lstinline{**args}
+is compatible with the parameters of \lstinline{app.run}.
 
 Fortunately, \lstinline{TypedDict} is added in Python 3.8 to represent a
 specific set of keys and their associated types. By default, every specified key
@@ -125,9 +125,9 @@ runtime error since there is an assertion in \lstinline{app.run} to ensure that
 
 This issue is not unique to Python and mypy. We have reproduced nearly the same
 issue in Ruby with two popular type checkers, namely Steep~\citep{steep} and
-Sorbet~\citep{sorbet}, which is illustrated in \hyperref[sec:ruby]{Appendices
-A\&B}.\footnote{Our code is tested against the latest versions of Steep 1.8.1
-and Sorbet 0.5.11600.}
+Sorbet~\citep{sorbet}, which is illustrated in \autoref{sec:steep} and
+\autoref{sec:sorbet}.\footnote{Our code is tested against Steep 1.9.2 (16
+December 2024) and Sorbet 0.5.11708 (20 December 2024).}
 
 In conclusion, subtyping can lead to a fundamental type-safety issue when
 dealing with first-class named and optional arguments. In essence, the following

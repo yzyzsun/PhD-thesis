@@ -74,11 +74,12 @@ reflexive and transitive.
   If $[[A <: B]]$ and $[[B <: C]]$, then $[[A <: C]]$.
 \end{theorem}
 
-\begin{figure}[t]
+\begin{figure}
 \begin{align*}
   &\text{Typing contexts}&[[G]] ::=&~ [[ [] ]] ~|~ [[G, x : A]]
 \end{align*}
 \IUdefntyping{}
+\IUdefnletbind{}
 \caption{Typing of \lambdaiu.} \label{fig:typ}
 \end{figure}
 
@@ -93,10 +94,9 @@ types (i.e. $[[e0]]:[[A|B]]$). This premise ensures the exhaustiveness of the
 cases in the switch. The $\ottkw{as}$-variable $[[x]]$ is refined to type
 $[[A]]$ in $[[e1]]$ and to type $[[B]]$ in $[[e2]]$.
 \Rref{Typ-Null,Typ-Rcd,Typ-Prj} added by us are straightforward. \Rref{Typ-Let}
-uses an auxiliary judgment $[[G |- letin -| G']]$ (defined in
-\hyperref[sec:appendix-let]{Appendix C}) to obtain the typing context for the
-body of the let-in binding. For example, if $[[e1]]$ has type $[[A]]$, then
-$[[let x = e1 in e2]]$ adds $[[x]]:[[A]]$ to the typing context before
+uses an auxiliary judgment $[[G |- letin -| G']]$ to obtain the typing context
+for the body of the let-in binding. For example, if $[[e1]]$ has type $[[A]]$,
+then $[[let x = e1 in e2]]$ adds $[[x]]:[[A]]$ to the typing context before
 type-checking $[[e2]]$.
 
 \paragraph{Dynamic Semantics.}
@@ -111,10 +111,9 @@ projective dispatch to select the needed field.
 
 Since the dynamic semantics of \lambdaiu is independent of the elaboration from
 \uaena to \lambdaiu, we omit the rules here but leave them in
-\hyperref[sec:appendix-dynamics]{Appendix D}. Note that the operational
-semantics is not commonplace in that it is type-directed and non-deterministic.
-Please refer to the dissertation by \citet{rehman2023blend} for detailed
-explanations.
+\autoref{sec:iu-dyn}. Note that the operational semantics is not commonplace in
+that it is type-directed and non-deterministic. Please refer to the dissertation
+by \citet{rehman2023blend} for detailed explanations.
 
 \begin{theorem}[Progress]
   If $[[ [] |- e : A]]$, then either $[[e]]$ is a value or $\exists [[e']], [[e]] \longrightarrow [[e']]$.
@@ -200,13 +199,8 @@ in the second function.
 \caption{Type-directed elaboration from \uaena to \lambdaiu.} \label{fig:elab}
 \end{figure}
 
-\begin{figure}
-\IUdefnpmatch{}
-\caption{Type-directed call site rewriting in \uaena.} \label{fig:match}
-\end{figure}
-
 \paragraph{Elaboration.}
-The type-directed elaboration from \uaena to \lambdaiu is defined in
+The type-directed elaboration from \uaena to \lambdaiu is defined at the top of
 \autoref{fig:elab}. $[[Gs |- es : As ~~> e]]$ means that the source
 expression $[[es]]$ has type $[[As]]$ and elaborates to the target expression
 $[[e]]$ under the typing context $[[Gs]]$. \Rref{Ela-Abs,Ela-App} for normal
@@ -219,6 +213,7 @@ that rewrites call sites according to the parameter and argument types.
 \Rref{Ela-NEmpty,Ela-NField} are used to elaborate named arguments.
 
 \paragraph{Named Parameter Elaboration.}
+As shown at the bottom of \autoref{fig:elab},
 $[[Gs; x |- p : P ~~> letin -| Gs']]$ means that the named parameter
 $[[p]]$ is inferred to have type $[[P]]$ and elaborates to a series of let-in
 bindings $[[letin]]$, given that the named parameters correspond to the target
@@ -229,7 +224,15 @@ simply generates $[[let l = x.l in]]$, while \rref{PEla-Optional} generates
 $[[let l = switch x.l as y case ||As|| => y case Null => e in]]$ to provide a
 default value $[[e]]$ for the $[[Null]]$ case.
 
+\begin{figure}
+\IUdefnpmatch{}
+\IUdefnlookup{}
+\IUdefnlookdown{}
+\caption{Type-directed call site rewriting in \uaena.} \label{fig:match}
+\end{figure}
+
 \paragraph{Call Site Rewriting.}
+As shown in \autoref{fig:match},
 $[[Gs; e |- P <> T ~~> e']]$ means that if the parameter type
 $[[P]]$ is compatible with the argument type $[[T]]$, the target expression
 $[[e]]$, which corresponds to the named arguments, will be rewritten to
@@ -241,15 +244,55 @@ respectively. The remaining case, where the optional argument is present but
 associated with a wrong type, is prohibited and cannot elaborate to any term.
 We have two more auxiliary judgments $[[T.l => As]]$ and
 $[[T.l =/>]]$ to indicate that the argument type $[[T]]$ contains a field $[[l]]$
-with type $[[As]]$ or $[[T]]$ does not contain $[[l]]$, whose definitions can be found in
-\hyperref[sec:appendix-lookup]{Appendix E}.
+with type $[[As]]$ or $[[T]]$ does not contain $[[l]]$.
 
 \paragraph{Type Translation.}
 As we have informally mentioned in \autoref{sec:core}, we translate named
 parameters to intersection types and optional parameters to union types. The
-rules for $|\cdot|$ can be found in \hyperref[sec:appendix-translate]{Appendix F}. Having
+rules for $|\cdot|$ can be found in \autoref{fig:trans-iu}. Having
 defined the translation, we can prove the soundness of call site rewriting and
 elaboration.
+
+\begin{figure}
+\framebox{$[[||As||]]$} \quad Type translation
+\begin{mathpar}
+[[||Int||]] \equiv [[Int]]
+
+[[||As -> Bs||]] \equiv [[||As|| -> ||Bs||]]
+
+[[||{P} -> Bs||]] \equiv [[||P|| -> ||Bs||]]
+
+[[||{T}||]] \equiv [[|T|]]
+\end{mathpar}
+
+\noindent
+\framebox{$[[||P||]]$} \quad Parameter type translation
+\begin{mathpar}
+[[||[]||]] \equiv [[Top]]
+
+[[||P; l:As||]] \equiv [[||P|| & {l : ||As||}]]
+
+[[||P; l?:As||]] \equiv [[||P|| & {l : ||As|| | Null}]]
+\end{mathpar}
+
+\noindent
+\framebox{$[[|T|]]$} \quad Argument type translation
+\begin{mathpar}
+[[|[]|]] \equiv [[Top]]
+
+[[|T; l:As|]] \equiv [[|T| & {l : ||As||}]]
+\end{mathpar}
+
+\noindent
+\framebox{$[[||Gs||]]$} \quad Typing context translation
+\begin{mathpar}
+[[||[]||]] \equiv [[ [] ]]
+
+[[||Gs, x : As||]] \equiv [[||Gs||, x : ||As||]]
+\end{mathpar}
+\caption{Type translation from \uaena to \lambdaiu.} \label{fig:trans-iu}
+\end{figure}
+
 
 \begin{theorem}[Soundness of Call Site Rewriting]
   If $[[Gs; e |- P <> T ~~> e']]$ and $[[||Gs|| |- e : |T|]]$,
