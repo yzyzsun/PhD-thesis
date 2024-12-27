@@ -476,11 +476,11 @@ Defined in \autoref{fig:source-typing}, $\Gamma  \vdash  \ottnt{e} \, \Leftright
 source expression $\ottnt{e}$ to a source type $\ottnt{A}$ under the typing context
 $\Gamma$ and the typing mode $\Leftrightarrow$, and the typing derivation generates a
 target expression $\epsilon$ from $\ottnt{e}$. The type system is
-\emph{bidirectional}~\citep{pierce2000local}: under the inference mode
-($ \Rightarrow $), $\ottnt{A}$ is generated as an output; under the checking mode
-($ \Leftarrow $), $\ottnt{A}$ is given as an input. Given the typing context, every
-well-typed $\ottnt{e}$ has a unique inferred type; all the types that $\ottnt{e}$ can be
-checked against are supertypes of this inferred type.
+\emph{bidirectional}~\citep{pierce2000local,dunfield2021bidirectional}: under
+the inference mode ($ \Rightarrow $), $\ottnt{A}$ is generated as an output; under the
+checking mode ($ \Leftarrow $), $\ottnt{A}$ is given as an input. Given the typing
+context, every well-typed $\ottnt{e}$ has a unique inferred type; all the types that
+$\ottnt{e}$ can be checked against are supertypes of this inferred type.
 
 \Rref{Ela-Merge} is the signature rule of calculi with \emph{disjoint
 intersection types}. The disjointness restriction on types ($\ottnt{A}  *  \ottnt{B}$, defined

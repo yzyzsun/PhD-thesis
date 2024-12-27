@@ -1,7 +1,165 @@
 \chapter{Disjoint Intersection Types and Traits} \label{ch:background}
 
-\section{Intersection and Union Types}
+This part provides a brief introduction to the background of this thesis. We
+first introduce intersection and union types, merging, disjointness, and traits
+in this chapter, laying the type-theoretic foundation for the CP language. Next
+in \autoref{ch:cp}, we will give a crash course in CP.
 
-\section{Merges and Disjointness}
+\newcommand{\tand}{\,\&\,}
+\newcommand{\tor}{\,|\,}
+\newcommand{\sub}{\;<:\;}
+
+\section{Intersection Types}
+
+\autoref{fig:intersection} characterizes intersection types in terms of typing
+and subtyping.
+
+\begin{figure}
+\begin{mathpar}
+\inferrule[T-And]{e : A \\ e : B}
+                 {e : A \tand B}
+\label{eq:t-and}
+
+\inferrule[S-AndL]{}{A \tand B \sub A}
+
+\inferrule[S-AndR]{}{A \tand B \sub B}
+
+\inferrule[S-And]{A <: B \\ A <: C}
+                 {A \sub B \tand C}
+\end{mathpar}
+\caption{Typing and subtyping rules for intersection types.} \label{fig:intersection}
+\end{figure}
+
+\paragraph{Distributive subtyping.}
+It is well known that $\lambda$-calculi have a close relationship with logical
+systems~\citep{wadler2015propositions}. For example, the Curry-Howard
+isomorphism states that propositions are types and proofs are terms. An
+interesting property in logic is that implication is left-distributive over
+conjunction, as shown in the following equivalence:
+\begin{equation*}
+A \to B \land C \quad\Leftrightarrow\quad (A \to B) \land (A \to C)
+\end{equation*}
+Since implication corresponds to function types and conjunction corresponds to
+intersection types in CP, the distributive property can be translated into
+two subtyping rules:
+\begin{align}
+          A \to B \tand C \quad <:& \quad (A \to B) \tand (A \to C) \label{eq:dist-1} \\
+(A \to B) \tand (A \to C) \quad <:& \quad A \to B \tand C \label{eq:dist-2}
+\end{align}
+\autoref{eq:dist-1} can be derived from the aforementioned subtyping rules for
+intersection types:
+\begin{mathpar}
+\small
+\inferrule*[right=S-And]
+  {\inferrule*[left=S-Fun]{A <: A \\
+                           \inferrule*[right=S-AndL]{ }
+                                                    {B \tand C \sub B}}
+                          {A \to B \tand C \sub A \to B} \\
+   \inferrule*[right=S-Fun]{A <: A \\
+                            \inferrule*[right=S-AndR]{ }
+                                                     {B \tand C \sub C}}
+                           {A \to B \tand C \sub A \to C}}
+  {A \to B \tand C \sub (A \to B) \tand (A \to C)}
+\end{mathpar}
+However, \autoref{eq:dist-2} is not derivable so far. Instead, it is a key rule
+of distributive subtyping, originating from the BCD type assignment
+system~\citep{barendregt1983filter}. An interesting consequence of adding
+\autoref{eq:dist-2} is that $(A \to B) \tand (C \to D)$ is a subtype of $A \tand
+C \to B \tand D$. This can be derived as follows via transitivity:
+\begin{mathpar}
+\text{(I)}
+\footnotesize
+\inferrule*[right=S-And]{\inferrule*[left=S-AndL]{\inferrule*[left=S-Fun]{A \tand C <: A \\ B <: B}
+                                                                         {A \to B \sub A \tand C \to B}}
+                                                 {(A \to B) \tand (C \to D) <: A \tand C \to B} \\
+                         \inferrule*[right=S-AndR]{\inferrule*[right=S-Fun]{A \tand C <: C \\ D <: D}
+                                                                           {C \to D \sub A \tand C \to D}}
+                                                  {(A \to B) \tand (C \to D) <: A \tand C \to D}}
+                        {(A \to B) \tand (C \to D) \sub (A \tand C \to B) \tand (A \tand C \to D)}
+
+\normalsize
+\inferrule*[right=S-Trans]
+  {\text{(I)}  \quad (A \to B) \tand (C \to D) \sub (A \tand C \to B) \tand (A \tand C \to D) \\
+   \text{(II)} \quad (A \tand C \to B) \tand (A \tand C \to D) \sub A \tand C \to B \tand D}
+  {(A \to B) \tand (C \to D) \sub A \tand C \to B \tand D}
+\end{mathpar}
+Judgment (I) is derivable as shown above, and Judgment (II) directly follows
+\autoref{eq:dist-2}. In short, distributive subtyping allows using an
+intersection of two function types as if it is a function type with the two
+parameter types intersected and the two return types intersected. This form of
+distributivity can be extended to record types and reveals the essence of nested
+composition~\citep{bi2018essence}. As a result, family
+polymorphism~\citep{ernst2001family} can be achieved, providing an elegant
+solution to the expression
+problem~\citep{wadler1998expression,ernst2004expression}. A detailed discussion
+about family polymorphism in CP can be found in \autoref{sec:ep}.
+
+\paragraph{Interaction with mutable references.}
+Although distributive intersection subtyping is powerful, it poses a significant
+challenge for type safety when mutable references are involved. In fact,
+intersection subtyping alone without distributivity is already problematic.
+\citet{davies2000intersection} illustrated the problem with the following
+example, assuming that \lstinline[morekeywords=Pos]{Pos} (positive numbers) is a
+subtype of \lstinline[morekeywords=Nat]{Nat} (natural numbers):
+\begin{lstlisting}[morekeywords={Nat,Pos}]
+let x = ref 48 : Ref Nat & Ref Pos in
+let y = (x := 0) in    -- x is used as Ref Nat
+let z = !x in z : Pos  -- x is used as Ref Pos
+\end{lstlisting}
+The code is well-typed but could cause a runtime error, because \lstinline{z} is
+expected to be positive while it is actually a non-positive number
+\lstinline{0}. The solution proposed by \citeauthor{davies2000intersection} is a
+variant of \emph{value restriction}~\citep{wright1995simple}, which requires
+that the introduction rule of intersection types (i.e. \textsc{T-And} in
+\autoref{fig:intersection}) only applies to values. By this means,
+\lstinline{ref 1} cannot be typed as
+\lstinline[morekeywords={Nat,Pos}]{Ref Nat & Ref Pos} since it is not a value.
+However, this solution does not work well with distributive subtyping.
+\citeauthor{davies2000intersection} showed a similar example to the previous
+one:
+\begin{lstlisting}[morekeywords={Nat,Pos}]
+let x = (\(_: ()) -> ref 48) () : Ref Nat & Ref Pos in
+let y = (x := 0) in    -- x is used as Ref Nat
+let z = !x in z : Pos  -- x is used as Ref Pos
+\end{lstlisting}
+Since the anonymous function \lstinline{(\(_: ()) -> ref 48)} is a value,
+it can be typed as an intersection type
+\lstinline[morekeywords={Nat,Pos}]{(() -> Ref Nat) & (() -> Ref Pos)}.
+Besides, this function can be used as
+\lstinline[morekeywords={Nat,Pos}]{() -> Ref Nat & Ref Pos}
+via distributive subtyping. Applying it to \lstinline{()} yields almost the same
+code as the previous example. To address this type-safety issue,
+\citeauthor{davies2000intersection} have to drop the distributivity rule.
+
+Recently, \citet{ye2024imperative} proposed a simpler solution to this problem
+based on \emph{bidirectional
+typing}~\citep{pierce2000local,dunfield2021bidirectional}. Bidirectional type
+system divides traditional type assignment ($e : A$) into two modes: type
+checking ($e \Leftarrow A$) and type inference ($e \Rightarrow a$). The key idea
+of \citeauthor{ye2024imperative}'s solution is that the type of the value stored
+in a reference can only be inferred but not checked:
+\begin{mathpar}
+\inferrule[T-Ref-Before]{e : A}
+                 {\mathbf{ref}\ e : \mathbf{Ref}\ A}
+
+\inferrule[T-Ref-After]{e \Rightarrow A}
+                 {\mathbf{ref}\ e \Rightarrow \mathbf{Ref}\ A}
+\end{mathpar}
+With the rule \textsc{T-Ref-After}, \lstinline{ref 48} can only have type
+\lstinline[morekeywords=Pos]{Ref Pos} because \lstinline{48} is inferred to have
+type \lstinline[morekeywords=Pos]{Pos}. Morever, \lstinline{ref 48} cannot be
+checked against \lstinline[morekeywords=Nat]{Ref Nat} since reference types are
+invariant. As a result, the previous two examples cannot type-check in this
+bidirectional type system. A final note is that, to have a reference of type
+\lstinline[morekeywords=Nat]{Ref Nat} with the initial value \lstinline{48},
+one can write \lstinline[morekeywords=Nat]{ref (48 : Nat)} instead.
+
+\section{Merging and Disjointness}
+
+\section{Union Types}
 
 \section{Traits and Other Units of Code Reuse}
+
+Similar to intersection types, traits are an overloaded concept in the
+literature. In the CP language, we use the term \emph{trait} to refer to a
+mechanism for code reuse described by \citet{ducasse2006traits}...

@@ -477,11 +477,11 @@ Defined in \autoref{fig:source-typing}, $[[G |- e dirflag A ~~> t]]$ relates a
 source expression $[[e]]$ to a source type $[[A]]$ under the typing context
 $[[G]]$ and the typing mode $[[dirflag]]$, and the typing derivation generates a
 target expression $[[t]]$ from $[[e]]$. The type system is
-\emph{bidirectional}~\citep{pierce2000local}: under the inference mode
-($[[=>]]$), $[[A]]$ is generated as an output; under the checking mode
-($[[<=]]$), $[[A]]$ is given as an input. Given the typing context, every
-well-typed $[[e]]$ has a unique inferred type; all the types that $[[e]]$ can be
-checked against are supertypes of this inferred type.
+\emph{bidirectional}~\citep{pierce2000local,dunfield2021bidirectional}: under
+the inference mode ($[[=>]]$), $[[A]]$ is generated as an output; under the
+checking mode ($[[<=]]$), $[[A]]$ is given as an input. Given the typing
+context, every well-typed $[[e]]$ has a unique inferred type; all the types that
+$[[e]]$ can be checked against are supertypes of this inferred type.
 
 \Rref{Ela-Merge} is the signature rule of calculi with \emph{disjoint
 intersection types}. The disjointness restriction on types ($[[A*B]]$, defined

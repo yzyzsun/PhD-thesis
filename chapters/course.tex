@@ -7,8 +7,8 @@ compositional programming. These features include:
 \begin{itemize}
 \item Disjoint intersection types~\citep{oliveira2016disjoint} and disjoint
       polymorphism~\citep{alpuim2017disjoint,xie2020row};
-\item Distributive subtyping~\citep{bi2018essence,bi2019distributive} and its
-      interaction with mutable references~\citep{ye2024imperative};
+\item Distributive intersection subtyping~\citep{bi2018essence,bi2019distributive}
+      and its interaction with mutable references~\citep{ye2024imperative};
 \item Iso-recursive types with nominal unfoldings~\citep{zhou2022calculus};
 \item Generalized record operations with type difference~\citep{xu2023making};
 \item Compositional embeddings of domain-specific languages
@@ -37,7 +37,7 @@ start with a lowercase letter. The type annotation (\lstinline{: I}) is not
 required for term definitions as long as the type can be inferred.
 
 \begin{table}
-\caption{List of operations by precedence in CP.} \label{tab:op}
+\caption{List of operators by precedence in CP.} \label{tab:op}
 \centering
 \begin{tabular}{*{4}{c}}
 \toprule
@@ -110,27 +110,15 @@ type.
 
 \section{Compound Types}
 
-Compound types in CP include arrays, references, records, intersections, and
+Compound types in CP include references, arrays, records, intersections, and
 unions.
 
-\paragraph{Arrays.}
-An array type is written as \lstinline{[T]}, where \lstinline{T} is the element
-type. Since arrays are immutable in CP, array types are treated
-\emph{covariantly}. For example, \lstinline{[Int]} is a subtype of
-\lstinline{[Top]} because \lstinline{Int} is a subtype of \lstinline{Top}.
-
-An array literal can be conveniently written as \lstinline{[e1; e2]}. Note that
-we use semicolons to separate elements instead of commas because
-\lstinline{e1,e2} is parsed as a merge. Two arrays can be concatenated using the
-\lstinline{++} operator. The length of an array can be obtained like
-\lstinline{#arr}, and the \lstinline{i}-th element can be accessed like
-\lstinline{arr!!i}.
-
 \paragraph{References.}
-A reference type is written as \lstinline{Ref T}. A mutable array can be
-represented as an array of references, i.e. \lstinline{[Ref T]}. Reference types
-are \emph{invariant}, meaning that \lstinline{Ref Int} is neither a subtype nor
-a supertype of \lstinline{Ref Top}.
+A reference is similar to a pointer in an imperative language. A reference type
+is denoted by \lstinline{Ref T}, where \lstinline{T} is the type of the value
+stored in the reference cell. Note that reference types are \emph{invariant},
+meaning that \lstinline{Ref Int} is neither a subtype nor a supertype of
+\lstinline{Ref Top}, in order to ensure type safety.
 
 A reference cell can be created using the \lstinline{ref} keyword. For example,
 \lstinline{ref 48} creates a cell of type \lstinline{Ref Int} with the initial
@@ -142,19 +130,95 @@ the unit value. Finally, \lstinline{e1 >> e2} denotes sequential composition,
 which means that \lstinline{e2} is returned after \lstinline{e1} (required to
 have the unit type) is executed.
 
+\paragraph{Arrays.}
+An array type is denoted by \lstinline{[T]}, where \lstinline{T} is the element
+type. Since arrays are \emph{immutable} in CP, array types are treated
+\emph{covariantly}. For example, \lstinline{[Int]} is a subtype of
+\lstinline{[Top]} because \lstinline{Int} is a subtype of \lstinline{Top}.
+
+\begin{tipblock}
+A mutable array can be represented as an array of references, i.e.
+\lstinline{[Ref T]}. Note that \lstinline{[Ref Int]} is not a subtype of
+\lstinline{[Ref Top]} due to the invariance of reference types.
+\end{tipblock}
+
+\noindent
+An array literal can be conveniently written as \lstinline{[e1; e2]}. Note that
+we use semicolons to separate elements instead of commas because
+\lstinline{e1,e2} is parsed as a merge. Two arrays can be concatenated using the
+\lstinline{++} operator. The length of an array can be obtained like
+\lstinline{#arr}, and the \lstinline{i}-th element can be accessed like
+\lstinline{arr!!i}.
+
 \paragraph{Records.}
 A record type has the form \lstinline|{ l1: T1; l2: T2 }|, where \lstinline{l1}
 and \lstinline{l2} are labels, and \lstinline{T1} and \lstinline{T2} are field
 types. A record literal has the form \lstinline|{ l1 = e1; l2 = e2 }|, where
 \lstinline{e1} and \lstinline{e2} are field expressions. Since there is no tuple
-type in CP, a pair can be represented as a record with two fields. An empty
-record \lstinline|{}| is also allowed, which is inferred to have the top type.
-Note that \lstinline|{}| is different from the unit value \lstinline|()|, which
-has the unit type. Record fields can be accessed using the dot notation like
-\lstinline{rcd.l1}.
+type in CP, a pair can be represented as a record with two fields. Record fields
+can be accessed using the dot notation like \lstinline{rcd.l1}.
 
-\paragraph{Intersections and Unions.}
-See \autoref{ch:background}? Talk about multiple fields = intersection?
+\begin{tipblock}
+An empty record \lstinline|{}| is also allowed, which is inferred to have the
+top type \lstinline{Top}. Note that \lstinline|{}| is different from the unit
+value \lstinline|()|, which has the unit type \lstinline|()|.
+\end{tipblock}
+
+\noindent
+Two records can be concatenated using the merge operator like \lstinline{e1,e2}.
+Many other operations on records are supported via merging and type difference,
+as shown in \autoref{tab:rcd}. Subtracting type \lstinline{T1} by type
+\lstinline{T2} is denoted by \lstinline{T1\T2}. Taking the difference of record
+types as an example, \lstinline|{ l1: Int; l2: Bool } \ { l1: Int }| is equal to
+\lstinline|{ l2: Bool }|.
+
+\begin{table}[b]
+\caption{List of operations on records in CP.} \label{tab:rcd}
+\centering
+\begin{tabular}{ccl}
+\toprule
+\thead{Subtraction by Label} & \lstinline{e \ l}        & $\triangleq$\quad\lstinline|e \\ { l: Bot }| \\
+\midrule
+\thead{Subtraction by Type}  & \lstinline{e \\ T}       & $\triangleq$\quad\lstinline{e : T0\T}\quad if \lstinline{e} has type \lstinline{T0} \\
+\midrule
+\thead{Subtraction by Term}  & \lstinline{e1 \- e2}     & $\triangleq$\quad\lstinline{e1 : T1\T2}\quad if \lstinline{e1} has \lstinline{T1} and \lstinline{e2} has \lstinline{T2} \\
+\midrule
+\thead{Label Renaming}       & \lstinline{e [l1 <- l2]} & $\triangleq$\quad\lstinline|e\l1 , { l2 = e.l1 }| \\
+\midrule
+\thead{Leftist Merge}        & \lstinline{e1 +, e2}     & $\triangleq$\quad\lstinline{e1 , (e2 \- e1)} \\
+\midrule
+\thead{Rightist Merge}       & \lstinline{e1 ,+ e2}     & $\triangleq$\quad\lstinline{(e1 \- e2) , e2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Intersections.}
+An intersection of types \lstinline{T1} and \lstinline{T2} is denoted by
+\lstinline{T1&T2}. Intersection types have an explicit introduction form in CP,
+which is called a merge and written as \lstinline{e1,e2}, where \lstinline{e1}
+is an expression of type \lstinline{T1} and \lstinline{e2} is of type
+\lstinline{T2}. Intersection types have no explicit elimination form, but they
+can be implicitly eliminated via subtyping. For example, \lstinline{e1,e2} can
+be used as if it has type \lstinline{T1} or \lstinline{T2}, because
+\lstinline{T1} and \lstinline{T2} are subtypes of \lstinline{T1&T2}.
+
+\begin{tipblock}
+A multi-field record is encoded as an intersection of single-field records in
+CP. For example, a record type with two fields \lstinline|{ l1: Int; l2: Bool }|
+is encoded as \lstinline|{ l1: Int } & { l2: Bool }|. Similarly, at the term
+level, a two-field record \lstinline|{ l1 = 48; l2 = true }| is encoded as
+\lstinline|{ l1 = 48 } , { l2 = true }| using the merge operator.
+\end{tipblock}
+
+\paragraph{Unions.}
+A union of types \lstinline{T1} and \lstinline{T2} is denoted by
+\lstinline{T1|T2}. Union types have an explicit elimination form in CP, written
+as \lstinline{switch e0 as x case T1 => e1 case T2 => e2}. Here \lstinline{x} is
+a variable bound to the value of \lstinline{e0}, and it is refined to type
+\lstinline{T1} in \lstinline{e1} and to \lstinline{T2} in \lstinline{e2}. This
+mechanism is called occurrence typing or flow-sensitive typing. Union types have
+no explicit introduction form, but they can be implicitly introduced via
+subtyping, e.g. \lstinline{48 : Int|()} and \lstinline{() : Int|()}.
 
 \section{Functions}
 
@@ -171,20 +235,26 @@ add (x: Int) (y: Int) = x + y;
 -- is equivalent to:
 add = \(x: Int) -> \(y: Int) -> x + y;
 \end{lstlisting}
-Calling \lstinline{add 1 2} will return \lstinline{3} as expected.
+Higher-order functions like function composition can be defined as follows:
+\begin{lstlisting}
+compose (f: Int -> Int) (g: Int -> Int) (x: Int) = f (g x);
+compose (\(x: Int) -> x + 1) (\(x: Int) -> x * 2) 3  --> 7
+\end{lstlisting}
 Unfortunately, CP does not support type inference for parameter types, so they
-must be explicitly annotated. However, the return type can be inferred for
-non-recursive functions. For recursive functions, the return type must also be
-annotated. For example, a factorial function can be defined as follows:
+must be explicitly annotated as shown above. However, the return type can be
+inferred for non-recursive functions. For recursive functions, the return type
+must also be annotated. For example, a factorial function can be defined as
+follows:
 \begin{lstlisting}
 fact (n: Int): Int = if n == 0 then 1 else n * fact (n - 1);
 -- is equivalent to:
 fact = fix fact: Int -> Int.
         \(n: Int) -> if n == 0 then 1 else n * fact (n - 1);
 \end{lstlisting}
+Recursive functions can be made anonymous using the \lstinline{fix} operator as
+shown above.
 
-\section{Named and Optional Arguments}
-
+\paragraph{Named and optional arguments.}
 See \autoref{ch:arguments}?
 
 \section{Parametric Polymorphism}
@@ -203,6 +273,8 @@ id A (x: A) = x;
 id = /\A. \(x: A) -> x;
 \end{lstlisting}
 Calling \lstinline{id @Int 48} will return \lstinline{48} as expected.
+
+\section{Distributive Intersection Subtyping}
 
 \section{Iso-Recursive Types}
 

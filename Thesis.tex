@@ -31,6 +31,7 @@
 \renewcommand{\subsectionautorefname}{Section}
 \renewcommand{\subsubsectionautorefname}{Section}
 \renewcommand{\paragraphautorefname}{Section}
+\renewcommand{\equationautorefname}{Formula}
 
 \renewcommand*{\backref}[1]{}
 \renewcommand*{\backrefalt}[4]{%
@@ -122,6 +123,7 @@
 % Load my packages
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+\usepackage{awesomebox}
 \usepackage{fancyvrb}
 \usepackage{multicol}
 \usepackage[vskip=1em,font=itshape]{quoting}
@@ -137,7 +139,7 @@
 
 \usepackage{listings}
 \lstdefinelanguage{CP}{
-  keywords={case,else,extends,false,fix,fold,forall,if,implements,inherits,interface,in,let,letrec,new,null,open,override,ref,switch,then,toString,trait,true,type,undefined,unfold,with,Bool,Bot,Double,Int,Null,Ref,String,Top,Trait},
+  keywords={as,case,else,extends,false,fix,fold,forall,if,implements,inherits,interface,in,let,letrec,new,null,open,override,ref,switch,then,toString,trait,true,type,undefined,unfold,with,Bool,Bot,Double,Int,Null,Ref,String,Top,Trait},
   alsoother={@},
   comment=[l]{--},
   morecomment=[n]{\{-}{-\}},
