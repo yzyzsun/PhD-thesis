@@ -19,7 +19,7 @@ calculi are widely
 studied~\citep{barbanera1995intersection,frisch2008semantic,dunfield2014elaborating}
 and provide a well-understood foundation for named and optional arguments.
 
-\paragraph{Named Arguments as Intersections.}
+\paragraph{Named arguments as intersections.}
 Named arguments are translated to multi-field records. However, the core
 language does not support multi-field records directly. There are only
 single-field records in the core language, and multiple fields are represented
@@ -35,7 +35,7 @@ multiple single-field records to form multi-field records, reminiscent of
 Forsythe~\citep{reynolds1997design}. For example, $\ottsym{\{}  \ottmv{x}  \ottsym{=}  \ottsym{1}  \ottsym{\}}  \bbcomma  \ottsym{\{}  \ottmv{y}  \ottsym{=}  \ottsym{2}  \ottsym{\}}$ forms a
 two-field record from two single-field records.
 
-\paragraph{Optional Arguments as Unions.}
+\paragraph{Optional arguments as unions.}
 Optional arguments are translated to nullable types. A nullable type is not
 implicit in the core language but is represented as a union with the null
 type~\citep{nieto2020scala}. For example, an optional integer argument named $z$
@@ -73,13 +73,13 @@ translate named arguments to records. For example, the function call
 \lstinline{append(x=1, xs=[0])} will be translated to {\small
 $\mathtt{append}\,\ottsym{(}  \ottsym{\{}  \ottmv{x}  \ottsym{=}  \ottsym{1}  \ottsym{\}}  \bbcomma  \ottsym{\{}  \ottmv{xs}  \ottsym{=}  \ottsym{[0]}  \ottsym{\}}  \ottsym{)}$}.
 
-\paragraph{Rewriting Call Sites.}
+\paragraph{Rewriting call sites.}
 More importantly, we also rewrite call sites to add null values for absent
 optional arguments. For example, the function call \lstinline{append(x=1)} will
 be rewritten and translated to {\small
 $\mathtt{append}\,\ottsym{(}  \ottsym{\{}  \ottmv{x}  \ottsym{=}  \ottsym{1}  \ottsym{\}}  \bbcomma  \ottsym{\{}  \ottmv{y}  \ottsym{=}  \ottkw{null}  \ottsym{\}}  \ottsym{)}$}.
 
-\paragraph{Dependent Default Values.}
+\paragraph{Dependent default values.}
 Another advantage of our translation scheme is that it naturally allows default
 values to depend on earlier arguments. Python and Ruby do not support dependent
 default values, but this feature can be useful in some practical scenarios. For
@@ -222,7 +222,7 @@ union types for type-theoretic solidness and elegance, it can work for a wider
 range of languages. We discuss the alternatives to intersections and unions
 below.
 
-\paragraph{Alternative to Intersections.}
+\paragraph{Alternative to intersections.}
 Record types have existed long before intersection types were invented. In
 practice, multi-field records are rarely represented as intersections of
 single-field records. For example, \emph{Software Foundations}~\citep{plf}
@@ -236,7 +236,7 @@ powerful if we want to construct first-class named arguments at run time like in
 CP, its absence does not disable our translation scheme. In other words, we only
 assume a simplified version that does not merge terms dynamically.
 
-\paragraph{Alternative to Unions.}
+\paragraph{Alternative to unions.}
 Nullable types are rarely represented as unions with the null type too. For
 example, C\#, Kotlin, and Dart support nullable types as a primitive data
 structure. Putting a question mark behind any type makes it nullable in these
@@ -250,7 +250,7 @@ type-based switch. C\# also provides the null coalescing operator \lstinline{??}
 and simplifies the common pattern $\ottkw{switch} \, \ottnt{e} \, \ottkw{as} \, \ottmv{x} \, \ottkw{case} \, \ottnt{A}  \Rightarrow  \ottmv{x} \, \ottkw{case} \, \ottkw{Null}  \Rightarrow  \ottnt{d}$
 as \lstinline{e??d} for nullable values.
 
-\paragraph{Dynamically Typed Languages.}
+\paragraph{Dynamically typed languages.}
 It may be surprising at first sight that dynamically typed languages can benefit
 from our work with static typing, but recall that the type-safety issue in
 \autoref{sec:mypy} was found in Python. Nowadays, popular dynamically typed

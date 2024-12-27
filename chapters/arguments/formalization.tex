@@ -99,7 +99,7 @@ for the body of the let-in binding. For example, if $[[e1]]$ has type $[[A]]$,
 then $[[let x = e1 in e2]]$ adds $[[x]]:[[A]]$ to the typing context before
 type-checking $[[e2]]$.
 
-\paragraph{Dynamic Semantics.}
+\paragraph{Dynamic semantics.}
 We have a small-step operational semantics for \lambdaiu. The judgment
 $[[e]]\longrightarrow[[e']]$ means that $[[e]]$ reduces to $[[e']]$ in one step,
 and $[[e]]\longrightarrow^*[[e']]$ is for multi-step reduction. We extend the
@@ -212,7 +212,7 @@ In \rref{Ela-NApp}, there is also an auxiliary judgment $[[Gs; e |- P <> T ~~> e
 that rewrites call sites according to the parameter and argument types.
 \Rref{Ela-NEmpty,Ela-NField} are used to elaborate named arguments.
 
-\paragraph{Named Parameter Elaboration.}
+\paragraph{Named parameter elaboration.}
 As shown at the bottom of \autoref{fig:elab},
 $[[Gs; x |- p : P ~~> letin -| Gs']]$ means that the named parameter
 $[[p]]$ is inferred to have type $[[P]]$ and elaborates to a series of let-in
@@ -231,7 +231,7 @@ default value $[[e]]$ for the $[[Null]]$ case.
 \caption{Type-directed call site rewriting in \uaena.} \label{fig:match}
 \end{figure}
 
-\paragraph{Call Site Rewriting.}
+\paragraph{Call site rewriting.}
 As shown in \autoref{fig:match},
 $[[Gs; e |- P <> T ~~> e']]$ means that if the parameter type
 $[[P]]$ is compatible with the argument type $[[T]]$, the target expression
@@ -246,7 +246,7 @@ We have two more auxiliary judgments $[[T.l => As]]$ and
 $[[T.l =/>]]$ to indicate that the argument type $[[T]]$ contains a field $[[l]]$
 with type $[[As]]$ or $[[T]]$ does not contain $[[l]]$.
 
-\paragraph{Type Translation.}
+\paragraph{Type translation.}
 As we have informally mentioned in \autoref{sec:core}, we translate named
 parameters to intersection types and optional parameters to union types. The
 rules for $|\cdot|$ can be found in \autoref{fig:trans-iu}. Having

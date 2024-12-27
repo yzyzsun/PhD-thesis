@@ -45,7 +45,7 @@ this design may confuse users since \lstinline{(exp 10.0) ~base:2.0} will raise
 a type error but \lstinline{exp 10.0 ~base:2.0} will not. Partial application
 does not lead to an equivalent program in such situations.
 
-\paragraph{Option Types.}
+\paragraph{Option types.}
 In OCaml, an optional argument is internally represented as an \lstinline{option}
 type, which comprises two constructors: \lstinline{None} and \lstinline{Some}.
 Here is an equivalent definition for \lstinline{exp}:
@@ -66,7 +66,7 @@ exp 10.0 ~base:2.0  (*> exp 10.0 ~base:(Some 2.0) *)
 kind of \lstinline{option} is not a built-in type in many mainstream languages,
 especially in those languages that do not support algebraic data types.
 
-\paragraph{Higher-Order Functions.}
+\paragraph{Higher-order functions.}
 A surprising gotcha in OCaml is that the commutativity breaks down when we pass
 a function with labeled arguments to another function. \emph{Real World
 OCaml}~\citep{madhavapeddy2022real} gives the following example:
@@ -287,7 +287,7 @@ mkSettings ReqSettings {..} =
               Settings { settingsHost = "*4", settingsTimeout = 30, .. }
 \end{lstlisting}
 
-\paragraph{Best Practice.}
+\paragraph{Best practice.}
 Although \lstinline{mkSettings} resolves the second issue, there is a regression
 concerning the first issue: users have to look for \lstinline{mk*} functions
 now. Fortunately, we can harmonize both design patterns to develop a third
