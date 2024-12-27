@@ -37,8 +37,9 @@ we determine where to insert ``\textsf{.fst}''? In a type-directed elaboration,
 we can generate coercion functions according to subtyping judgments in the
 typing derivation. A \rref{DTyp-Sub} can be found in previous work.
 \begin{mathpar}
-\drule{DTypXXSub}
-\drule{ElaXXSub}
+\ottdruleDTypXXSub{}
+\and
+\ottdruleElaXXSub{}
 \end{mathpar}
 The \rref{DTyp-Sub} means that if a source term $\ottnt{e}$ is inferred to have type
 $\ottnt{A}$ and elaborated into a target term $\epsilon$, and the subtyping judgment
