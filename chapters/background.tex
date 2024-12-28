@@ -3,7 +3,7 @@
 This part provides a brief introduction to the background of this thesis. We
 first introduce intersection and union types, merging, disjointness, and traits
 in this chapter, laying the type-theoretic foundation for the CP language. Next
-in \autoref{ch:cp}, we will give a crash course in CP.
+in \autoref{ch:cp}, we will give a crash course in CP in a friendly manner.
 
 \newcommand{\tand}{\,\&\,}
 \newcommand{\tor}{\,|\,}
@@ -11,15 +11,77 @@ in \autoref{ch:cp}, we will give a crash course in CP.
 
 \section{Intersection Types}
 
-\autoref{fig:intersection} characterizes intersection types in terms of typing
-and subtyping.
+Generics or parametric polymorphism provides a mechanism for code reuse by
+assigning infinite possibilities of types to a single definition. This kind of
+polymorphism is \emph{uniform} in that all possibilities behave identically
+despite different types instantiated.
 
-\begin{figure}
+In contrast, intersection types allows explicitly enumerating all possible types
+that a single definition can have. In this thesis, intersection types are
+closely related to overloading or \emph{ad-hoc} polymorphism. For example, the
+type of the addition operator \lstinline{(+)} for both integers and
+floating-point numbers can be written as:
+\begin{equation*}
+(\mathbf{Int} \to \mathbf{Int} \to \mathbf{Int}) \quad\&\quad
+(\mathbf{Double} \to \mathbf{Double} \to \mathbf{Double})
+\end{equation*}
+Note that the two versions of addition do not necessarily have the same behavior
+in this setting. Semantic subtyping~\citep{frisch2008semantic} provides a
+set-theoretic foundation for overloaded functions typed as intersections and is
+recently employed in the Elixir type system~\citep{castagna2023design}.
+
+However, this connection is not the original motivation for intersection types
+(the connection did not even hold!) if we look back at the history from
+1970s~\citep{bono2020tale}. Instead, functions with intersection types had a
+uniform behavior and could be regarded as a finite portion of parametrically
+polymorphic functions. Furthermore, intersection types are useful for some terms
+that cannot be typed in the simply typed $\lambda$-calculus, such as the
+$\Omega$-combinator ($\lambda x.\ x\ x$). The $\Omega$-combinator can be typed
+using the typing rules in \autoref{fig:typ-and} (\textsc{T-Abs} and
+\textsc{T-App} are standard rules for functions and thus omitted):
 \begin{mathpar}
-\inferrule[T-And]{e : A \\ e : B}
-                 {e : A \tand B}
-\label{eq:t-and}
+\inferrule*[right=T-Abs]{\inferrule*[right=T-App]{\inferrule[T-AndElimL]{\dots}
+                                                                        {x : (A \to B) \tand A \;\vdash\; x : A \to B} \\
+                                                  \inferrule[T-AndElimR]{\dots}
+                                                                        {x : (A \to B) \tand A \;\vdash\; x : A}}
+                                                 {x : (A \to B) \tand A \;\vdash\; x\ x : B}}
+                        {\cdot \vdash \lambda x.\ x\ x : (A \to B) \tand A \to B}
+\end{mathpar}
+Intersection types in this setting are typically used to characterize the
+termination properties of $\lambda$-terms~\citep{dezani2005compositional}.
+Because of the correspondence with termination, type inference with intersection
+types is \emph{not} decidable; neither is type
+inhabitation~\citep{urzyczyn1999emptiness}.
 
+In light of the analogy with set intersection, it is tempting to add subtyping
+to an intersection type system. \autoref{fig:sub-and} shows three subtyping
+rules for intersection types, which are naturally induced by set inclusion.
+Besides the subtyping rules, we also need to add the subsumption rule to the
+typing rules in \autoref{fig:typ-and}:
+\begin{mathpar}
+\inferrule[T-Sub]{e : A \\ A <: B}
+                 {e : B}
+\end{mathpar}
+With \textsc{T-Sub}, the previous elimination rules \textsc{T-AndElimL} and
+\textsc{T-AndElimR} can now be derived from the subtyping rules \textsc{S-AndL}
+and \textsc{S-AndR}.
+
+\begin{figure}[t]
+\begin{mathpar}
+\inferrule[T-AndIntro]{e : A \\ e : B}
+                      {e : A \tand B}
+
+\inferrule[T-AndElimL]{e : A \tand B}
+                      {e : A}
+
+\inferrule[T-AndElimR]{e : A \tand B}
+                      {e : B}
+\end{mathpar}
+\caption{Typing rules for intersection types.} \label{fig:typ-and}
+\end{figure}
+
+\begin{figure}[b]
+\begin{mathpar}
 \inferrule[S-AndL]{}{A \tand B \sub A}
 
 \inferrule[S-AndR]{}{A \tand B \sub B}
@@ -27,7 +89,7 @@ and subtyping.
 \inferrule[S-And]{A <: B \\ A <: C}
                  {A \sub B \tand C}
 \end{mathpar}
-\caption{Typing and subtyping rules for intersection types.} \label{fig:intersection}
+\caption{Subtyping rules for intersection types.} \label{fig:sub-and}
 \end{figure}
 
 \paragraph{Distributive subtyping.}
@@ -110,13 +172,12 @@ The code is well-typed but could cause a runtime error, because \lstinline{z} is
 expected to be positive while it is actually a non-positive number
 \lstinline{0}. The solution proposed by \citeauthor{davies2000intersection} is a
 variant of \emph{value restriction}~\citep{wright1995simple}, which requires
-that the introduction rule of intersection types (i.e. \textsc{T-And} in
-\autoref{fig:intersection}) only applies to values. By this means,
-\lstinline{ref 1} cannot be typed as
-\lstinline[morekeywords={Nat,Pos}]{Ref Nat & Ref Pos} since it is not a value.
-However, this solution does not work well with distributive subtyping.
-\citeauthor{davies2000intersection} showed a similar example to the previous
-one:
+that the introduction rule of intersection types (i.e. \textsc{T-AndIntro} in
+\autoref{fig:typ-and}) only applies to values. By this means, \lstinline{ref 1}
+cannot be typed as \lstinline[morekeywords={Nat,Pos}]{Ref Nat & Ref Pos} since
+it is not a value. However, this solution does not work well with distributive
+subtyping. \citeauthor{davies2000intersection} showed a similar example to the
+previous one:
 \begin{lstlisting}[morekeywords={Nat,Pos}]
 let x = (\(_: ()) -> ref 48) () : Ref Nat & Ref Pos in
 let y = (x := 0) in    -- x is used as Ref Nat
