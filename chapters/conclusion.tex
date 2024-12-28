@@ -1,1 +1,125 @@
 \chapter{Conclusion and Future Work} \label{ch:conclusion}
+
+\section{Future Work}
+
+\subsection{Evaluating Document DSLs}
+
+Recently, \citet{crichton2024core} proposed a core calculus for documents...
+
+\subsection{Improving the CP Compiler}
+
+\paragraph{Side effects in top-like terms.}
+Our formalization of \lambdaiplus follows the distributive subtyping rules
+proposed by \citet{barendregt1983filter}, which allows the top type $\top$ to be
+a subtype of $\top \to \top$. Via transitivity and contravariance of functions,
+we can show that $\top$ is a subtype of any function type returning $\top$:
+\begin{mathpar}
+\inferrule*[right=S-Trans]{\top \sub \top \to \top \\
+                           \inferrule*[right=S-Fun]{A <: \top \\ \top <: \top}
+                                                   {\top \to \top \sub A \to \top}}
+                          {\top \sub A \to \top}
+\end{mathpar}
+This relation can be understood as a generalization of the distributive
+subtyping rule for function types, where $n = 0$:
+\begin{equation*}
+(A \to B_1) \tand (A \to B_2) \tand \cdots \tand (A \to B_n)
+\sub A \to (B_1 \tand B_2 \tand \cdots \tand B_n)
+\end{equation*}
+Since $\top$ represents the 0-ary intersection, the relation above is simplified
+to $\top <: A \to \top$. The other direction $A \to \top <: \top$ also holds
+because any type is a subtype of the maximal type $\top$. This means that $A \to
+\top$ is equivalent to $\top$ and is called \emph{top-like} (i.e. $\rceil A \to
+\top \lceil$) in \autoref{fig:disj}.
+
+In our elaboration rules in \autoref{fig:source-typing}, all top-like terms are
+treated as $\top$ and elaborated to an empty record (see
+\rref{Ela-Top,Ela-TopAbs,Ela-TopRcd}). Moreover, the coercive subtyping
+\rref{S-Top} in \autoref{fig:source-subtype} coerce a target term to an empty
+record if $B$ is top-like in $A <: B$. As a result, side effects in top-like
+terms are erased during elaboration, which is not desired in imperative
+languages.
+
+One reason we choose this design is to avoid the semantic ambiguity introduced
+by the overlapping of disjoint types on the top-like part. For example...
+
+\paragraph{Reconciliation between eagerness and laziness.}
+As observed by \citet{fan2022direct}, trait instantiation may diverge in CP if a
+call-by-value evaluation strategy is used. More than a score of years ago, a
+similar observation was made by \citet{bruce1999comparing} in the context of
+object encodings. \citeauthor{fan2022direct} fixed the divergence issue by
+switching to a call-by-name evaluation strategy completely, which is inefficient
+in practice. That is why we turn to a hybrid strategy: only self-annotated trait
+fields are lazily evaluated, as shown in \autoref{fig:call-by-need}, and other
+constructs are eagerly evaluated. Our hybrid approach is implemented in the CP
+compiler and proves to be effective in practice, but it has not been formalized
+or well studied. It is worthwhile to investigate formal semantics with the
+hybrid evaluation strategy and see how it can be applied to other languages.
+
+First, let us review why the trait instantiation does not terminate with the
+call-by-value strategy. The example used for \autoref{fig:call-by-need}
+corresponds to the following code using the fixpoint operator, and it reduces as
+follows:
+\begin{lstlisting}
+    fix this. { x = this.y; y = 48 }
+|-> { x = (fix this. { x = this.y; y = 48 }).y; y = 48 }
+|-> { x = { x = (fix this. { x = this.y; y = 48 }).y; y = 48 }.y; y = 48 }
+|-> ...
+\end{lstlisting}
+The evaluation diverges because the variable \lstinline{this} is evaluated
+repeatedly, despite the fact that only \lstinline{this.y} is needed. Therefore,
+we can conclude that the key to laziness is: do not evaluate anything until it
+is needed...
+
+A natural direction is to integrate the call-by-push-value
+model~\citep{levy2012call}, which reconciles the call-by-value and call-by-name
+strategies...
+
+\paragraph{Representation of type indices.}
+As discussed in \autoref{sec:index}, we use a shorter representation for
+function types in our implementation, which only includes the return type.
+However, there are some rare corner cases where this design causes trouble. Here
+is an example:
+\begin{lstlisting}
+type A = (Int -> Int&Bool) -> Int;
+type B = (Int -> Int&String) -> Int;
+f (g: Int -> Int) = g 0;
+f' = f : A&B;
+f'' = f' : A;
+f'' (\(x:Int) -> x,true)
+\end{lstlisting}
+Although the types of components of a merge are guaranteed to be disjoint, there
+is no rule guaranteeing components of an intersection type to be disjoint.
+Therefore, we can duplicate the function by casting \lstinline{f} to type
+\lstinline{A&B}. Since \lstinline{A} and \lstinline{B} are not disjoint and have
+the same return type, they would share the same type index
+\lstinline{"func_int"}. We could not distinguish them by type indices, and the
+field for \lstinline{f:B} would override that for \lstinline{f:A} in our
+implementation. At first sight, it somehow makes sense because they are
+essentially the same function so we do not need to keep two copies. However, the
+trouble here is that their parameters have different type indices:
+\lstinline{"func_(bool&int)"} for \lstinline{A}'s parameter and
+\lstinline{"func_(int&string)"} for \lstinline{B}'s. This subtle difference
+leads to slightly different compilation results for \lstinline{f:A} and
+\lstinline{f:B}. The code above would go wrong as we do not distinguish them and
+misuse \lstinline{f:B} as \lstinline{f:A}.
+
+The fix can be easy. Our formalization in \autoref{ch:calculi} uses a more
+precise representation for function types: both the parameter and return types
+are included in the type indices. Nevertheless, the issue is really rare, and we
+have never encountered such a case in benchmarks. For the considerations of
+performance and code size, we still use the shorter type indices that only
+include return types in our implementation. It is worthwhile to investigate the
+trade-off between soundness and performance in the representation of type
+indices. For example, we can use bit sets to represent intersection types.
+
+\subsection{Mixing Named and Positional Arguments}
+
+As shown in \autoref{tab:survey}, CP advocate distinctness between named and
+positional arguments. An interesting direction worth exploring is to drop
+distinctness. By this means, we can support omitting keywords if the order of
+arguments is not changed from how they are defined. However, mixing positional
+and named arguments can easily lead to ambiguity, especially when some arguments
+are optional. An important first step is to find an appropriate restriction that
+we should impose to mitigate the ambiguity problem.
+
+One possibility is to follow the restriction in Python: ...

@@ -317,42 +317,6 @@ index conflicts between two functions in a merge. Our design that includes only
 return types also avoids very long property names in JavaScript, which may lead
 to performance issues.
 
-\begin{comment}
-However, there are some rare corner cases where this design causes trouble. Here
-is an example:
-\begin{lstlisting}
-type A = (Int -> Int&Bool) -> Int;
-type B = (Int -> Int&String) -> Int;
-f (g: Int -> Int) = g 0;
-f' = f : A&B;
-f'' = f' : A;
-f'' (\(x:Int) -> x,true)
-\end{lstlisting}
-Although the types of components of a merge are guaranteed to be disjoint, there
-is no rule guaranteeing components of an intersection type to be disjoint.
-Therefore, we can duplicate the function by casting \lstinline{f} to type
-\lstinline{A&B}. Since \lstinline{A} and \lstinline{B} are not disjoint and have
-the same return type, they would share the same type index
-\lstinline{"func_int"}. We could not distinguish them by type indices, and the
-field for \lstinline{f:B} would override that for \lstinline{f:A} in our
-implementation. At first sight, it somehow makes sense because they are
-essentially the same function so we do not need to keep two copies. However, the
-trouble here is that their parameters have different type indices:
-\lstinline{"func_(bool&int)"} for \lstinline{A}'s parameter and
-\lstinline{"func_(int&string)"} for \lstinline{B}'s. This subtle difference
-leads to slightly different compilation results for \lstinline{f:A} and
-\lstinline{f:B}. The code above would go wrong as we do not distinguish them and
-misuse \lstinline{f:B} as \lstinline{f:A}.
-
-The fix is easy. Our formalization in \autoref{ch:calculi} uses a more precise
-representation for function types: both the parameter and return types are
-included in the type indices. Nevertheless, the issue is really rare, and we
-have never encountered such a case in benchmarks. For performance reasons, we
-still use the shorter type indices that only include return types in our
-implementation. To make the compiled code more concise, we also use this
-representation in \autoref{ch:compilation}.
-\end{comment}
-
 \paragraph{Compiling parametric polymorphism.}
 As we have discussed previously, dynamic inheritance and family polymorphism are
 already difficult to handle. In those examples, parametric polymorphism also
