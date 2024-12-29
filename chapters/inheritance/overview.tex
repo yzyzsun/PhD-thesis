@@ -23,8 +23,8 @@ inheritance~\citep{wand1991type,cook1989denotational}.
 
 However, adding an unrestricted merge operator to a language would lead to
 semantic ambiguity. In other words, the semantics of the language would become
-non-deterministic. For example, $1\bbcomma2$ could evaluate to either $1$ or
-$2$. That is why \citet{oliveira2016disjoint} introduced the notion of
+non-deterministic. For example, $(1\bbcomma2)+3$ could evaluate to either $4$ or
+$5$. That is why \citet{oliveira2016disjoint} introduced the notion of
 \emph{disjointness} to avoid ambiguity. If specialized to record types again,
 disjointness is similar to constraints used in \emph{row
 polymorphism}~\citep{harper1991record}. In the presence of disjointness, the two

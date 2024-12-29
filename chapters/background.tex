@@ -17,28 +17,32 @@ polymorphism is \emph{uniform} in that all possibilities behave identically
 despite different types instantiated.
 
 In contrast, intersection types allows explicitly enumerating all possible types
-that a single definition can have. In this thesis, intersection types are
-closely related to overloading or \emph{ad-hoc} polymorphism. For example, the
-type of the addition operator \lstinline{(+)} for both integers and
+that a single definition can have. In recently developed
+theories~\citep{dunfield2014elaborating,castagna2023programming}, intersection
+types are closely related to overloading or \emph{ad-hoc} polymorphism. For
+example, the type of the addition operator \lstinline{(+)} for both integers and
 floating-point numbers can be written as:
 \begin{equation*}
-(\mathbf{Int} \to \mathbf{Int} \to \mathbf{Int}) \quad\&\quad
-(\mathbf{Double} \to \mathbf{Double} \to \mathbf{Double})
+(\mathbf{Int} \times \mathbf{Int} \to \mathbf{Int}) \quad\&\quad
+(\mathbf{Double} \times \mathbf{Double} \to \mathbf{Double})
 \end{equation*}
-Note that the two versions of addition do not necessarily have the same behavior
-in this setting. Semantic subtyping~\citep{frisch2008semantic} provides a
+Note that the two versions of addition do not necessarily have the same
+behavior. Semantic subtyping~\citep{frisch2008semantic} provides a
 set-theoretic foundation for overloaded functions typed as intersections and is
-recently employed in the Elixir type system~\citep{castagna2023design}.
+employed in the Elixir type system~\citep{castagna2023design}.
 
 However, this connection is not the original motivation for intersection types
 (the connection did not even hold!) if we look back at the history from
-1970s~\citep{bono2020tale}. Instead, functions with intersection types had a
+1970s~\citep{bono2020tale}. Instead, functions with intersection types had
 uniform behavior and could be regarded as a finite portion of parametrically
-polymorphic functions. Furthermore, intersection types are useful for some terms
-that cannot be typed in the simply typed $\lambda$-calculus, such as the
-$\Omega$-combinator ($\lambda x.\ x\ x$). The $\Omega$-combinator can be typed
-using the typing rules in \autoref{fig:typ-and} (\textsc{T-Abs} and
-\textsc{T-App} are standard rules for functions and thus omitted):
+polymorphic functions. This notion is called \emph{coherent} overloading or
+\emph{finitary} polymorphism~\citep{pierce1991programming}, which is a limited
+form of ad-hoc polymorphism. Nevertheless, intersection types are useful for
+some functions that cannot be typed in the simply typed $\lambda$-calculus (\`a
+la Curry), such as the $\Omega$-combinator ($\lambda x.\ x\ x$). The
+$\Omega$-combinator can be typed using the two elimination rules for
+intersection types in \autoref{fig:typ-and} (\textsc{T-Abs} and \textsc{T-App}
+are standard rules for functions and thus omitted):
 \begin{mathpar}
 \inferrule*[right=T-Abs]{\inferrule*[right=T-App]{\inferrule[T-AndElimL]{\dots}
                                                                         {x : (A \to B) \tand A \;\vdash\; x : A \to B} \\
@@ -56,8 +60,8 @@ inhabitation~\citep{urzyczyn1999emptiness}.
 In light of the analogy with set intersection, it is tempting to add subtyping
 to an intersection type system. \autoref{fig:sub-and} shows three subtyping
 rules for intersection types, which are naturally induced by set inclusion.
-Besides the subtyping rules, we also need to add the subsumption rule to the
-typing rules in \autoref{fig:typ-and}:
+Besides the subtyping rules, we also need to add the standard subsumption rule
+to the typing rules in \autoref{fig:typ-and}:
 \begin{mathpar}
 \inferrule[T-Sub]{e : A \\ A <: B}
                  {e : B}
@@ -94,16 +98,16 @@ and \textsc{S-AndR}.
 
 \paragraph{Distributive subtyping.}
 It is well known that $\lambda$-calculi have a close relationship with logical
-systems~\citep{wadler2015propositions}. For example, the Curry-Howard
+systems~\citep{wadler2015propositions}: the Curry-Howard
 isomorphism states that propositions are types and proofs are terms. An
 interesting property in logic is that implication is left-distributive over
 conjunction, as shown in the following equivalence:
 \begin{equation*}
-A \to B \land C \quad\Leftrightarrow\quad (A \to B) \land (A \to C)
+A \to B \land C \quad\Longleftrightarrow\quad (A \to B) \land (A \to C)
 \end{equation*}
 Since implication corresponds to function types and conjunction corresponds to
-intersection types in CP, the distributive property can be translated into
-two subtyping rules:
+intersection types in our setting, the distributive property can be interpreted
+as two subtyping rules:
 \begin{align}
           A \to B \tand C \quad <:& \quad (A \to B) \tand (A \to C) \label{eq:dist-1} \\
 (A \to B) \tand (A \to C) \quad <:& \quad A \to B \tand C \label{eq:dist-2}
@@ -169,7 +173,7 @@ let y = (x := 0) in    -- x is used as Ref Nat
 let z = !x in z : Pos  -- x is used as Ref Pos
 \end{lstlisting}
 The code is well-typed but could cause a runtime error, because \lstinline{z} is
-expected to be positive while it is actually a non-positive number
+expected to be positive while it is actually a non-positive natural number
 \lstinline{0}. The solution proposed by \citeauthor{davies2000intersection} is a
 variant of \emph{value restriction}~\citep{wright1995simple}, which requires
 that the introduction rule of intersection types (i.e. \textsc{T-AndIntro} in
@@ -179,11 +183,11 @@ it is not a value. However, this solution does not work well with distributive
 subtyping. \citeauthor{davies2000intersection} showed a similar example to the
 previous one:
 \begin{lstlisting}[morekeywords={Nat,Pos}]
-let x = (\(_: ()) -> ref 48) () : Ref Nat & Ref Pos in
+let x = (\() -> ref 48) () : Ref Nat & Ref Pos in
 let y = (x := 0) in    -- x is used as Ref Nat
 let z = !x in z : Pos  -- x is used as Ref Pos
 \end{lstlisting}
-Since the anonymous function \lstinline{(\(_: ()) -> ref 48)} is a value,
+Since the anonymous function \lstinline{(\() -> ref 48)} is a value,
 it can be typed as an intersection type
 \lstinline[morekeywords={Nat,Pos}]{(() -> Ref Nat) & (() -> Ref Pos)}.
 Besides, this function can be used as
@@ -193,12 +197,11 @@ code as the previous example. To address this type-safety issue,
 \citeauthor{davies2000intersection} have to drop the distributivity rule.
 
 Recently, \citet{ye2024imperative} proposed a simpler solution to this problem
-based on \emph{bidirectional
-typing}~\citep{pierce2000local,dunfield2021bidirectional}. Bidirectional type
-system divides traditional type assignment ($e : A$) into two modes: type
-checking ($e \Leftarrow A$) and type inference ($e \Rightarrow a$). The key idea
-of \citeauthor{ye2024imperative}'s solution is that the type of the value stored
-in a reference can only be inferred but not checked:
+based on \emph{bidirectional typing}~\citep{dunfield2021bidirectional}.
+Bidirectional type system divides traditional type assignment ($e : A$) into two
+modes: type checking ($e \Leftarrow A$) and type inference ($e \Rightarrow a$).
+The key idea of \citeauthor{ye2024imperative}'s solution is that the type of the
+value stored in a reference can only be inferred but not checked:
 \begin{mathpar}
 \inferrule[T-Ref-Before]{e : A}
                  {\mathbf{ref}\ e : \mathbf{Ref}\ A}
@@ -217,7 +220,95 @@ one can write \lstinline[morekeywords=Nat]{ref (48 : Nat)} instead.
 
 \section{Merging and Disjointness}
 
+In last section, we have mentioned that intersection types correspond to logical
+conjunction when introducing distributive subtyping. However, this
+correspondence does not apply to the original intersection type systems,
+including the BCD system~\citep{barendregt1983filter}. \citet{hindley1983coppo}
+gave a counterexample showing that some uninhabited intersection types are
+provable in most logics. The root cause is that the introduction rule
+(\textsc{T-AndIntro} in \autoref{fig:typ-and}) requires the two premises to have
+the same term $e$, which is not the case in logical conjunction.
+\citet{dunfield2014elaborating} proposed to add a merge construct ($e_1 \bbcomma
+e_2$), where the comma\footnote{We use a single comma in this thesis instead of
+double commas used by \citet{dunfield2014elaborating}. Although it is styled as
+$\bbcomma$ in formulas, it is written as a plain comma \lstinline{,} in CP
+code.} $(\bbcomma)$ is called the merge operator, to close the gap between
+intersection types and logical conjunction. Two typing rules (\textsc{T-MergeL}
+and \textsc{T-MergeR}) are added by \citeauthor{dunfield2014elaborating}, and
+together with \textsc{T-AndIntro}, we can show that $e_1 \bbcomma e_2$ has type
+$A \tand B$ if $e_1$ has type $A$ and $e_2$ has type $B$:
+\begin{mathpar}
+\inferrule*[lab=T-MergeL]{e_1 : A}
+                         {e_1 \bbcomma e_2 : A}
+
+\inferrule*[lab=T-MergeR]{e_2 : B}
+                         {e_1 \bbcomma e_2 : B}
+
+\inferrule*[right=T-AndIntro]{\inferrule*[left=T-MergL]{e_1 : A}
+                                                       {e_1 \bbcomma e_2 : A} \\
+                              \inferrule*[right=T-MergL]{e_2 : B}
+                                                        {e_1 \bbcomma e_2 : B}}
+                             {e_1 \bbcomma e_2 : A \tand B}
+\end{mathpar}
+The merge operator can be traced back to Forsythe, a ALGOL-like language
+designed by \citet{reynolds1997design}. Merging in Forsythe is biased to avoid
+semantic ambiguity. For example, if $f$ is a function, $e \bbcomma f$ will
+override all function components in $e$. Consequently, merging in Forsythe
+cannot be used to encode function overloading, though intersections of function
+types are supported and a limited form of \emph{coherent} overloading can be
+achieved. A significant outcome of merging is the ability to encode multi-field
+records, where width and permutation subtyping are naturally supported via
+intersection subtyping.
+
+Contrary to Forsythe, merging in \citeauthor{dunfield2014elaborating}'s system
+has the nice property of \emph{commutativity}: the order of merging does not
+matter. Since there is no bias in favor of either side, semantic ambiguity
+becomes an important problem. For example, applying
+$(\lambda x.\ x + 1)\bbcomma(\lambda x.\ x + 2)$ to $0$ can yield either $1$ or
+$2$. To address this issue, \citet{oliveira2016disjoint} require that the two
+terms to be merged must have \emph{disjoint} types. A typical typing rule for
+disjoint merges is as follows:
+\begin{mathpar}
+\inferrule[T-Merge-Disjoint]{e_1 \Rightarrow A \\ e_2 \Rightarrow B \\ A * B}
+                            {e_1 \bbcomma e_2 \Rightarrow A \tand B}
+\end{mathpar}
+The premise $A * B$ denotes that $A$ and $B$ are disjoint. The aforementioned
+example is now \emph{not} well-typed because $\mathbf{Int} \to \mathbf{Int}$ is
+\emph{not} disjoint with $\mathbf{Int} \to \mathbf{Int}$ itself. More generally,
+$A \to \mathbf{Int}$ is not disjoint with $B \to \mathbf{Int}$ no matter what
+$A$ and $B$ are, because they have an overlapping part $A \tand B \to
+\mathbf{Int}$ (or technically speaking, a common subtype). For example, consider
+this overloaded function:
+\begin{equation*}
+(\lambda x.\ x + 1)\bbcomma(\lambda x.\ \mathbf{if}\ x\ \mathbf{then}\ 1\ \mathbf{else}\ 0)
+: (\mathbf{Int} \to \mathbf{Int}) \tand (\mathbf{Bool} \to \mathbf{Int})
+\end{equation*}
+Applying it to $1 \bbcomma \mathbf{false}$ can yield $2$ if we choose the
+left-hand side or $0$ if we choose the right-hand side. In contrast,
+\emph{overloading by return type} is allowed in
+\citeauthor{oliveira2016disjoint}'s system with disjoint intersection types.
+For example, consider this exotically overloaded function:
+\begin{equation*}
+(\lambda x.\ x + 1)\bbcomma(\lambda x.\ x > 0)
+: (\mathbf{Int} \to \mathbf{Int}) \tand (\mathbf{Int} \to \mathbf{Bool})
+\end{equation*}
+Applying it to an integer never causes ambiguity.
+
+A more exciting application of disjoint merges is to model record concatenation.
+The merge $r_1 \bbcomma r_2$ is concatenating two records if $r_1$ and $r_2$ are
+non-overlapping records. The inherent difficulty of unambiguous record
+concatenation with subtyping has been mentioned by
+\citet{cardelli1991operations}. \citet{alpuim2017disjoint} further provide a
+type-sound and coherent foundation for polymorphic record concatenation. With
+parametric polymorphism, disjointness can also be used as a constraint on
+quantified types, exhibiting similar expressiveness to bounded
+polymorphism~\citep{xie2020row}. A detailed discussion about the interaction
+among record concatenation, subtyping, and polymorphism can be found in
+\autoref{sec:merge}.
+
 \section{Union Types}
+
+Union types are the dual concept of intersection types...
 
 \section{Traits and Other Units of Code Reuse}
 

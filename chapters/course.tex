@@ -3,12 +3,15 @@
 CP, short for \emph{compositional programming}, is a statically typed
 programming language that emphasizes modularity and extensibility. It
 incorporates a number of novel features in line with recent research on
-compositional programming. These features include:
+compositional programming at the University of Hong Kong. These features
+include:
 \begin{itemize}
 \item Disjoint intersection types~\citep{oliveira2016disjoint} and disjoint
       polymorphism~\citep{alpuim2017disjoint,xie2020row};
 \item Distributive intersection subtyping~\citep{bi2018essence,bi2019distributive}
       and its interaction with mutable references~\citep{ye2024imperative};
+\item Compositional interfaces, method patterns, and modular
+      dependencies~\citep{zhang2021compositional};
 \item Iso-recursive types with nominal unfoldings~\citep{zhou2022calculus};
 \item Generalized record operations with type difference~\citep{xu2023making};
 \item Compositional embeddings of domain-specific languages
@@ -25,18 +28,19 @@ Before diving into the novel features, we first introduce the basics of CP.
 A CP program consists of a sequence of definitions, either for types or for
 terms, and ends with a main expression to be evaluated. For example, the
 following program defines a type alias \lstinline{I} and a term variable
-\lstinline{i}, and finally evaluates \lstinline{i + 1}:
+\lstinline{i} of type \lstinline{I}, and finally evaluates \lstinline{i + 1}:
 \begin{lstlisting}[xleftmargin=.3\textwidth]
 type I = Int;  -- type definition
 i: I = 1;      -- term definition
 i + 1          -- main expression
 \end{lstlisting}
+Every definition must end with a semicolon.
 Anything after \lstinline{--} (or within \lstinline|{- block -}|) is a comment.
 Note that a type must start with an uppercase letter, while a term variable must
 start with a lowercase letter. The type annotation (\lstinline{: I}) is not
 required for term definitions as long as the type can be inferred.
 
-\begin{table}
+\begin{table}[b!]
 \caption{List of operators by precedence in CP.} \label{tab:op}
 \centering
 \begin{tabular}{*{4}{c}}
@@ -66,9 +70,9 @@ required for term definitions as long as the type can be inferred.
 \midrule
 \texttt{\^}              & Traits (lhs)                          & Binary        & Forwarding \\
 \midrule
-\makecell{\texttt{,} \\ \texttt{+,  ,+}} & \dots                 & Binary        & \makecell{Merging (Neutral, \\ Leftist, or Rightist)} \\
+\makecell{\texttt{,} \\ \texttt{+,  ,+}} & \emph{Disjoint}       & Binary        & \makecell{Merging (Neutral, \\ Leftist, or Rightist)} \\
 \midrule
-\texttt{\textbackslash-} & \dots                                 & Binary        & Diff. \\
+\texttt{\textbackslash-} & \emph{Subtractable}                   & Binary        & Diff. \\
 \midrule
 \texttt{:=}              & References (lhs)                      & Binary        & Assignment \\
 \midrule
@@ -79,7 +83,7 @@ required for term definitions as long as the type can be inferred.
 \end{tabular}
 \vskip 1ex
 {\footnotesize
-  lhs: left-hand side; rhs: right-hand side.
+  lhs: left-hand side; \quad rhs: right-hand side.
 }
 \end{table}
 
