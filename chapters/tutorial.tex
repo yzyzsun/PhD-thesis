@@ -219,10 +219,9 @@ A union of types \lstinline{T1} and \lstinline{T2} is denoted by
 \lstinline{T1|T2}. Union types have an explicit elimination form in CP, written
 as \lstinline{switch e0 as x case T1 => e1 case T2 => e2}. Here \lstinline{x} is
 a variable bound to the value of \lstinline{e0}, and it is refined to type
-\lstinline{T1} in \lstinline{e1} and to \lstinline{T2} in \lstinline{e2}. This
-mechanism is called occurrence typing or flow-sensitive typing. Union types have
-no explicit introduction form, but they can be implicitly introduced via
-subtyping, e.g. \lstinline{48 : Int|()} and \lstinline{() : Int|()}.
+\lstinline{T1} in \lstinline{e1} and to \lstinline{T2} in \lstinline{e2}. Union
+types have no explicit introduction form, but they can be implicitly introduced
+via subtyping, e.g. \lstinline{48 : Int|()} and \lstinline{() : Int|()}.
 
 \section{Functions}
 
@@ -258,8 +257,45 @@ fact = fix fact: Int -> Int.
 Recursive functions can be made anonymous using the \lstinline{fix} operator as
 shown above.
 
+If a local recursive function is desired rather than a top-level definition, the
+\lstinline{letrec} expression can be used. For example, a tail-recursive
+version of factorial can be defined as follows:
+\begin{lstlisting}
+fact = letrec fact' (acc: Int) (n: Int): Int =
+         if n == 0 then acc else fact' (n * acc) (n - 1) in
+       fact' 1;
+\end{lstlisting}
+Note that changing \lstinline{letrec} into \lstinline{let} will cause an error
+complaining that \lstinline{fact'} is undefined, because \lstinline{let} does
+not bind the variable being defined in its own definition. Nevertheless, this
+behavior of \lstinline{let} can sometimes be useful for refining an existing
+definition:
+\begin{lstlisting}
+letrec fact (acc: Int) (n: Int): Int =
+  if n == 0 then acc else fact (n * acc) (n - 1) in
+let fact = fact 1 in
+...
+\end{lstlisting}
+Note that \lstinline{let fact = fact 1} is not a recursive definition. Instead,
+\lstinline{fact 1} is partially applying the previously defined \lstinline{fact}
+to \lstinline{1}, and the previous \lstinline{fact} is shadowed by the new
+\lstinline{fact}.
+
 \paragraph{Named and optional arguments.}
-See \autoref{ch:arguments}?
+CP natively supports named and optional arguments. The syntax of function
+definitions with named arguments are similar to record patterns in ML-like
+languages, though CP does not support pattern matching in general. Below is an
+exponential function with two named arguments:
+\begin{lstlisting}
+exp { x: Int; base = 10 }: Int =
+  if x == 0 then 1 else base * exp { x = x - 1; base = base };
+exp { base = 2; x = 15 }  --> 2^15 = 32768
+exp { x = 4 }  --> 10^4 = 10000
+\end{lstlisting}
+The function can be called with named arguments in any order. Here
+\lstinline{base} is an optional argument with a default value \lstinline{10}.
+Therefore, the second call \lstinline|exp { x = 4 }| is equivalent to
+\lstinline|exp { x = 4; base = 10 }| since \lstinline{base} is absent.
 
 \section{Parametric Polymorphism}
 
@@ -276,9 +312,30 @@ id A (x: A) = x;
 -- is equivalent to:
 id = /\A. \(x: A) -> x;
 \end{lstlisting}
-Calling \lstinline{id @Int 48} will return \lstinline{48} as expected.
-
-\section{Distributive Intersection Subtyping}
+Calling \lstinline{id @Int 48} will return \lstinline{48} as is. A more
+intriguing example is a polymorphic function with \emph{disjoint
+quantification}:
+\begin{lstlisting}
+concat R (r: R) = r , { l = 48 };  -- Type Error!
+concat' (R * { l: Int }) (r: R) = r , { l = 48 };  -- OK!
+\end{lstlisting}
+When concatenating \lstinline{r} with a new field \lstinline|{ l = 48 }|, we
+need to check whether it conflicts with any existing field in \lstinline{r}.
+However, we do not know anything about \lstinline{r} if it has a totally
+abstract type \lstinline{R}. That is why the first definition above is rejected
+by the type checker, preventing potential field conflicts. The second definition
+type-checks because the quantification \lstinline|(R * { l: Int })| indicates
+that the quantified type variable \lstinline{R} is disjoint (will not overlap)
+with \lstinline|{ l: Int }|, so \lstinline{r} will never have a field that
+conflicts with \lstinline|{ l = 48 }|. The disjointness constraint will be
+checked at the point of instantiation:
+\begin{lstlisting}
+concat' @{ l: Int; l': Int } { l = 46; l' = 0 }  -- Type Error!
+concat' @{ l': Int } { l' = 0 }  --> { l' = 0; l = 48 }
+\end{lstlisting}
+The first instantiation is rejected because \lstinline|{ l: Int; l': Int }| is
+not disjoint (overlaps) with \lstinline|{ l: Int }|. The second one type-checks
+since the two labels \lstinline{l} and \lstinline{l'} are distinct.
 
 \section{Iso-Recursive Types}
 
@@ -297,10 +354,16 @@ equal to $\mathbb{1} + \mathbb{Z} \times (\mu \alpha.\: \mathbb{1} + \mathbb{Z}
 language constructs (i.e. \lstinline{fold} and \lstinline{unfold}) form an
 isomorphism between the two types.
 
-\section{Traits}
+\section{Compositional Interfaces and Traits}
+
+Although CP does not support algebraic data types or pattern matching in a
+strict sense, similar functionalities can be achieved using compositional
+interfaces and traits...
 
 Mention a constructor name starts with an uppercase letter...
 Mention laziness...
+
+\section{Nested Composition}
 
 \section{Implementations}
 
