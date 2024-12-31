@@ -337,33 +337,136 @@ The first instantiation is rejected because \lstinline|{ l: Int; l': Int }| is
 not disjoint (overlaps) with \lstinline|{ l: Int }|. The second one type-checks
 since the two labels \lstinline{l} and \lstinline{l'} are distinct.
 
-\section{Iso-Recursive Types}
+\section{Compositional Traits}
 
-Recursive types are useful for defining dynamic data structures. For example,
-integer lists can be defined in Haskell as follows:
-\begin{lstlisting}[language=Haskell]
-data IntList = Nil | Cons Int IntList
+CP-flavored traits are composable reuse units and are similar to classes (not
+interfaces!) in traditional object-oriented languages. A trait implements an
+interface by providing concrete implementations or inheriting from other traits.
+A trait expression is anonymous and has the basic form \lstinline{trait => e},
+where \lstinline{e} is the body expression, usually a record literal. A simple
+example is shown below:
+\begin{lstlisting}
+type Point = { x: Int; y: Int };       -- interface (a type definition)
 \end{lstlisting}
-This definition can be represented as $\mu \alpha.\: \mathbb{1} + \mathbb{Z}
-\times \alpha$ in type theory, where $\mu$ is the least fixpoint binder. There
-are two forms of recursive types in the literature: equi-recursive types and
-iso-recursive types. With equi-recursive types, a recursive type is equal to its
-unfolding. For example, $\mu \alpha.\: \mathbb{1} + \mathbb{Z} \times \alpha$ is
-equal to $\mathbb{1} + \mathbb{Z} \times (\mu \alpha.\: \mathbb{1} + \mathbb{Z}
-\times \alpha)$. However, they are distinct under iso-recursive types. Explicit
-language constructs (i.e. \lstinline{fold} and \lstinline{unfold}) form an
-isomorphism between the two types.
+\vspace{-1ex}
+\begin{lstlisting}
+point (x: Int) (y: Int) =  -- trait with parameters (a term definition)
+  trait implements Point => { x = x; y = y };  -- has type Trait<Point>
+\end{lstlisting}
+Note that traits in CP are \emph{structurally} typed, so the trait has type
+\lstinline{Trait<Point>} even without declaring \lstinline{implements Point}.
+The \lstinline{implements}-clause is mainly a subtyping check, ensuring that the
+trait has implemented all the fields required by the interface, so we recommend
+always writing it. The \lstinline{Point} interface above can be extended using
+intersection types, and an extended trait can be defined by inheriting from
+\lstinline{point x y}:
+\begin{lstlisting}
+type ColorPoint = Point & { color: String };
+\end{lstlisting}
+\vspace{-1ex}
+\begin{lstlisting}
+colorPoint (x: Int) (y: Int) (c: String) =
+  trait implements ColorPoint inherits point x y => { color = c };
+\end{lstlisting}
+Instantiating a trait is done by the \lstinline{new} operator (the precedence of
+\lstinline{new} is lower than function application):
+\begin{lstlisting}
+new colorPoint 0 0 "black"  --> { x = 0; y = 0; color = "black" }
+\end{lstlisting}
 
-\section{Compositional Interfaces and Traits}
+\paragraph{Self-references.}
+A more interesting example is traits with self-type annotations:
+\begin{lstlisting}
+type Even = { isEven: Int -> Bool };
+type Odd  = { isOdd:  Int -> Bool };
+\end{lstlisting}
+\vspace{-1ex}
+\begin{lstlisting}
+even = trait [self: Odd] implements Even => {
+  isEven n = if n == 0 then true else self.isOdd (n - 1);
+};  -- has type Trait<Odd => Even>
+\end{lstlisting}
+\vspace{-1ex}
+\begin{lstlisting}
+odd = trait [self: Even] implements Odd => {
+  isOdd n = if n == 0 then false else self.isEven (n - 1);
+};  -- has type Trait<Even => Odd>
+\end{lstlisting}
+Here the annotations \lstinline{[self: Odd]} and \lstinline{[self: Even]} allow
+the trait bodies to refer to late-bound self-references by \lstinline{self},
+which is declared to have types \lstinline{Odd} and \lstinline{Even}
+respectively. The trait type becomes a bit more complicated with a self-type,
+written as \lstinline{Trait<In=>Out>}, where \lstinline{In} is the self-type and
+\lstinline{Out} is the inferred type for the trait body (a subtype of, but not
+necessarily the same as, the declared interface). Note that we do not need to
+specify the type of the method parameter \lstinline{n}, for example, in
+\lstinline{isEven n}, because the type can be inferred from the declared
+interface \lstinline{Even}.
 
+\begin{tipblock}
+If we review the aforementioned type \lstinline{Trait<Point>}, we will find that
+it is not the most precise type for the trait \lstinline{point x y}.
+\lstinline{Trait<Point>} is a shorthand for \lstinline{Trait<Point => Point>} in
+the latest version of CP, which is a supertype of \lstinline{Trait<Top => Point>}.
+The latter is more precise because it indicates that the self-reference is not
+used in the trait body (\lstinline{Top} contains no information).
+\end{tipblock}
+
+\noindent
+If we try to instantiate the traits separately by \lstinline{new even} or
+\lstinline{new odd}, a type error will be triggered saying that the required
+interface is not satisfied (the input type is not supertype of the output type).
+However, we can instantiate them together since they satisfy each other's
+requirement:
+\begin{lstlisting}
+new even,odd  --> { isEven = ...; isOdd = ... }
+\end{lstlisting}
+Here \lstinline{new} is effectively obtaining a fixpoint of the merge of the two
+trait, allowing late binding of the self-reference. The merge
+\lstinline{even,odd} works because \lstinline{Trait<Odd=>Even> & Trait<Even=>Odd>}
+can be used as \lstinline{Trait<Odd&Even>}. We see that the self-type annotations
+are crucial for modular dependencies in CP.
+
+\paragraph{Compositional interfaces and method patterns.}
 Although CP does not support algebraic data types or pattern matching in a
 strict sense, similar functionalities can be achieved using compositional
-interfaces and traits...
+interfaces and method patterns.
 
-Mention a constructor name starts with an uppercase letter...
-Mention laziness...
+\emph{Compositional interfaces} refer to a kind of special interfaces that
+contain constructors. A compositional interface is parametrized by a
+\emph{sort}, syntactically different from a normal type parameter, which serves
+as the return type for the constructors.
 
-\section{Nested Composition}
+For example, an option type can be defined as follows:
+\begin{lstlisting}
+type OptionSig<Option> T = {
+  None: Option;
+  Some: T -> Option;
+};
+\end{lstlisting}
+The option type has two constructors: \lstinline{None} directly constructs an
+option value, while \lstinline{Some} takes a value of \lstinline{T} and
+constructs an option value. The sort \lstinline{<Option>} is used to indicate
+the return type of the constructors. This definition is similar to a generalized
+algebraic data type (GADT) in Haskell. Note that constructors must start with an
+uppercase letter, instead of a lowercase letter as in normal terms.
+
+\lstinline{OptionSig} can be implemented by implementing a concrete method as
+follows:
+\begin{lstlisting}
+type ValueMethod T = { value: T -> T };
+optional T = trait implements OptionSig<ValueMethod T> T => {
+  (None).value def = def;
+  (Some x).value _ = x;
+};
+\end{lstlisting}
+This syntax is similar to pattern matching in functional languages and thus
+called \emph{method patterns}. The method \lstinline{value} is defined for both
+constructors \lstinline{None} and \lstinline{Some}. The method parameter
+\lstinline{def} is used as a default value for \lstinline{None}, while it is
+unused and replaced by a placeholder \lstinline{_} for \lstinline{Some}...
+
+\section{Binary Methods and Recursive Types}
 
 \section{Implementations}
 
