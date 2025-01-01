@@ -155,14 +155,15 @@ self-reference, we can refer to other fields like \lstinline{this.m} in the
 \lstinline{n} field. In this model, the instantiation of a class is obtained by
 taking a fixpoint of the function. Furthermore, class inheritance can be encoded
 as record concatenation:
-\begin{lstlisting}
+\begin{lstlisting}[deletekeywords=super]
 -- class B extends A
 mkB = \(this: Rcd) -> let super = mkA this in super , { m = 48 };
 \end{lstlisting}
 We first provide the new self-reference to \lstinline{mkA} to obtain
-\lstinline{super}. Then we merge \lstinline{super} with the body of class
-\lstinline{B} to obtain the final object. After instantiating class
-\lstinline{B} with a fixpoint, we can access the \lstinline{n} field:
+\lstinline[deletekeywords=super]{super}. Then we merge
+\lstinline[deletekeywords=super]{super} with the body of class \lstinline{B} to
+obtain the final object. After instantiating class \lstinline{B} with a
+fixpoint, we can access the \lstinline{n} field:
 \begin{lstlisting}
 o = fix this: Rcd. mkB this;  --> { m = "foobar"; n = "FOOBAR"; m = 48 }
 o.n  --> "FOOBAR"

@@ -41,7 +41,7 @@ start with a lowercase letter. The type annotation (\lstinline{: I}) is not
 required for term definitions as long as the type can be inferred.
 
 \begin{table}[b!]
-\caption{List of operators by precedence in CP.} \label{tab:op}
+\caption{List of term operators by precedence in CP.} \label{tab:op}
 \centering
 \begin{tabular}{*{4}{c}}
 \toprule
@@ -53,13 +53,15 @@ required for term definitions as long as the type can be inferred.
 \midrule
 \texttt{\#}              & Arrays                                & Unary         & Length \\
 \midrule
+\texttt{!}               & References                            & Unary         & Deref. \\
+\midrule
 \texttt{!!}              & Arrays (lhs), \lstinline{Int} (rhs)   & Binary        & Index \\
 \midrule
 \texttt{* / \%}          & \lstinline{Int} or \lstinline{Double} & Binary        & Mul. \& Div. \& Mod. \\
 \midrule
 \texttt{+ -}             & \lstinline{Int} or \lstinline{Double} & Binary        & Add. \& Sub. \\
 \midrule
-\texttt{++}              & \lstinline{String} or Arrays          & Binary        & Concatenation \\
+\texttt{++}              & \lstinline{String} or Arrays          & Binary        & Concat. \\
 \midrule
 \makecell{\texttt{== !=} \\ \texttt{< <= > >=}} & \makecell{\lstinline{Int} or \lstinline{Double} or \lstinline{String} or \lstinline{Bool} \\
                            or References}                        & Binary        & Comparison \\
@@ -70,7 +72,7 @@ required for term definitions as long as the type can be inferred.
 \midrule
 \texttt{\^}              & Traits (lhs)                          & Binary        & Forwarding \\
 \midrule
-\makecell{\texttt{,} \\ \texttt{+,  ,+}} & \emph{Disjoint}       & Binary        & \makecell{Merging (Neutral, \\ Leftist, or Rightist)} \\
+\texttt{,}               & \emph{Disjoint}                       & Binary        & Merging \\
 \midrule
 \texttt{\textbackslash-} & \emph{Subtractable}                   & Binary        & Diff. \\
 \midrule
@@ -177,7 +179,7 @@ types as an example, \lstinline|{ l1: Int; l2: Bool } \ { l1: Int }| is equal to
 \lstinline|{ l2: Bool }|.
 
 \begin{table}[b]
-\caption{List of operations on records in CP.} \label{tab:rcd}
+\caption{List of operations on records or traits in CP.} \label{tab:rcd}
 \centering
 \begin{tabular}{ccl}
 \toprule
@@ -337,7 +339,7 @@ The first instantiation is rejected because \lstinline|{ l: Int; l': Int }| is
 not disjoint (overlaps) with \lstinline|{ l: Int }|. The second one type-checks
 since the two labels \lstinline{l} and \lstinline{l'} are distinct.
 
-\section{Compositional Traits}
+\section{Traits}
 
 CP-flavored traits are composable reuse units and are similar to classes (not
 interfaces!) in traditional object-oriented languages. A trait implements an
@@ -371,11 +373,95 @@ colorPoint (x: Int) (y: Int) (c: String) =
 Instantiating a trait is done by the \lstinline{new} operator (the precedence of
 \lstinline{new} is lower than function application):
 \begin{lstlisting}
-new colorPoint 0 0 "black"  --> { x = 0; y = 0; color = "black" }
+blackPoint = colorPoint 1 2 "black";  -- has type Trait<ColorPoint>
+new blackPoint  --> { x = 1; y = 2; color = "black" } : ColorPoint
 \end{lstlisting}
 
-\paragraph{Self-references.}
-A more interesting example is traits with self-type annotations:
+\paragraph{Overriding.}
+Trait inheritance in CP prevents unexpected overriding by requiring the
+\lstinline{override} keyword. One can access fields in the super-trait using the
+\lstinline{super} keyword. For example, below we define a point by reflecting
+\lstinline{blackPoint}:
+\begin{lstlisting}
+reflected = trait inherits blackPoint => {
+  override x = -super.x;
+  override y = -super.y;
+};
+\end{lstlisting}
+The two fields \lstinline{x} and \lstinline{y} are overridden while
+\lstinline{color} is inherited. Removing the \lstinline{override} keyword will
+cause a type error complaining that disjointness is violated.
+
+\paragraph{Multiple inheritance.}
+Following the trait approach to multiple inheritance, there cannot be field
+conflicts between multiple super-traits. In other words, one must explicitly
+resolve the conflict, for example, by using the restriction operators, renaming,
+or biased merging in \autoref{tab:rcd}. Below we show a fine-grained resolution
+with restriction operators:
+\begin{lstlisting}
+mixedPoint = trait [self] inherits blackPoint\color , reflected\\Point => {
+  override x = super.x + (reflected ^ self).x;
+};
+new mixedPoint  --> { x = 0; y = 2; color = "black" }
+\end{lstlisting}
+Here \lstinline{blackPoint\color} removes the \lstinline{color} field, while
+\lstinline{reflected\\Point} removes all fields in type \lstinline{Point} (i.e.
+\lstinline{x} and \lstinline{y}). In the trait body, we intentionally override
+\lstinline{x} to show that the excluded \lstinline{x} field in
+\lstinline{reflected} can still be accessed using the forwarding operator
+\lstinline{^}.
+
+\section{Recursive Types}
+
+Recursive types are needed if a method refers to its enclosing trait. For
+example, let us consider adding a method to the \lstinline{Point} type, which
+compares two points for equality:
+\begin{lstlisting}
+type Point = { x: Int; y: Int; eq: Point -> Bool };
+\end{lstlisting}
+Now \lstinline{Point} has to refer to itself in the type of the \lstinline{eq}
+method. However, the definition above does not work because \lstinline{Point} is
+not yet defined when the type of \lstinline{eq} is being checked. To solve this
+problem, the \lstinline{fix} keyword can be used:
+\begin{lstlisting}
+type Point = fix Point. { x: Int; y: Int; eq: Point -> Bool };
+\end{lstlisting}
+The form of recursive types implemented in CP is called \emph{iso}-recursive,
+meaning that \lstinline{Point} is \emph{not} equivalent to
+\lstinline|{ x: Int; y: Int; eq: Point -> Bool }|. Instead, they are isomorphic
+up to folding/unfolding. For example, \lstinline{unfold @Point p} converts
+\lstinline{p} from type \lstinline{Point} to the record type, while
+\lstinline|fold @Point { ... }| does the opposite:
+\begin{lstlisting}
+getX (p: Point) = (unfold @Point p).x;
+getY (p: Point) = (unfold @Point p).y;
+eqPoint (x: Int) (y: Int) = fold @Point {
+  x = x;  y = y;
+  eq (p: Point)  =  getX p == x && getY p == y
+};
+\end{lstlisting}
+
+\paragraph{Implicit folding/unfolding.}
+Nevertheless, CP simplifies typical uses of recursive types by implicitly
+inserting \lstinline{fold} and \lstinline{unfold} when necessary. For example,
+\lstinline{fold} is automatically inserted for a trait if the declared interface
+is a recursive type, and \lstinline{unfold} is inserted for record projection.
+The previous example can be rewritten as follows:
+\begin{lstlisting}
+eqPoint (x: Int) (y: Int) = trait implements Point => {
+  x = x;  y = y;
+  eq p  =  p.x == x && p.y == y;
+};
+\end{lstlisting}
+
+\begin{tipblock}
+Due to type-theoretic difficulties, a trait implementing a recursive type cannot
+be inherited or merged with other traits in CP.
+\end{tipblock}
+
+\section{Self-References}
+
+A more intriguing example is traits with self-type annotations:
 \begin{lstlisting}
 type Even = { isEven: Int -> Bool };
 type Odd  = { isOdd:  Int -> Bool };
@@ -383,13 +469,13 @@ type Odd  = { isOdd:  Int -> Bool };
 \vspace{-1ex}
 \begin{lstlisting}
 even = trait [self: Odd] implements Even => {
-  isEven n = if n == 0 then true else self.isOdd (n - 1);
+  isEven n  =  if n == 0 then true else self.isOdd (n - 1);
 };  -- has type Trait<Odd => Even>
 \end{lstlisting}
 \vspace{-1ex}
 \begin{lstlisting}
 odd = trait [self: Even] implements Odd => {
-  isOdd n = if n == 0 then false else self.isEven (n - 1);
+  isOdd n  =  if n == 0 then false else self.isEven (n - 1);
 };  -- has type Trait<Even => Odd>
 \end{lstlisting}
 Here the annotations \lstinline{[self: Odd]} and \lstinline{[self: Even]} allow
@@ -404,8 +490,8 @@ specify the type of the method parameter \lstinline{n}, for example, in
 interface \lstinline{Even}.
 
 \begin{tipblock}
-If we review the aforementioned type \lstinline{Trait<Point>}, we will find that
-it is not the most precise type for the trait \lstinline{point x y}.
+If we review the type \lstinline{Trait<Point>} in last section, we will find
+that it is not the most precise type for the trait \lstinline{point x y}.
 \lstinline{Trait<Point>} is a shorthand for \lstinline{Trait<Point => Point>} in
 the latest version of CP, which is a supertype of \lstinline{Trait<Top => Point>}.
 The latter is more precise because it indicates that the self-reference is not
@@ -427,46 +513,142 @@ trait, allowing late binding of the self-reference. The merge
 can be used as \lstinline{Trait<Odd&Even>}. We see that the self-type annotations
 are crucial for modular dependencies in CP.
 
-\paragraph{Compositional interfaces and method patterns.}
+\section{Compositional Interfaces and Method Patterns}
+
 Although CP does not support algebraic data types or pattern matching in a
 strict sense, similar functionalities can be achieved using compositional
 interfaces and method patterns.
 
 \emph{Compositional interfaces} refer to a kind of special interfaces that
 contain constructors. A compositional interface is parametrized by a
-\emph{sort}, syntactically different from a normal type parameter, which serves
-as the return type for the constructors.
-
-For example, an option type can be defined as follows:
+\emph{sort}, which serves as the return type for the constructors. For example,
+an abstract syntax tree for a language with integer literals and addition can be
+defined as follows, with a Haskell counterpart (using the notation of
+generalized algebraic data types) on the right for comparison:
 \begin{lstlisting}
-type OptionSig<Option> T = {
-  None: Option;
-  Some: T -> Option;
+type ExpSig<Exp> = {             -- data Exp where
+  Lit: Int -> Exp;               --   Lit :: Int -> Exp
+  Add: Exp -> Exp -> Exp;        --   Add :: Exp -> Exp -> Exp
 };
 \end{lstlisting}
-The option type has two constructors: \lstinline{None} directly constructs an
-option value, while \lstinline{Some} takes a value of \lstinline{T} and
-constructs an option value. The sort \lstinline{<Option>} is used to indicate
-the return type of the constructors. This definition is similar to a generalized
-algebraic data type (GADT) in Haskell. Note that constructors must start with an
-uppercase letter, instead of a lowercase letter as in normal terms.
+Here \lstinline{Exp} is a sort, which is delimited by angle brackets to
+distinguish it from a normal type parameter. \lstinline{ExpSig} contains two
+constructors: \lstinline{Lit} takes an integer and \lstinline{Add} takes two
+subexpressions, both returning the sort \lstinline{Exp}. Note that constructors
+must start with an uppercase letter to distinguish them from normal fields.
 
-\lstinline{OptionSig} can be implemented by implementing a concrete method as
-follows:
+\lstinline{ExpSig} can be implemented by providing a method \lstinline{eval}:
 \begin{lstlisting}
-type ValueMethod T = { value: T -> T };
-optional T = trait implements OptionSig<ValueMethod T> T => {
-  (None).value def = def;
-  (Some x).value _ = x;
+type Eval = { eval: Int };              -- eval :: Exp -> Int
+evalExp = trait implements ExpSig<Eval> => {
+  (Lit     n).eval = n;                 -- eval (Lit     n) = n
+  (Add e1 e2).eval = e1.eval + e2.eval; -- eval (Add e1 e2) = eval e1 + eval e2
 };
 \end{lstlisting}
-This syntax is similar to pattern matching in functional languages and thus
-called \emph{method patterns}. The method \lstinline{value} is defined for both
-constructors \lstinline{None} and \lstinline{Some}. The method parameter
-\lstinline{def} is used as a default value for \lstinline{None}, while it is
-unused and replaced by a placeholder \lstinline{_} for \lstinline{Some}...
+This syntax is similar to pattern matching in Haskell on the right and is thus
+called \emph{method patterns}. The sort is instantiated with a concrete type
+\lstinline{Eval} in \lstinline{ExpSig<Eval>}, which represents a method
+\lstinline{eval} defined for both constructors \lstinline{Lit} and
+\lstinline{Add}.
 
-\section{Binary Methods and Recursive Types}
+\begin{tipblock}
+Different from algebraic data types, which are closed in Haskell, compositional
+interfaces and traits are open to extension in CP. As we have seen, interfaces
+can be extended via intersection types, and traits can be inherited or extended
+via merging.
+\end{tipblock}
+
+\paragraph{Modular dependencies.}
+A merit of compositional interfaces is that they can modularly handle
+dependencies between different methods for the constructors. Consider a funny
+pretty-printer below:
+\begin{lstlisting}
+type Print = { print: String };
+printExp = trait implements ExpSig<Eval => Print> => {
+  (Lit     n).print = toString n;
+  (Add e1 e2).print = if e2.eval == 0 then e1.print
+                      else e1.print ++ " + " ++ e2.print;
+};
+\end{lstlisting}
+Here \lstinline{(Add e1 e2).print} depends on \lstinline{e2.eval}, but there is
+no implementation of \lstinline{eval} in \lstinline{printExp}. To make such a
+dependency work, instead of \lstinline{ExpSig<Print>}, we declare the interface
+as \lstinline{ExpSig<Eval => Print>}. This notation means that \lstinline{e1}
+and \lstinline{e2} (and other subexpressions in constructors, if any) has type
+\lstinline{Eval&Print}. They only have type \lstinline{Print} with
+\lstinline{ExpSig<Print>}.
+
+It is useful to compare this example with a simpler approach based on
+inheritance:
+\begin{lstlisting}
+printChild = trait implements ExpSig<Eval&Print> inherits evalExp => {
+  (Lit     n).print = toString n;
+  (Add e1 e2).print = if e2.eval == 0 then e1.print
+                      else e1.print ++ " + " ++ e2.print;
+};
+\end{lstlisting}
+The body of \lstinline{printChild} is exactly the same as that of
+\lstinline{printExp}. The difference is that \lstinline{printChild} implements
+\lstinline{ExpSig<Eval&Print>} by inheriting from \lstinline{evalExp},
+essentially containing both \lstinline{eval} and \lstinline{print}. Although
+both approaches work, \lstinline{printChild} is tightly coupled with
+\lstinline{evalExp}, while \lstinline{printExp} can be composed with any other
+trait that implements \lstinline{eval}. By the way, the former is similar to
+directly writing the following code in Haskell:
+\begin{lstlisting}
+print (Add e1 e2) = if eval e2 == 0 then ...
+\end{lstlisting}
+The definition of \lstinline{print} is tightly coupled with a concrete function
+\lstinline{eval}. We would prefer to make use of type classes to decouple them
+in Haskell.
+
+\paragraph{Combination with self-references.}
+As introduced previously, self-type annotations are also a powerful mechanism
+for modular dependencies. In fact, we can combine the two mechanisms together
+to achieve more flexible and modular designs. For example, we can define a
+funnier pretty-printer like this:
+\begin{lstlisting}
+printSelf = trait implements ExpSig<Eval => Print> => {
+         (Lit     n).print = toString n;
+  [self]@(Add e1 e2).print = if self.eval == 0 then "0"
+                             else e1.print ++ " + " ++ e2.print;
+};
+\end{lstlisting}
+Now \lstinline{(Add e1 e2).print} depends on \lstinline{self.eval} rather than
+\lstinline{e2.eval}. Therefore, we add a self-type annotation in
+\lstinline{[self]@(Add e1 e2)}. The type of \lstinline{self} is inferred to be
+\lstinline{Eval&Print} according to the interface \lstinline{ExpSig<Eval => Print>},
+but it can be explicitly declared as \lstinline{[self: Eval]@(Add e1 e2)} if needed.
+
+\paragraph{Virtual constructors.}
+Before concluding this section, we briefly introduce how to use the traits to
+construct an expression and pretty-print it. A lightweight way is: first merging
+\lstinline{evalExp} into \lstinline{printSelf} to form a self-contained trait,
+and then using the \lstinline{open} keyword to bring into scope both
+constructors in \lstinline{factory}:
+\begin{lstlisting}
+factory = new evalExp,printSelf : ExpSig<Eval&Print>;
+let e1 = open factory in Add (Lit 4) (Lit 8) in e1.print  --> "4 + 8"
+let e2 = open factory in Add (Lit 0) (Lit 0) in e2.print  --> "0"
+\end{lstlisting}
+
+A more recommended way is to define a \lstinline{repo} trait with a self-type
+annotation:
+\begin{lstlisting}
+repo Exp = trait [self: ExpSig<Exp>] => open self in {
+  e1 = Add (Lit 4) (Lit 8);
+  e2 = Add (Lit 0) (Lit 0);
+};
+\end{lstlisting}
+This trait allows us to use constructors \emph{virtually} to construct
+expressions without sticking to a concrete implementation of \lstinline{ExpSig}.
+Then we can, for example, apply \lstinline{repo} to type \lstinline{Eval&Print}
+and merge it with \lstinline{evalExp} and \lstinline{printSelf}:
+\begin{lstlisting}
+exp = new evalExp , printSelf , repo @(Eval&Print);
+exp.e1.print  --> "4 + 8"
+exp.e2.print  --> "0"
+\end{lstlisting}
 
 \section{Implementations}
 
