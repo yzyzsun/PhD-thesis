@@ -97,10 +97,9 @@ CP supports five primitive types and their literal forms:
 \item \lstinline{Double}: floating-point numbers, e.g. \lstinline{48.0} and \lstinline{-1e8} (scientific notation);
 \item \lstinline{String}: strings, e.g. \lstinline{"foo \n bar"};
 \item \lstinline{Bool}: booleans, either \lstinline{true} or \lstinline{false};
-\item \lstinline{()}: the unit type. The unit type has only one value, also
-      denoted by \lstinline{()}, and thus holds no information. It is used as
-      \lstinline{null} in \autoref{ch:arguments} and as the return value of
-      variable assignment.
+\item \lstinline{()}: unit. The unit type has only one value, also denoted by
+      \lstinline{()}. It is used as \lstinline{null} in \autoref{ch:arguments}
+      and as the return value of variable assignment.
 \end{itemize}
 Primitive operations on these types can be found in \autoref{tab:op}, which also
 lists other operations to be introduced later.
@@ -170,6 +169,28 @@ top type \lstinline{Top}. Note that \lstinline|{}| is different from the unit
 value \lstinline|()|, which has the unit type \lstinline|()|.
 \end{tipblock}
 
+\begin{table}[b!]
+\caption{List of operations on records or traits in CP.} \label{tab:rcd}
+\centering
+\begin{tabular}{ccl}
+\toprule
+\thead{Subtraction by Label} & \lstinline{e \ l}              & $\triangleq$\quad\lstinline|e \\ { l: Bot }| \\
+\midrule
+\thead{Subtraction by Type}  & \lstinline{e \\ T}             & $\triangleq$\quad\lstinline{e : T0\T}\quad if \lstinline{e} has type \lstinline{T0} \\
+\midrule
+\thead{Subtraction by Term}  & \lstinline{e1 \- e2}           & $\triangleq$\quad\lstinline{e1 : T1\T2}\quad if \lstinline{e}$_i$ has type \lstinline{T}$_i$ \\
+\midrule
+\thead{Field Updating}       & \lstinline|{ e1 with l = e2 }| & $\triangleq$\quad\lstinline|e1\l , { l = e2 }| \\
+\midrule
+\thead{Label Renaming}       & \lstinline{e [l1 <- l2]}       & $\triangleq$\quad\lstinline|e\l1 , { l2 = e.l1 }| \\
+\midrule
+\thead{Leftist Merge}        & \lstinline{e1 +, e2}           & $\triangleq$\quad\lstinline{e1 , (e2 \- e1)} \\
+\midrule
+\thead{Rightist Merge}       & \lstinline{e1 ,+ e2}           & $\triangleq$\quad\lstinline{(e1 \- e2) , e2} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \noindent
 Two records can be concatenated using the merge operator like \lstinline{e1,e2}.
 Many other operations on records are supported via merging and type difference,
@@ -177,26 +198,6 @@ as shown in \autoref{tab:rcd}. Subtracting type \lstinline{T1} by type
 \lstinline{T2} is denoted by \lstinline{T1\T2}. Taking the difference of record
 types as an example, \lstinline|{ l1: Int; l2: Bool } \ { l1: Int }| is equal to
 \lstinline|{ l2: Bool }|.
-
-\begin{table}[b]
-\caption{List of operations on records or traits in CP.} \label{tab:rcd}
-\centering
-\begin{tabular}{ccl}
-\toprule
-\thead{Subtraction by Label} & \lstinline{e \ l}        & $\triangleq$\quad\lstinline|e \\ { l: Bot }| \\
-\midrule
-\thead{Subtraction by Type}  & \lstinline{e \\ T}       & $\triangleq$\quad\lstinline{e : T0\T}\quad if \lstinline{e} has type \lstinline{T0} \\
-\midrule
-\thead{Subtraction by Term}  & \lstinline{e1 \- e2}     & $\triangleq$\quad\lstinline{e1 : T1\T2}\quad if \lstinline{e1} has \lstinline{T1} and \lstinline{e2} has \lstinline{T2} \\
-\midrule
-\thead{Label Renaming}       & \lstinline{e [l1 <- l2]} & $\triangleq$\quad\lstinline|e\l1 , { l2 = e.l1 }| \\
-\midrule
-\thead{Leftist Merge}        & \lstinline{e1 +, e2}     & $\triangleq$\quad\lstinline{e1 , (e2 \- e1)} \\
-\midrule
-\thead{Rightist Merge}       & \lstinline{e1 ,+ e2}     & $\triangleq$\quad\lstinline{(e1 \- e2) , e2} \\
-\bottomrule
-\end{tabular}
-\end{table}
 
 \paragraph{Intersections.}
 An intersection of types \lstinline{T1} and \lstinline{T2} is denoted by
@@ -359,9 +360,11 @@ Note that traits in CP are \emph{structurally} typed, so the trait has type
 \lstinline{Trait<Point>} even without declaring \lstinline{implements Point}.
 The \lstinline{implements}-clause is mainly a subtyping check, ensuring that the
 trait has implemented all the fields required by the interface, so we recommend
-always writing it. The \lstinline{Point} interface above can be extended using
-intersection types, and an extended trait can be defined by inheriting from
-\lstinline{point x y}:
+always writing it.
+
+\paragraph{Inheritance.}
+The \lstinline{Point} interface above can be extended using intersection types,
+and an extended trait can be defined by inheriting from \lstinline{point x y}:
 \begin{lstlisting}
 type ColorPoint = Point & { color: String };
 \end{lstlisting}
@@ -417,27 +420,27 @@ Recursive types are needed if a method refers to its enclosing trait. For
 example, let us consider adding a method to the \lstinline{Point} type, which
 compares two points for equality:
 \begin{lstlisting}
-type Point = { x: Int; y: Int; eq: Point -> Bool };
+type EqPoint = { x: Int; y: Int; eq: EqPoint -> Bool };
 \end{lstlisting}
-Now \lstinline{Point} has to refer to itself in the type of the \lstinline{eq}
-method. However, the definition above does not work because \lstinline{Point} is
+Now \lstinline{EqPoint} has to refer to itself in the type of the \lstinline{eq}
+method. However, the definition above does not work because \lstinline{EqPoint} is
 not yet defined when the type of \lstinline{eq} is being checked. To solve this
 problem, the \lstinline{fix} keyword can be used:
 \begin{lstlisting}
-type Point = fix Point. { x: Int; y: Int; eq: Point -> Bool };
+type EqPoint = fix EqPoint. { x: Int; y: Int; eq: EqPoint -> Bool };
 \end{lstlisting}
 The form of recursive types implemented in CP is called \emph{iso}-recursive,
-meaning that \lstinline{Point} is \emph{not} equivalent to
-\lstinline|{ x: Int; y: Int; eq: Point -> Bool }|. Instead, they are isomorphic
-up to folding/unfolding. For example, \lstinline{unfold @Point p} converts
-\lstinline{p} from type \lstinline{Point} to the record type, while
-\lstinline|fold @Point { ... }| does the opposite:
+meaning that \lstinline{EqPoint} is \emph{not} equivalent to
+\lstinline|{ x: Int; y: Int; eq: EqPoint -> Bool }|. Instead, they are isomorphic
+up to folding/unfolding. For example, \lstinline{unfold @EqPoint p} converts
+\lstinline{p} from type \lstinline{EqPoint} to the record type, while
+\lstinline|fold @EqPoint { ... }| does the opposite:
 \begin{lstlisting}
-getX (p: Point) = (unfold @Point p).x;
-getY (p: Point) = (unfold @Point p).y;
-eqPoint (x: Int) (y: Int) = fold @Point {
+getX (p: EqPoint) = (unfold @EqPoint p).x;
+getY (p: EqPoint) = (unfold @EqPoint p).y;
+eqPoint (x: Int) (y: Int) = fold @EqPoint {
   x = x;  y = y;
-  eq (p: Point)  =  getX p == x && getY p == y
+  eq (p: EqPoint)  =  getX p == x && getY p == y
 };
 \end{lstlisting}
 
@@ -448,11 +451,14 @@ inserting \lstinline{fold} and \lstinline{unfold} when necessary. For example,
 is a recursive type, and \lstinline{unfold} is inserted for record projection.
 The previous example can be rewritten as follows:
 \begin{lstlisting}
-eqPoint (x: Int) (y: Int) = trait implements Point => {
+eqPoint (x: Int) (y: Int) = trait implements EqPoint => {
   x = x;  y = y;
   eq p  =  p.x == x && p.y == y;
 };
 \end{lstlisting}
+Note that now we do not need to specify the type of the method parameter
+\lstinline{p} in \lstinline{eq p}, because the type can be inferred from the
+declared interface \lstinline{EqPoint}.
 
 \begin{tipblock}
 Due to type-theoretic difficulties, a trait implementing a recursive type cannot
@@ -484,10 +490,7 @@ which is declared to have types \lstinline{Odd} and \lstinline{Even}
 respectively. The trait type becomes a bit more complicated with a self-type,
 written as \lstinline{Trait<In=>Out>}, where \lstinline{In} is the self-type and
 \lstinline{Out} is the inferred type for the trait body (a subtype of, but not
-necessarily the same as, the declared interface). Note that we do not need to
-specify the type of the method parameter \lstinline{n}, for example, in
-\lstinline{isEven n}, because the type can be inferred from the declared
-interface \lstinline{Even}.
+necessarily the same as, the declared interface).
 
 \begin{tipblock}
 If we review the type \lstinline{Trait<Point>} in last section, we will find
@@ -557,6 +560,13 @@ interfaces and traits are open to extension in CP. As we have seen, interfaces
 can be extended via intersection types, and traits can be inherited or extended
 via merging.
 \end{tipblock}
+
+\noindent
+Furthermore, a wildcard pattern is also supported in CP. For example, the trait
+below evaluates all \lstinline{Lit} and \lstinline{Add} expressions to \lstinline{0}:
+\begin{lstlisting}
+evalDummy = trait implements ExpSig<Eval> => { _.eval = 0 };  -- eval _ = 0
+\end{lstlisting}
 
 \paragraph{Modular dependencies.}
 A merit of compositional interfaces is that they can modularly handle
@@ -631,6 +641,11 @@ factory = new evalExp,printSelf : ExpSig<Eval&Print>;
 let e1 = open factory in Add (Lit 4) (Lit 8) in e1.print  --> "4 + 8"
 let e2 = open factory in Add (Lit 0) (Lit 0) in e2.print  --> "0"
 \end{lstlisting}
+Note that we do not need to add \lstinline{new} before \lstinline{Add} and
+\lstinline{Lit}, because \lstinline{new} is implicitly inserted for constructors
+(syntactically starting with an uppercase letter). In case \lstinline{new} is
+not desired, \lstinline{$Add} and \lstinline{$Lit} can be used instead. In other
+words, \lstinline{Lit 0} is equivalent to \lstinline{new $Lit 0}.
 
 A more recommended way is to define a \lstinline{repo} trait with a self-type
 annotation:
