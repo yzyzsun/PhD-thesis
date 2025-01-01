@@ -414,6 +414,23 @@ Here \lstinline{blackPoint\color} removes the \lstinline{color} field, while
 \lstinline{reflected} can still be accessed using the forwarding operator
 \lstinline{^}.
 
+\paragraph{Dynamic inheritance.}
+Traits in CP are first-class in the sense that they can be passed around like
+other values. First-class traits usually imply dynamic trait inheritance, where
+a trait can inherit from a trait expression, whose value is determined
+dynamically. For example, we can decide whether the inherited trait is reflected
+at run time:
+\begin{lstlisting}
+reflectedOrNot (b: Bool) =
+  trait inherits if b then reflected else blackPoint => { amazing = true };
+\end{lstlisting}
+When combined with parametric polymorphism, dynamic inheritance may require
+certain disjointness constraints to ensure that there is no field conflict:
+\begin{lstlisting}
+mixin (T * { amazing: Bool }) (base: Trait<T>) =
+  trait [self: T] inherits base => { amazing = true };
+\end{lstlisting}
+
 \section{Recursive Types}
 
 Recursive types are needed if a method refers to its enclosing trait. For
@@ -487,10 +504,15 @@ odd = trait [self: Even] implements Odd => {
 Here the annotations \lstinline{[self: Odd]} and \lstinline{[self: Even]} allow
 the trait bodies to refer to late-bound self-references by \lstinline{self},
 which is declared to have types \lstinline{Odd} and \lstinline{Even}
-respectively. The trait type becomes a bit more complicated with a self-type,
-written as \lstinline{Trait<In=>Out>}, where \lstinline{In} is the self-type and
-\lstinline{Out} is the inferred type for the trait body (a subtype of, but not
-necessarily the same as, the declared interface).
+respectively. By this means, \lstinline{even} and \lstinline{odd} are not
+coupled with each other, allowing them to be composed with other
+implementations. Self-type annotations play a crucial role in modular
+dependencies in CP.
+
+The trait type becomes a bit more complicated with a self-type annotation,
+written as \lstinline{Trait<In => Out>}, where \lstinline{In} is the self-type
+and \lstinline{Out} is the inferred type for the trait body (a subtype of, but
+not necessarily the same as, the declared interface).
 
 \begin{tipblock}
 If we review the type \lstinline{Trait<Point>} in last section, we will find
@@ -513,8 +535,7 @@ new even,odd  --> { isEven = ...; isOdd = ... }
 Here \lstinline{new} is effectively obtaining a fixpoint of the merge of the two
 trait, allowing late binding of the self-reference. The merge
 \lstinline{even,odd} works because \lstinline{Trait<Odd=>Even> & Trait<Even=>Odd>}
-can be used as \lstinline{Trait<Odd&Even>}. We see that the self-type annotations
-are crucial for modular dependencies in CP.
+can be used as \lstinline{Trait<Odd&Even>}.
 
 \section{Compositional Interfaces and Method Patterns}
 
