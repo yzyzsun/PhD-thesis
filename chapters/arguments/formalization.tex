@@ -1,4 +1,4 @@
-\section{Formalization}
+\section{Formalization} \label{sec:iu-uaena}
 
 In this section, we formalize the translation of named and optional arguments as
 an elaboration semantics. The target of elaboration is called \lambdaiu, and the
@@ -52,11 +52,6 @@ The syntax of $[[letin]]$ is as follows:
 The composition of two let-in bindings is denoted by $[[letin1 letin2]]$, and an
 empty binding is denoted by $[[id]]$.
 
-\begin{figure}
-\IUdefnsub{}
-\caption{Subtyping of \lambdaiu.} \label{fig:sub}
-\end{figure}
-
 \paragraph{Subtyping.}
 \autoref{fig:sub} shows the subtyping rules of \lambdaiu. The rules are standard
 for a type system with intersection and union types. \Rref{Sub-Top} shows that
@@ -73,6 +68,11 @@ reflexive and transitive.
 \begin{theorem}[Subtyping Transitivity]
   If $[[A <: B]]$ and $[[B <: C]]$, then $[[A <: C]]$.
 \end{theorem}
+
+\begin{figure}[b!]
+\IUdefnsub{}
+\caption{Subtyping of \lambdaiu.} \label{fig:sub}
+\end{figure}
 
 \begin{figure}
 \begin{align*}
@@ -163,23 +163,6 @@ key-value pairs. For example, the previous function can be applied to
 $\{[[x]]=1;\;[[y]]=2\}$ or $\{[[x]]=1\}$ or a variable having a compatible type.
 The variable case demonstrates the first-class nature of named arguments in \uaena.
 
-Careful readers may notice that a named argument type can also serve as the
-parameter of a normal function. This also demonstrates the first-class nature of
-named arguments. But note that a normal function that takes named
-arguments is different from a function with named parameters. Consider the
-following two functions, the former of which is a function with named parameters
-and the latter is a normal function:
-\begin{align*}
-                    (\lambda\{[[x]]:[[Int]];\;[[y]]=0\}.\;[[x+y]]) \quad&:\quad \{[[x]]:[[Int]];\;[[y]]?:[[Int]]\}[[->]][[Int]] \\
-  (\lambda([[args]]:\{[[x]]:[[Int]];\;[[y]]:[[Int]]\}).\;[[args]]) \quad&:\quad (\{[[x]]:[[Int]];\;[[y]]:[[Int]]\})[[->]]\{[[x]]:[[Int]];\;[[y]]:[[Int]]\}
-\end{align*}
-Although both functions can be applied to $\{[[x]]=1;\;[[y]]=2\}$, there are two
-main differences between them. First, optional parameters cannot be defined in a
-normal function. So we cannot provide $[[y]]=0$ as a default value in the second
-function. Second, $[[x]]$ and $[[y]]$ are not brought into the scope of the
-function body in a normal function. So the only accessible variable is $[[args]]$
-in the second function.
-
 % manually break line for the conclusion
 \renewcommand{\IUdrulePElaXXOptional}[1]{\ottdrule[#1]{%
 \ottpremise{[[ Gs; x |- p : P ~~> letin -| Gs' ]]}%
@@ -198,6 +181,23 @@ in the second function.
 \IUdefnpelab{}
 \caption{Type-directed elaboration from \uaena to \lambdaiu.} \label{fig:elab}
 \end{figure}
+
+Careful readers may notice that a named argument type can also serve as the
+parameter of a normal function. This also demonstrates the first-class nature of
+named arguments. But note that a normal function that takes named
+arguments is different from a function with named parameters. Consider the
+following two functions, the former of which is a function with named parameters
+and the latter is a normal function:
+\begin{align*}
+                    (\lambda\{[[x]]:[[Int]];\;[[y]]=0\}.\;[[x+y]]) \quad&:\quad \{[[x]]:[[Int]];\;[[y]]?:[[Int]]\}[[->]][[Int]] \\
+  (\lambda([[args]]:\{[[x]]:[[Int]];\;[[y]]:[[Int]]\}).\;[[args]]) \quad&:\quad (\{[[x]]:[[Int]];\;[[y]]:[[Int]]\})[[->]]\{[[x]]:[[Int]];\;[[y]]:[[Int]]\}
+\end{align*}
+Although both functions can be applied to $\{[[x]]=1;\;[[y]]=2\}$, there are two
+main differences between them. First, optional parameters cannot be defined in a
+normal function. So we cannot provide $[[y]]=0$ as a default value in the second
+function. Second, $[[x]]$ and $[[y]]$ are not brought into the scope of the
+function body in a normal function. So the only accessible variable is $[[args]]$
+in the second function.
 
 \paragraph{Elaboration.}
 The type-directed elaboration from \uaena to \lambdaiu is defined at the top of

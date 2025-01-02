@@ -1,4 +1,4 @@
-\section{Our Type-Safe Approach}
+\section{Our Type-Safe Approach} \label{sec:type-safe}
 
 In this section, we informally present how we translate named and optional
 arguments into a core language with intersection and union types, while
@@ -161,7 +161,16 @@ inserted to remove the forgotten fields (e.g. \lstinline{debug} in this case).
 Therefore, the only remaining work is to add null values for absent optional
 arguments.
 
-\begin{figure}[b!]
+To demonstrate the use of named and optional arguments in CP, we show a fractal
+example in \autoref{fig:fractal}, which is adapted from code in
+\autoref{sec:fractal}. The code makes use of named and optional arguments a lot,
+including both the \lstinline{SVG}/\lstinline{Rect} constructors from the
+library and the \lstinline{fractal} function defined by the client. For example,
+\lstinline{fractal} has five named arguments (\lstinline{level}, \lstinline{x},
+\lstinline{y}, \lstinline{width}, and \lstinline{height}), among which
+\lstinline{level} is optional with a default value of \lstinline{4}.
+
+\begin{figure}[t]
 \begin{lstlisting}[language=CP,xleftmargin=.05\textwidth]
 -- from a SVG library in CP
 SVG: { width: Int; height: Int } -> [Element] -> Graphic;    -- <svg>
@@ -188,15 +197,6 @@ main = SVG init ([Rect init] ++ fractal init);
 \end{lstlisting}
 \caption{Sierpiński carpets implemented in the CP language.} \label{fig:fractal}
 \end{figure}
-
-To demonstrate the use of named and optional arguments in CP, we show a fractal
-example in \autoref{fig:fractal}, which is adapted from code in
-\autoref{sec:fractal}. The code makes use of named and optional arguments a lot,
-including both the \lstinline{SVG}/\lstinline{Rect} constructors from the
-library and the \lstinline{fractal} function defined by the client. For example,
-\lstinline{fractal} has five named arguments (\lstinline{level}, \lstinline{x},
-\lstinline{y}, \lstinline{width}, and \lstinline{height}), among which
-\lstinline{level} is optional with a default value of \lstinline{4}.
 
 It is worth noting that named arguments are used as first-class values in the CP
 code. On the first line of the \lstinline{fractal} body, we store three fields
