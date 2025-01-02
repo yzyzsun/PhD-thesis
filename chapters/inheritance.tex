@@ -3,11 +3,13 @@
 This chapter presents the second case study of compositional programming:
 type-safe dynamic inheritance. While dynamic inheritance is supported by many
 dynamically typed languages, such as JavaScript, it poses significant challenges
-for statically typed languages to implement it in a type-safe manner. We
-identify an \emph{inexact superclass problem}, revealing a type-safety issue in
-TypeScript, which extends JavaScript with static typing. Then we show how CP
-solves this problem via \emph{merging}. In short, CP supports dynamic multiple
-inheritance and family polymorphism while preserving type safety.
+for statically typed languages to implement it in a type-safe manner.
+\autoref{sec:introduction} starts with a manifesto of our proposal based on a
+trait model with merging. Then in \autoref{sec:background}, we show some
+concrete examples in TypeScript, which extends JavaScript with static typing,
+revealing type-safety issues. Finally in \autoref{sec:overview}, we show how CP
+solves these issues. In short, CP supports dynamic multiple inheritance and
+family polymorphism while preserving type safety.
 
 \input{chapters/inheritance/introduction}
 \input{chapters/inheritance/background}

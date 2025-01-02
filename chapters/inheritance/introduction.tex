@@ -1,4 +1,4 @@
-\section{Introduction}
+\section{First-Class Traits with Merging} \label{sec:introduction}
 
 Many programming language constructs are first-class. First-class functions are
 a key construct of functional programming. Similarly, objects are first-class in
@@ -179,9 +179,9 @@ flexible and type-safe designs that support all these features at once.
 Because our design is based on the trait model, we also inherit its advantages.
 In particular, since merging extends behavior rather than replace behavior, it
 is less prone to problems such as the \emph{fragile base class
-problem}~\citep{mikhajlov1998study}. As we shall see, in the presence of dynamic
-inheritance, designs based on implicit overriding, such as TypeScript,
-exacerbate the fragile base class problem: not only can overriding break
-invariants of the superclass, but it can also break type safety! Designs based
-on a trait-model with merging preserve the behavior of inherited classes and
-avoid the issues due to (implicit) overriding.
+problem}~\citep{mikhajlov1998study}. As we shall see in next section, in the
+presence of dynamic inheritance, designs based on implicit overriding, such as
+TypeScript, exacerbate the fragile base class problem: not only can overriding
+break invariants of the superclass, but it can also break type safety! Designs
+based on a trait-model with merging preserve the behavior of inherited classes
+and avoid the issues due to (implicit) overriding.

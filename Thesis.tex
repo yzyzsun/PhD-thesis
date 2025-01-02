@@ -340,10 +340,13 @@ diploma, or other qualifications.
 \listoffigures
 \listoftables
 
-\cleardoublepage
+\clearpage
 \phantomsection
 \pdfbookmark{List of Theorems}{theorems}
+\begingroup
+\let\cleardoublepage\clearpage
 \listoftheorems
+\endgroup
 
 %%---------------------%%
 \mainmatter
