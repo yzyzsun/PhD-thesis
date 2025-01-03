@@ -106,6 +106,139 @@ document constructs and functions without modifying the original source code.
 Furthermore, there is no static typing in Scribble, though it uses Racket's
 \emph{contract} system to perform run-time type checking.
 
+\section{Multiple, Dynamic Inheritance and Virtual Classes}
+
+\emph{Multiple inheritance} is a well-known troublemaker in OOP languages,
+bringing the diamond problem and method conflicts, among other issues.
+Alternative notions like \emph{mixins}~\citep{bracha1990mixin} and
+\emph{traits}~\citep{ducasse2006traits} are proposed to alleviate the issues. A
+core difference between mixins and traits is how they handle conflicts when the
+same method name occurs in multiple ancestors. Mixins resolve conflicts
+implicitly by linearization (e.g. C3
+linearization~\citep{barrett1996monotonic}). However, the implicit resolution of
+conflicts may conceal accidental conflicts and lead to subtle bugs. Traits, on
+the other hand, require the programmer to resolve conflicts explicitly. CP
+adopts the trait model and imposes the disjointness constraint on merging (and
+trait inheritance). Note that the disjointness constraint does not only consider
+the method names but also takes into account the types of the methods, so the
+methods with the same name but different return types are considered disjoint
+and do not conflict with each other. By this means, CP tries to reach a balance
+between safety and flexibility.
+
+\paragraph{Dynamic inheritance and first-class classes.} \label{sec:first-class}
+While various forms of multiple inheritance are well studied and implemented in
+some popular languages, such as C++, Ruby, and Scala, dynamic inheritance is
+more challenging and involved, especially in terms of static typing. In the
+literature of OOP, dynamic inheritance is often discussed in a broader context
+of \emph{first-class classes}~\citep{strickland2013contracts}, where inherited
+classes can be determined at run time, among other dynamic features. There are
+only a few statically typed languages that support first-class classes. To the
+best of our knowledge, they are \texttt{gbeta}~\citep{ernst2000gbeta},
+TypeScript~\citep{typescript}, Typed Racket~\citep{takikawa2012gradual},
+Wyvern~\citep{lee2015theory}, and most recently,
+CP~\citep{zhang2021compositional}. As elaborated in \autoref{sec:background},
+the most popular one, TypeScript, has significant type-safety issues when
+dealing with dynamic inheritance.
+
+Typed Racket is gradually typed and uses row polymorphism to represent class
+types. Similarly to the disjointness constraints in CP, there are constraints on
+row variables to express absence, and thus the \emph{inexact superclass problem}
+that TypeScript suffers from is resolved in Typed Racket. However, the absence
+constraint on a row variable only includes the method name but not the type, so
+the dynamically inherited class is more restricted than in CP. Moreover,
+\citet{xie2020row} formally prove that CP's disjoint polymorphism is more
+powerful than similar forms of row polymorphism. Furthermore, unlike Typed
+Racket, CP can model virtual classes and family polymorphism. 
+
+Wyvern is a language for design-driven assurance, and \citet{lee2015theory}
+explored a foundational account of first-class classes based on
+tagging~\citep{glew1999type}. Similarly to our formalization, they give an
+elaboration semantics of an OOP language. However, their theory is very
+different from ours, and they target a more sophisticated calculus with
+hierarchical tagging and dependent types. In contrast, our target language is a
+standard record calculus. Furthermore, their calculus cannot model multiple
+inheritance or family polymorphism, and their implementation is an interpreter
+rather than a compiler.
+
+The \texttt{gbeta} language is the most interesting one and is the closest to CP
+because it supports dynamic multiple inheritance and family polymorphism.
+However, separate compilation was not supported at the time when
+\citet{ernst2000gbeta} wrote his dissertation because of some technical issues
+with the Mjølner BETA persistence support. If this factor is disregarded,
+separate compilation can still be accomplished, but at the cost of efficient
+attribute lookup. Since an object in \texttt{gbeta} may have more mixin
+instances at run time than what is statically known, and the mixin instances may
+occur in a different order, the offset of an attribute cannot be determined
+statically. As a result, \texttt{gbeta} has to perform a linear search through
+super-mixins to look up inherited attributes. In contrast, attribute lookup in
+CP, even with dynamic inheritance, is more efficient, and no linear search is
+needed.
+
+The notion of \emph{patterns} in \texttt{gbeta} unifies classes and methods, and
+patterns can be composed using the combination operator `\&', which is similar
+to the merge operator `$\bbcomma$' in CP. Though dynamic multiple inheritance
+can be achieved using `\&', only a subset of dynamic combinations is safe, where
+at least one of the classes being composed must be created by single
+inheritance~\citep{ernst2002safe}. Otherwise, the C3 linearization algorithm
+used by \texttt{gbeta} may fail at run time. In contrast, dynamic inheritance
+via `$\bbcomma$' is completely type-safe, because CP utilizes disjointness to
+avoid conflicts, and no linearization is needed. This difference has been
+summarized earlier as \emph{mixins versus traits}. Some other notable
+consequences of this difference are:
+\begin{itemize}
+\item `$\bbcomma$' is commutative, while `\&' is not;
+\item `$\bbcomma$' supports mutual dependencies between traits, while `\&'
+rejects such cycles.
+\end{itemize}
+
+\paragraph{Virtual classes and family polymorphism.}
+Virtual classes~\citep{madsen1989virtual}, similarly to virtual methods, are
+nested classes that can be overridden in subclasses. Virtual classes enable
+family polymorphism~\citep{ernst2001family}, which can naturally solve the
+expression problem~\citep{ernst2004expression}. The idea of virtual classes was
+initially introduced in the BETA programming language~\citep{madsen1993object}
+and later generalized in \texttt{gbeta}~\citep{ernst2000gbeta}.
+CaesarJ~\citep{aracic2006overview}, an aspect-oriented programming language
+based on Java, also supports virtual classes but does not allow cross-family
+inheritance and dynamic inheritance. Newspeak~\citep{bracha2010modules}, a
+descendant of Smalltalk, combines virtual classes and first-class modules (i.e.
+instances of top-level classes) but is dynamically typed. The calculi
+Jx~\citep{nystrom2004scalable}, J\&~\citep{nystrom2006j},
+\emph{vc}~\citep{ernst2006virtual}, Tribe~\citep{clarke2007tribe}, and
+.FJ~\citep{saito2008lightweight}, just to name a few, formalize virtual classes
+with static inheritance but do not support dynamic inheritance.
+
+\citet{zhang2017familia} propose the Familia programming language that unites
+object-oriented polymorphism and parametric polymorphism by unifying interfaces
+and type classes. In Familia, a mechanism of family polymorphism based on
+\emph{nested inheritance}, similarly to Jx~\citep{nystrom2004scalable}, is also
+deployed. During compilation, a \emph{linkage} is computed for every class,
+which consists of a self-reference, a dispatch table, and the linkages of its
+nested classes, among others. At the heart of the mechanism is \emph{further
+binding}~\citep{madsen1993object}: rewiring self-references for nested classes.
+Further binding is realized in Familia by linkage concatenation between
+families. This process is similar to the nested trait composition in CP, but
+there is a significant distinction in terms of separate compilation. CP
+\emph{only} needs type information of the imported modules at compile time,
+while Familia requires class linkages that contain some implementation details
+of the imported modules (e.g. method definitions) and copy these details from
+superclasses' linkages. In this sense, with linkages, Familia supports some
+degree of separate compilation, but not to the same extent as the CP compiler
+does. Moreover, since Familia does not support dynamic inheritance, their class
+hierarchies are determined statically. In contrast, CP supports dynamic trait
+composition, which brings extra flexibility.
+
+More recently, \citet{kravchuk2024persimmon} propose \textsc{Persimmon}, a
+functional programming language that features extensible variant types and
+extensible pattern matching. CP also supports them via compositional interfaces
+and method patterns. \textsc{Persimmon} additionally allows types to be members
+of a family, relying on the support for \emph{relative path
+types}~\citep{saito2008lightweight} in their core calculus. Internally,
+\textsc{Persimmon} makes use of \emph{linkages} that are similar to those in
+Familia. An important limitation of their current design is that modular type
+checking and separate compilation are \emph{not} supported for multi-file
+programs, while CP fully supports them.
+
 \section{Compilation of Inheritance}
 
 In his excellent survey on inheritance, \citet{taivalsaari1996notion}
@@ -253,136 +386,3 @@ variability~\citep{hallsteinsen2008dynamic} and is proven to be type-safe.
 However, dynamic DOP is not yet implemented, and its separation compilation is
 unexplored.
 \end{comment}
-
-\section{Multiple, Dynamic Inheritance and Virtual Classes}
-
-\emph{Multiple inheritance} is a well-known troublemaker in OOP languages,
-bringing the diamond problem and method conflicts, among other issues.
-Alternative notions like \emph{mixins}~\citep{bracha1990mixin} and
-\emph{traits}~\citep{ducasse2006traits} are proposed to alleviate the issues. A
-core difference between mixins and traits is how they handle conflicts when the
-same method name occurs in multiple ancestors. Mixins resolve conflicts
-implicitly by linearization (e.g. C3
-linearization~\citep{barrett1996monotonic}). However, the implicit resolution of
-conflicts may conceal accidental conflicts and lead to subtle bugs. Traits, on
-the other hand, require the programmer to resolve conflicts explicitly. CP
-adopts the trait model and imposes the disjointness constraint on merging (and
-trait inheritance). Note that the disjointness constraint does not only consider
-the method names but also takes into account the types of the methods, so the
-methods with the same name but different return types are considered disjoint
-and do not conflict with each other. By this means, CP tries to reach a balance
-between safety and flexibility.
-
-\paragraph{Dynamic inheritance and first-class classes.} \label{sec:first-class}
-While various forms of multiple inheritance are well studied and implemented in
-some popular languages, such as C++, Ruby, and Scala, dynamic inheritance is
-more challenging and involved, especially in terms of static typing. In the
-literature of OOP, dynamic inheritance is often discussed in a broader context
-of \emph{first-class classes}~\citep{strickland2013contracts}, where inherited
-classes can be determined at run time, among other dynamic features. There are
-only a few statically typed languages that support first-class classes. To the
-best of our knowledge, they are \texttt{gbeta}~\citep{ernst2000gbeta},
-TypeScript~\citep{typescript}, Typed Racket~\citep{takikawa2012gradual},
-Wyvern~\citep{lee2015theory}, and most recently,
-CP~\citep{zhang2021compositional}. As elaborated in \autoref{sec:background},
-the most popular one, TypeScript, has significant type-safety issues when
-dealing with dynamic inheritance.
-
-Typed Racket is gradually typed and uses row polymorphism to represent class
-types. Similarly to the disjointness constraints in CP, there are constraints on
-row variables to express absence, and thus the \emph{inexact superclass problem}
-that TypeScript suffers from is resolved in Typed Racket. However, the absence
-constraint on a row variable only includes the method name but not the type, so
-the dynamically inherited class is more restricted than in CP. Moreover,
-\citet{xie2020row} formally prove that CP's disjoint polymorphism is more
-powerful than similar forms of row polymorphism. Furthermore, unlike Typed
-Racket, CP can model virtual classes and family polymorphism. 
-
-Wyvern is a language for design-driven assurance, and \citet{lee2015theory}
-explored a foundational account of first-class classes based on
-tagging~\citep{glew1999type}. Similarly to our formalization, they give an
-elaboration semantics of an OOP language. However, their theory is very
-different from ours, and they target a more sophisticated calculus with
-hierarchical tagging and dependent types. In contrast, our target language is a
-standard record calculus. Furthermore, their calculus cannot model multiple
-inheritance or family polymorphism, and their implementation is an interpreter
-rather than a compiler.
-
-The \texttt{gbeta} language is the most interesting one and is the closest to CP
-because it supports dynamic multiple inheritance and family polymorphism.
-However, separate compilation was not supported at the time when
-\citet{ernst2000gbeta} wrote his dissertation because of some technical issues
-with the Mjølner BETA persistence support. If this factor is disregarded,
-separate compilation can still be accomplished, but at the cost of efficient
-attribute lookup. Since an object in \texttt{gbeta} may have more mixin
-instances at run time than what is statically known, and the mixin instances may
-occur in a different order, the offset of an attribute cannot be determined
-statically. As a result, \texttt{gbeta} has to perform a linear search through
-super-mixins to look up inherited attributes. In contrast, attribute lookup in
-CP, even with dynamic inheritance, is more efficient, and no linear search is
-needed.
-
-The notion of \emph{patterns} in \texttt{gbeta} unifies classes and methods, and
-patterns can be composed using the combination operator `\&', which is similar
-to the merge operator `$\bbcomma$' in CP. Though dynamic multiple inheritance
-can be achieved using `\&', only a subset of dynamic combinations is safe, where
-at least one of the classes being composed must be created by single
-inheritance~\citep{ernst2002safe}. Otherwise, the C3 linearization algorithm
-used by \texttt{gbeta} may fail at run time. In contrast, dynamic inheritance
-via `$\bbcomma$' is completely type-safe, because CP utilizes disjointness to
-avoid conflicts, and no linearization is needed. This difference has been
-summarized earlier as \emph{mixins versus traits}. Some other notable
-consequences of this difference are:
-\begin{itemize}
-\item `$\bbcomma$' is commutative, while `\&' is not;
-\item `$\bbcomma$' supports mutual dependencies between traits, while `\&'
-rejects such cycles.
-\end{itemize}
-
-\paragraph{Virtual classes and family polymorphism.}
-Virtual classes~\citep{madsen1989virtual}, similarly to virtual methods, are
-nested classes that can be overridden in subclasses. Virtual classes enable
-family polymorphism~\citep{ernst2001family}, which can naturally solve the
-expression problem~\citep{ernst2004expression}. The idea of virtual classes was
-initially introduced in the BETA programming language~\citep{madsen1993object}
-and later generalized in \texttt{gbeta}~\citep{ernst2000gbeta}.
-CaesarJ~\citep{aracic2006overview}, an aspect-oriented programming language
-based on Java, also supports virtual classes but does not allow cross-family
-inheritance and dynamic inheritance. Newspeak~\citep{bracha2010modules}, a
-descendant of Smalltalk, combines virtual classes and first-class modules (i.e.
-instances of top-level classes) but is dynamically typed. The calculi
-Jx~\citep{nystrom2004scalable}, J\&~\citep{nystrom2006j},
-\emph{vc}~\citep{ernst2006virtual}, Tribe~\citep{clarke2007tribe}, and
-.FJ~\citep{saito2008lightweight}, just to name a few, formalize virtual classes
-with static inheritance but do not support dynamic inheritance.
-
-\citet{zhang2017familia} propose the Familia programming language that unites
-object-oriented polymorphism and parametric polymorphism by unifying interfaces
-and type classes. In Familia, a mechanism of family polymorphism based on
-\emph{nested inheritance}, similarly to Jx~\citep{nystrom2004scalable}, is also
-deployed. During compilation, a \emph{linkage} is computed for every class,
-which consists of a self-reference, a dispatch table, and the linkages of its
-nested classes, among others. At the heart of the mechanism is \emph{further
-binding}~\citep{madsen1993object}: rewiring self-references for nested classes.
-Further binding is realized in Familia by linkage concatenation between
-families. This process is similar to the nested trait composition in CP, but
-there is a significant distinction in terms of separate compilation. CP
-\emph{only} needs type information of the imported modules at compile time,
-while Familia requires class linkages that contain some implementation details
-of the imported modules (e.g. method definitions) and copy these details from
-superclasses' linkages. In this sense, with linkages, Familia supports some
-degree of separate compilation, but not to the same extent as the CP compiler
-does. Moreover, since Familia does not support dynamic inheritance, their class
-hierarchies are determined statically. In contrast, CP supports dynamic trait
-composition, which brings extra flexibility.
-
-More recently, \citet{kravchuk2024persimmon} propose \textsc{Persimmon}, a
-functional programming language that features extensible variant types and
-extensible pattern matching. CP also supports them via compositional interfaces
-and method patterns. \textsc{Persimmon} additionally allows types to be members
-of a family, relying on the support for \emph{relative path
-types}~\citep{saito2008lightweight} in their core calculus. Internally,
-\textsc{Persimmon} makes use of \emph{linkages} that are similar to those in
-Familia. An important limitation of their current design is that modular type
-checking and separate compilation are \emph{not} supported for multi-file
-programs, while CP fully supports them.

@@ -442,8 +442,10 @@ type EqPoint = { x: Int; y: Int; eq: EqPoint -> Bool };
 Now \lstinline{EqPoint} has to refer to itself in the type of the \lstinline{eq}
 method. However, the definition above does not work because \lstinline{EqPoint} is
 not yet defined when the type of \lstinline{eq} is being checked. To solve this
-problem, the \lstinline{fix} keyword can be used:
+problem, the \lstinline{interface} keyword can be used:
 \begin{lstlisting}
+interface EqPoint { x: Int; y: Int; eq: EqPoint -> Bool };
+-- is equivalent to:
 type EqPoint = fix EqPoint. { x: Int; y: Int; eq: EqPoint -> Bool };
 \end{lstlisting}
 The form of recursive types implemented in CP is called \emph{iso}-recursive,
@@ -473,7 +475,7 @@ eqPoint (x: Int) (y: Int) = trait implements EqPoint => {
   eq p  =  p.x == x && p.y == y;
 };
 \end{lstlisting}
-Note that now we do not need to specify the type of the method parameter
+Note that we no longer need to specify the type of the method parameter
 \lstinline{p} in \lstinline{eq p}, because the type can be inferred from the
 declared interface \lstinline{EqPoint}.
 
