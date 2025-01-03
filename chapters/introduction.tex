@@ -5,9 +5,9 @@ programming}, which is a statically typed programming paradigm that emphasizes
 modularity and extensibility, proposed by Weixin Zhang, Yaozhu Sun (the author),
 and Bruno C. d. S. Oliveira \citeyearpar{zhang2021compositional}...
 
-\section{Motivation}
+\section{Motivations}
 
-Compositionality is an important principle in software engineering. It means
+Compositionality is an important principle in software engineering, meaning
 that a complex system can be built by composing simpler parts. However, it is
 non-trivial to achieve compositionality in practice. During the evolution of a
 software system, we often need to add new features, including extending the
@@ -15,102 +15,144 @@ current system with both new data types and new operations. The \emph{expression
 problem}~\citep{wadler1998expression} illustrates the difficulty of such
 two-dimensional extensibility in a modular way.
 
-This is not only a theoretic problem, but also a practical issue, for example,
-in the development of domain-specific languages (DSLs). A common approach to
-defining DSLs is via a direct embedding into a host language. There are several
-well-known techniques to do such embeddings, including \emph{shallow} and
-\emph{deep} embeddings. However, it is hard to modularly extend language
-constructs (data types) in deep embeddings or to modularly extend
-interpretations (operations) in shallow embeddings. This two-dimensional dillema
-corresponds to the aforementioned expression problem. Polymorphic
-embeddings~\citep{hofer2008polymorphic}, tagless-final
-embeddings~\citep{carette2009finally}, and object
-algebras~\citep{oliveira2012extensibility} are some of the techniques that have
-been proposed to address this issue, yet they all have drawbacks, such as
-requiring boilerplate code and lacking a mechanism to modularly handle
-dependencies between interpretations. In contrast, the CP language provides
-native support for compositional embeddings, which is a modular paradigm to
-support two-dimensional extensibility as well as dependent interpretations.
+\paragraph{Embedded domain-specific languages.}
+The difficulty of compositionality is not only a theoretic problem, but also a
+practical issue, for example, in the development of domain-specific languages
+(DSLs). A common approach to defining DSLs is via a direct embedding into a host
+language. This approach is used in several programming languages, such as
+Haskell, Scala, and Racket. In those languages, various DSLs -- including pretty
+printers~\citep{hughes1995design,wadler2003prettier}, parser
+combinators~\citep{leijen2001parsec}, and property-based testing
+frameworks~\citep{claessen2000quickcheck} -- are defined as embedded DSLs. There
+are a few techniques for such embeddings, including the well-known
+\emph{shallow} and \emph{deep} embeddings~\citep{boulton1992experience}.
 
+Unfortunately, shallow and deep embeddings come with various trade-offs in
+existing programming languages. Such trade-offs have been widely discussed in
+the literature~\citep{rompf2012scala,scherr2014implicit,gibbons2014folding}. On
+the one hand, the strengths of shallow embeddings are in providing
+\emph{linguistic reuse}~\citep{krishnamurthi2001linguistic}, exploiting
+meta-language optimizations, and allowing the addition of new DSL constructs
+easily. On the other hand, deep embeddings shine in enabling the definition of
+complex semantic interpretations and optimizations over the abstract syntax tree
+(AST) of the DSL, and they enable adding new semantic interpretations easily.
+Regarding such trade-offs, \citet{svenningsson2015combining} made the following
+striking comment:
+
+\begin{quoting}
+\noindent ``The holy grail of embedded language implementation is to be able to
+combine the advantages of shallow and deep in a single implementation.''
+\end{quoting}
+
+While progress has been made in embedded language implementation, the holy grail
+is still not fully achieved in existing programming languages. Owing to the
+trade-offs between shallow and deep embeddings, many realistic embedded DSLs end
+up using a mix of both approaches in practice or more advanced forms of
+embeddings. For instance, there have been several
+approaches~\citep{rompf2012scala,svenningsson2015combining,jovanovic2014yinyang}
+promoting the use of shallow embeddings as the frontend of the DSL to enable
+linguistic reuse, while deep embeddings are used as the backend for added
+flexibility in defining semantic interpretations. While such approaches manage
+to alleviate some of the trade-offs, they require translations between the two
+embeddings, a substantial amount of code, and some advanced coding techniques.
+Alternatively, there are more advanced embedding techniques, which are inspired
+by work on extensible Church encodings of algebraic data
+types~\citep{hinze2006generics,oliveira2006extensible,oliveira2009modular}. Such
+techniques include \emph{tagless-final
+embeddings}~\citep{carette2009finally,kiselyov2010typed}, \emph{polymorphic
+embeddings}~\citep{hofer2008polymorphic}, and \emph{object
+algebras}~\citep{oliveira2012extensibility}, and they are able to eliminate some
+of the trade-offs too. In particular, those approaches eliminate the trade-offs
+with respect to extensibility, facilitating both the addition of new DSL
+constructs and semantic interpretations. However, being quite close to shallow
+embeddings, those approaches lack some important capabilities, such as the
+ability to define complex interpretations and the use of (nested) pattern
+matching to express semantic interpretations and transformations easily and
+modularly.
+
+\paragraph{Type-safe dynamic inheritance.}
 In general-purpose programming languages, compositionality often requires
 mechanisms of code reuse. Object-oriented programming languages usually employs
 inheritance, which allows code reuse by defining new classes that inherit from
 existing ones. However, traditional inheritance mechanisms have limitations. For
-example, multiple inheritance can lead to the diamond problem, where a class
-inherits from two classes that have a common ancestor. This can cause ambiguity
-when resolving method calls. Traits are a mechanism that addresses the diamond
-problem by detecting ambiguous compositions and requiring the programmer to
-resolve the conflicts explicitly. However, the detection of conflicts becomes
-more challenging when dealing with dynamic inheritance, where classes (or
-traits) can be composed at run time. Most statically typed languages only
-provide static inheritance to achieve type safety at the cost of flexibility.
+example, multiple inheritance can lead to the \emph{diamond problem}, where a
+class inherits from two classes that have a common ancestor. This can cause
+ambiguity when resolving method calls. Traits~\citep{ducasse2006traits} are a
+mechanism that addresses the diamond problem by detecting ambiguous compositions
+and requiring the programmer to resolve the conflicts explicitly. However, the
+detection of conflicts becomes more challenging when dealing with dynamic
+inheritance, where classes (or traits) can be composed at run time. This feature
+can typically be found in languages with first-class
+classes~\citep{takikawa2012gradual,lee2015theory}. Most statically typed
+languages only provide static inheritance to achieve type safety at the cost of
+flexibility.
 
-\paragraph{A three-fold challenge: achieving flexibility, efficiency, and type safety.}
 Ideally, programming languages with dynamic inheritance and first-class classes
 should have three properties:
-
 \begin{enumerate}
-
-\item \textbf{Flexibility:} The language should be flexible so that highly
+\item \textbf{Flexibility.} The language should be flexible so that highly
       dynamic patterns of inheritance are allowed. Thus, it should be possible
       to support dynamic forms of mixins or traits, as well as nested classes or
       even virtual classes and family polymorphism.
-
-\item \textbf{Reasonable efficiency and separate compilation:} For practical
+\item \textbf{Reasonable efficiency and separate compilation.} For practical
       implementations, it is desirable to have a compilation model that is
       reasonably efficient and supports good software engineering properties,
       such as separate compilation.
-
-\item \textbf{Type safety:} The language should be type-safe, so that type
+\item \textbf{Type safety.} The language should be type-safe, so that type
       errors can be prevented statically.
-
 \end{enumerate}
+Both JavaScript and TypeScript support the 1\st and 2\nd points well. With
+first-class classes, we can model dynamic inheritance, mixins, nested classes,
+and even virtual
+classes~\citep{madsen1989virtual,ernst2006virtual,clarke2007tribe} and family
+polymorphism~\citep{ernst2001family,saito2008lightweight,zhang2017familia}.
+Therefore, the inheritance model provided by JavaScript and TypeScript is
+expressive and flexible. Furthermore, there has been a lot of work on optimizing
+JavaScript implementations, so JavaScript and TypeScript's inheritance and class
+model are reasonably efficient.
 
-\noindent
-Both JavaScript and TypeScript support points (1) and (2) well. As we have seen,
-with first-class classes, we can model dynamic inheritance, mixins, nested
-classes, and even virtual classes and family polymorphism. Therefore, the
-inheritance model provided by JavaScript and TypeScript is expressive and
-flexible. Furthermore, there has been a lot of work on optimizing JavaScript
-implementations, so JavaScript and TypeScript's inheritance and class model are
-reasonably efficient.
-
-Unfortunately, for point (3), TypeScript's support for type-checking first-class
-classes has a few type-soundness holes. Some of these holes, such as the use of
-bivariant subtyping, are known and documented. First-class classes bring new
-issues, such as the inexact superclass problem. The inexact superclass problem
-can be avoided by moving into a model based on static inheritance, which is the
-option widely adopted by most mainstream languages. However, this trades
-flexibility for type safety. Ideally, we want to avoid this trade-off. Retaining
-flexibility and type safety while addressing the inexact superclass problem is
-non-trivial. In particular, it seems to be hard with the overriding semantics of
-JavaScript, which simply overrides properties that have the same name. Thus, to
-achieve the three goals together, a new compilation scheme seems desirable.
-
-Previous work on compositional programming has addressed points (1) and (3).
-However, that work has not studied practical implementability questions, such as
-how to have a reasonably efficient compilation model with separate compilation.
-Although there is an implementation of the CP language, this implementation is
-based on an interpreter. Moreover, the semantics for compositional programming
-languages is based on \emph{coercive subtyping}~\citep{luo2013coercive}, which
-raises immediate questions in terms of efficiency, since upcasts have a
-computational cost. A naive implementation that inserts coercions every time
-upcasting is needed has a prohibitive cost, which can be \emph{orders of
-magnitude} slower than JavaScript programs.
+Unfortunately, for the 3\rd point, TypeScript's support for type-checking
+first-class classes has a few type-soundness holes. Some of these holes, such as
+the use of bivariant subtyping, are known and documented. First-class classes
+bring new issues, such as a type-safety issue that we later call the
+\emph{inexact superclass problem}. The inexact superclass problem can be avoided
+by moving into a model based on static inheritance, which is the option widely
+adopted by most mainstream languages. However, this trades flexibility for type
+safety. Ideally, we want to avoid this trade-off. Retaining flexibility and type
+safety while addressing the inexact superclass problem is non-trivial. In
+particular, it seems to be hard with the overriding semantics of JavaScript,
+which simply overrides properties that have the same name. Thus, to achieve the
+three goals together, a new compilation scheme seems desirable.
 
 \paragraph{Solving the three-fold challenge: efficient compilation for CP.}
-The problem that this paper solves is how to compile compositional programming
-much more efficiently while also supporting separate compilation. Therefore, we
-obtain property (2), which was missing on previous work on CP. Thus, we can
-solve the three-fold challenge. We should emphasize that our work lacks various
-features supported by JavaScript and TypeScript, and the semantics we employ for
-inheritance has some important differences from JavaScript. Thus, our work does
-not offer an immediate solution that TypeScript can adopt as a type-safe
-replacement for their current class model. Nevertheless, our compilation model
-can be useful for new languages that aim to have highly expressive models of
-inheritance while ensuring type safety. Moreover, it can inform existing
-language designers, who may be able to borrow some ideas to improve their
-language designs.
+Previous work on compositional programming has addressed the 1\st and 3\rd
+points. However, no previous work has studied practical implementability
+questions, such as how to have a reasonably efficient compilation model with
+separate compilation. Although there is an implementation of the CP language,
+this implementation is based on an interpreter. Moreover, the semantics for
+compositional programming languages is based on \emph{coercive
+subtyping}~\citep{luo2013coercive}, which raises immediate questions in terms of
+efficiency, since upcasts have a computational cost. A naive implementation that
+inserts coercions every time upcasting is needed has a prohibitive cost, which
+can be \emph{orders of magnitude} slower than JavaScript programs. To fully
+solve the aforementioned three-fold challenge, we need to investigate how to
+compile compositional programming much more efficiently while also supporting
+separate compilation.
+
+\paragraph{Compositional programming with union types.}
+The modularity and extensibility of compositional programming are supported by
+intersection types from a type-theoretic perspective. It is tempting to explore
+how compositional programming can be extended with union types, the dual of
+intersection types. Our preliminary investigation shows that union types enable
+optional arguments in CP, while named arguments are already supported by
+intersection types. Named and optional arguments are prevalent features in many
+existing programming
+languages~\citep{garrigue2001labeled,flatt2009keyword,rytz2010named}, enhancing
+code readability and flexibility. Despite widespread use, their formalization
+has not been extensively studied in the literature. Especially in languages with
+subtyping, such as Python and Ruby, first-class named arguments can lead to
+type-safety issues. It is worthwhile to conduct a formal study of type-safe
+foundations for named and optional arguments.
 
 \section{Contribution}
 
