@@ -308,7 +308,23 @@ among record concatenation, subtyping, and polymorphism can be found in
 
 \section{Union Types}
 
-Union types are the dual concept of intersection types...
+Union types are the dual concept of intersection types. While an intersection $A
+\tand B$ represent a type that is both $A$ and $B$, a union $A \tor B$
+represents a type that is either $A$ or $B$. A direct application of union types
+is to model nullable types~\citep{nieto2020scala}, which can be represented as
+$A \tor \mathbf{Null}$.
+
+Again, if we consider their logical counterparts, a noticeable property is that
+implication is right-\emph{anti}distributive over disjunction:
+\begin{equation*}
+A \lor B \to C \quad\Longleftrightarrow\quad (A \to C) \land (B \to C)
+\end{equation*}
+Note that the disjunction on the left-hand side turns into a conjunction on the
+right-hand side. This property comes from the duality between conjunction and
+disjunction in De Morgan's laws. In fact, this duality has been exploited in the
+design of Forsythe~\citep{reynolds1997design}, where
+$\lambda x:\mathbf{Int}\tor\mathbf{Double}.\ x > 0$ has type
+$(\mathbf{Int}\to\mathbf{Bool})\tand(\mathbf{Double}\to\mathbf{Bool})$.
 
 \section{Traits and Other Units of Code Reuse}
 
