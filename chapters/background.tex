@@ -244,10 +244,10 @@ $A \tand B$ if $e_1$ has type $A$ and $e_2$ has type $B$:
 \inferrule*[lab=T-MergeR]{e_2 : B}
                          {e_1 \bbcomma e_2 : B}
 
-\inferrule*[right=T-AndIntro]{\inferrule*[left=T-MergL]{e_1 : A}
-                                                       {e_1 \bbcomma e_2 : A} \\
-                              \inferrule*[right=T-MergL]{e_2 : B}
-                                                        {e_1 \bbcomma e_2 : B}}
+\inferrule*[right=T-AndIntro]{\inferrule*[left=T-MergeL]{e_1 : A}
+                                                        {e_1 \bbcomma e_2 : A} \\
+                              \inferrule*[right=T-MergeR]{e_2 : B}
+                                                         {e_1 \bbcomma e_2 : B}}
                              {e_1 \bbcomma e_2 : A \tand B}
 \end{mathpar}
 The merge operator can be traced back to Forsythe, a ALGOL-like language
@@ -310,12 +310,71 @@ among record concatenation, subtyping, and polymorphism can be found in
 
 Union types are the dual concept of intersection types. While an intersection $A
 \tand B$ represent a type that is both $A$ and $B$, a union $A \tor B$
-represents a type that is either $A$ or $B$. A direct application of union types
-is to model nullable types~\citep{nieto2020scala}, which can be represented as
-$A \tor \mathbf{Null}$.
+represents a type that is either $A$ or $B$. Although tagged unions are more
+common in functional languages, as seen in algebraic data types, we focus on
+\emph{un}tagged unions in this thesis.
 
-Again, if we consider their logical counterparts, a noticeable property is that
-implication is right-\emph{anti}distributive over disjunction:
+In classic $\lambda$-calculi with union types~\citep{barbanera1995intersection},
+typical typing rules for union types are as follows:
+\begin{mathpar}
+\inferrule[T-OrIntroL]{\Gamma \vdash e : A}
+                      {\Gamma \vdash e : A \tor B}
+
+\inferrule[T-OrIntroR]{\Gamma \vdash e : B}
+                      {\Gamma \vdash e : A \tor B}
+
+\inferrule[T-OrElim]{\Gamma \vdash e' : A \tor B \\
+                     \Gamma, x : A \,\vdash\, e : C \\
+                     \Gamma, x : B \,\vdash\, e : C}
+                    {\Gamma \vdash [ e' / x ] e : C}
+\end{mathpar}
+The union introduction rules (\textsc{T-OrIntroL} and \textsc{T-OrIntroR}) are
+straightforward and dual to the intersection elimination rules
+(\textsc{T-AndElimL} and \textsc{T-AndElimR}). In contrast, the union
+elimination rule (\textsc{T-OrElim}) is more intriguing. It basically states
+that, if $[ e' / x ] e$ can be typed as $C$ no matter whether we assume $e'$
+evaluates to a value of type $A$ or $B$, then it is safe to type $[ e' / x ] e$
+as $C$ when $e'$ has type $A \tor B$. An intermediate variable $x$ is used
+because a typing context can only associate a type with a variable rather than
+an expression.
+
+A direct application of union types is to model nullable
+types~\citep{nieto2020scala}, which can be represented as $A \tor
+\mathbf{Null}$. To make union or nullable types more useful, \emph{occurrence
+typing}~\citep{castagna2022revisiting}, also known as \emph{flow-sensitive
+typing}, is usually employed. Without occurrence typing, the following code
+cannot type-check:
+\begin{lstlisting}
+double (x: Int|Null) = if x == null then 0 else 2*x;
+\end{lstlisting}
+The reason is that \lstinline{2*x} is well-typed only if \lstinline{x} has type
+\lstinline{Int}, but \lstinline{x} actually has type \lstinline{Int|Null} as
+declared. With occurrence typing, the type of \lstinline{x} is refined to
+\lstinline{Int} in the \lstinline{else}-clause (and is refined to
+\lstinline{Null} in the \lstinline{then}-clause), so the code is well-typed.
+\citeauthor{castagna2022revisiting} generalize the \lstinline{null}-test to
+\emph{type-cases} and develop a theoretic framework to refine the type of
+expressions occurring in type-cases. CP follows a simpler treatment proposed by
+\citet{rehman2023blend}, where a type-case is written as
+\lstinline{switch e0 as x case A => e1 case B => e2}. For example, the previous
+function can be rewritten as:
+\begin{lstlisting}
+double (x: Int|Null) = switch x as x case Null => 0 case Int => 2*x;
+\end{lstlisting}
+Now union types have an explicit elimination form, \textsc{T-OrElim} can be
+replaced by \textsc{T-Switch}:
+\begin{mathpar}
+\inferrule[T-Switch]{\Gamma \vdash e_0 : A \tor B \\
+                     \Gamma, x : A \,\vdash\, e_1 : C \\
+                     \Gamma, x : B \,\vdash\, e_2 : C}
+                    {\Gamma \vdash \mathbf{switch}\ e_0\ \mathbf{as}\ x\ \mathbf{case}\ A \Rightarrow e_1\
+                                                                         \mathbf{case}\ B \Rightarrow e_2 : C}
+\end{mathpar}
+
+\paragraph{Distributive subtyping.}
+Again, if we consider the logical counterparts of intersection and union types,
+a noticeable property is that implication is right-\emph{anti}distributive over
+disjunction:
 \begin{equation*}
 A \lor B \to C \quad\Longleftrightarrow\quad (A \to C) \land (B \to C)
 \end{equation*}
@@ -324,7 +383,43 @@ right-hand side. This property comes from the duality between conjunction and
 disjunction in De Morgan's laws. In fact, this duality has been exploited in the
 design of Forsythe~\citep{reynolds1997design}, where
 $\lambda x:\mathbf{Int}\tor\mathbf{Double}.\ x > 0$ has type
-$(\mathbf{Int}\to\mathbf{Bool})\tand(\mathbf{Double}\to\mathbf{Bool})$.
+$(\mathbf{Int}\to\mathbf{Bool})\tand(\mathbf{Double}\to\mathbf{Bool})$. Although
+union types are not supported by Forsythe, the notation of the alternative
+operator ($\tor$) implies that the parameter type is essentially a union. In
+other words, the following subtyping relation holds (assuming $A = \mathbf{Int}$,
+$B = \mathbf{Double}$, and $C = \mathbf{Bool}$):
+\begin{equation}
+A \tor B \to C  \quad <: \quad  (A \to C) \tand (B \to C) \label{eq:dist-3}
+\end{equation}
+Similar to \autoref{eq:dist-1}, \autoref{eq:dist-3} can also be derived from
+standard subtyping rules for intersection and union types:
+\begin{mathpar}
+\inferrule*[right=S-And]
+  {\inferrule*[left=S-Fun]{\inferrule*[left=S-OrL]{ }
+                                                  {A \sub A \tor B} \\
+                           C <: C}
+                          {A \tor B \to C \sub A \to C} \\
+   \inferrule*[right=S-Fun]{\inferrule*[left=S-OrR]{ }
+                                                   {B \sub A \tor B} \\
+                            C <: C}
+                           {A \tor B \to C \sub B \to C}}
+  {A \tor B \to C \sub (A \to C) \tand (B \to C)}
+\end{mathpar}
+However, its converse (\autoref{eq:dist-4}) is not derivable and is added as an
+axiom, for example, by \citet{barbanera1995intersection}:
+\begin{equation}
+  (A \to C) \tand (B \to C)  \quad <: \quad  A \tor B \to C \label{eq:dist-4}
+\end{equation}
+A final note is that intersections and unions can distribute over each other:
+\begin{align}
+(A \tor B) \tand C  \quad          <:& \quad  (A \tand C) \tor (B \tand C) \label{eq:dist-and} \\
+(A \tor C) \tand (B \tor C)  \quad <:& \quad  (A \tand B) \tor C \label{eq:dist-or}
+\end{align}
+The converses of \autoref{eq:dist-and} and \autoref{eq:dist-or} are derivable so
+they need not be axioms. The algorithm for subtyping becomes non-trivial with
+the four distributivity axioms. The one employed in CP is proposed by
+\citet{huang2021distributing}, having the advantage of not requiring types to be
+normalized and being relatively simple to implement.
 
 \section{Traits and Other Units of Code Reuse}
 
