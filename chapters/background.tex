@@ -250,7 +250,7 @@ $A \tand B$ if $e_1$ has type $A$ and $e_2$ has type $B$:
                                                          {e_1 \bbcomma e_2 : B}}
                              {e_1 \bbcomma e_2 : A \tand B}
 \end{mathpar}
-The merge operator can be traced back to Forsythe, a ALGOL-like language
+The merge operator can be traced back to Forsythe, an ALGOL-like language
 designed by \citet{reynolds1997design}. Merging in Forsythe is biased to avoid
 semantic ambiguity. For example, if $f$ is a function, $e \bbcomma f$ will
 override all function components in $e$. Consequently, merging in Forsythe
@@ -406,11 +406,11 @@ standard subtyping rules for intersection and union types:
   {A \tor B \to C \sub (A \to C) \tand (B \to C)}
 \end{mathpar}
 However, its converse (\autoref{eq:dist-4}) is not derivable and is added as an
-axiom, for example, by \citet{barbanera1995intersection}:
+axiom, for example, by \citet{barbanera1995intersection} and \citet{rehman2023blend}:
 \begin{equation}
   (A \to C) \tand (B \to C)  \quad <: \quad  A \tor B \to C \label{eq:dist-4}
 \end{equation}
-A final note is that intersections and unions can distribute over each other:
+A final note is that intersections and unions can usually distribute over each other:
 \begin{align}
 (A \tor B) \tand C  \quad          <:& \quad  (A \tand C) \tor (B \tand C) \label{eq:dist-and} \\
 (A \tor C) \tand (B \tor C)  \quad <:& \quad  (A \tand B) \tor C \label{eq:dist-or}
@@ -421,8 +421,50 @@ the four distributivity axioms. The one employed in CP is proposed by
 \citet{huang2021distributing}, having the advantage of not requiring types to be
 normalized and being relatively simple to implement.
 
-\section{Traits and Other Units of Code Reuse}
+\section{Traits and Mechanisms for Code Reuse}
 
-Similar to intersection types, traits are an overloaded concept in the
-literature. In the CP language, we use the term \emph{trait} to refer to a
-mechanism for code reuse described by \citet{ducasse2006traits}...
+Traits are an overloaded term in the literature, referring to various mechanisms
+for code reuse. The earliest use of the term ``traits'' in the context of
+object-oriented programming can be traced back to Mesa~\citep{curry1982traits},
+an ALGOL-like language developed by Xerox PARC. That traits model of subclassing
+is used to handle multiple inheritance in Xerox Star workstation software.
+Later, \citet{ungar1991organizing} reused the term in the context of \self, a
+dynamically-typed prototype-based language, which is also developed by Xerox
+PARC. There is no class in a prototype-based language, and objects inherits
+directly from other objects. Traits in \self are parent objects that are shared
+among multiple objects, playing a similar role to traditional classes.
+
+\citet{ducasse2006traits} reconceptualized traits as a reuse mechanism for
+class-based languages. In their model, traits are purely units of reuse, while
+classes are generators of objects. Not only can a trait \emph{provide} methods,
+but it can also \emph{require} methods that are used but not implemented. A
+class can be composed of multiple traits while resolving conflicts and
+implementing the required methods in the meantime. An important property of
+traits is that the composition order is irrelevant, in contrast to
+order-sensitive mixins~\citep{bracha1990mixin}. Besides the sum operator ($+$)
+for trait composition, exclusion ($-$), aliasing ($\to$), and overriding
+($\rhd$) are also supported in \citeauthor{ducasse2006traits}'s traits model to
+resolve conflicts.
+
+The term ``traits'' has recently been popularized by Scala and Rust, though it
+refers to different concepts from all the mechanisms mentioned above. Scala's
+traits correspond to Java 8's interfaces, which may contain abstract members and
+default implementations thereof. The semantics of trait composition in Scala is
+more like mixins despite the name. Rust's traits are similar to type classes in
+Haskell, providing a less ad-hoc mechanism for ad-hoc polymorphism. In short,
+traits in Scala and Rust are significantly different from traits in CP, which
+follows the principle of the traits mechanism proposed by
+\citeauthor{ducasse2006traits}
+
+\paragraph{First-class traits.}
+CP-flavored traits are first-class~\citep{bi2018typed} in the sense that they
+can be passed around like other values. For example, we can write a function
+that takes a trait (not an instance of a trait) and returns a new trait, or
+assigns a trait to a variable. First-class traits usually imply dynamic trait
+inheritance, where a trait can inherit from a trait expression, whose result is
+determined dynamically. The dynamic nature of first-class traits poses a
+challenge for static typing. The aforementioned notions of merging and
+disjointness play a crucial role in ensuring that the dynamic trait inheritance
+is type-safe. A type-safety issue of dynamic inheritance can be found in
+\autoref{sec:override}, and CP's solution is later presented in
+\autoref{sec:dynamic}.

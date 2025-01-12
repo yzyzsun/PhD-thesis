@@ -1,6 +1,6 @@
 \chapter{Related Work} \label{ch:related}
 
-\section{Solutions to the Expression Problem}
+% \section{Solutions to the Expression Problem}
 
 \section{Embedded Domain-Specific Languages}
 
@@ -244,7 +244,7 @@ programs, while CP fully supports them.
 In his excellent survey on inheritance, \citet{taivalsaari1996notion}
 distinguishes two strategies for implementing inheritance: \emph{delegation} and
 \emph{concatenation}. Most prototype-based languages, such as
-\textsc{Self}~\citep{ungar1987self} and JavaScript, implement inheritance via
+\self~\citep{ungar1987self} and JavaScript, implement inheritance via
 delegation, where an object contains a reference to its prototype (e.g.
 \lstinline{__proto__} in JavaScript), and methods that are not found in the
 current object will be delegated to its ancestors in the prototype chain. In
@@ -255,13 +255,13 @@ concatenation strategy is more efficient than delegation in terms of method
 lookup.
 
 To improve the performance of method lookup, newer implementations of the
-\textsc{Self} language cache all lookup results for a polymorphic call site in a
+\self language cache all lookup results for a polymorphic call site in a
 \emph{polymorphic inline cache} (PIC)~\citep{holzle1991optimizing}. The methods
 cached in a PIC will be inlined into the caller to further reduce the overhead
 of method calls. Since a PIC is empty until a method is called for the first
 time, dynamic recompilation is required to optimize the code at run time.
 Moreover, the presence of \emph{dynamic inheritance} may lead to a full method
-lookup in \textsc{Self}~\citep{chambers1992design}. Modern JavaScript engines,
+lookup in \self~\citep{chambers1992design}. Modern JavaScript engines,
 such as V8 used in Node.js, utilize similar PIC-based techniques to optimize
 method calls. Though the CP compiler does not implement inlining at all, which
 is definitely a useful optimization, it is still efficient in terms of method
