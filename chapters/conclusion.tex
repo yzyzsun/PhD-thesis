@@ -37,32 +37,28 @@ example, a section can be represented as \kw{node} (\lstinline{"section"},
 interpolated expression is denoted by \lstinline{\(e)}, and an attributed tagged
 tree is like \lstinline|\Section{id=0}[title]|.
 
-\paragraph{Computations in templates.}
+\paragraph{Computation in \ExT.}
 Relating \ExT to \DArtTLit is not particularly interesting because the ability
 to perform general-purpose computation in \ExT is not captured in \DArtTLit.
-\DArtTProg extends \DArtTLit with three new template parts: $\kw{set}\ x = e$,
-$\kw{if}\ e\ \kw{then}\ t_1\ \kw{else}\ t_2$, and $\kw{foreach}\ e\ \{x.\,t\}$.
-Although \ExT does not support these constructs directly, we can simulate the
-latter two by implementing customized commands. In other words,
-\kw{if}-expressions and \kw{foreach}-loops can be encoded as special \kw{node}s.
-A simplified code snippet for such encoding is shown below:
+\DArtTProg extends \DArtTLit with template programs, namely three new template
+parts: $\kw{set}\ x = e$, $\kw{if}\ e\ \kw{then}\ t_1\ \kw{else}\ t_2$, and
+$\kw{foreach}\ e\ \{x.\,t\}$. Although \ExT does not support these constructs
+directly, we can simulate the latter two by implementing customized commands. In
+other words, \kw{if}-expressions and \kw{foreach}-loops can be encoded as
+special \kw{node}s. A simplified code snippet for such encodings is shown below:
 \begin{lstlisting}[literate={``}{{\textasciigrave}}1]
-...
-If (b: Bool) (t: Element) (e: Element) -> trait =>
-  if b then t else e;
-Foreach A (xs: A) (f: A -> Element) = trait =>
+-- \If(cond)[then][else]
+If (b: Bool) (t: Element) (e: Element) = trait => if b then t else e;
+-- \Foreach@Type(array)(func)
+Foreach A (xs: [A]) (f: A -> Element) = trait =>
   letrec go (i: Int): Element = if i == #xs then Str ""
-                                else Comp (f (xs!!i)) (go (i+1))
-  in go 0;
+                                else Comp (f (xs!!i)) (go (i+1)) in go 0;
 ...
-fruits = [ "apple"; "banana"; "cherry" ];
+fruits = [ "apple"; "banana"; "cherry" ];  -- \Set is not encodable yet
 ...
-`\Itemize[
-  \Foreach@String(fruits)(\(x: String) ->
+`\Itemize[\Foreach@String(fruits)(\(x: String) ->
     ``\If(x == "apple")[][\Item[\(x)]]``
-  )
-]`
-...
+)]`
 \end{lstlisting}
 However, encoding the \kw{set}-statement is much more challenging, because
 variable binding is difficult, if not impossible, to implement in the userland.
@@ -90,21 +86,48 @@ subtyping rule for function types, where $n = 0$:
 \sub A \to (B_1 \tand B_2 \tand \cdots \tand B_n)
 \end{equation*}
 Since $\top$ represents the 0-ary intersection, the relation above is simplified
-to $\top <: A \to \top$. The other direction $A \to \top <: \top$ also holds
+to $\top \sub A \to \top$. The other direction $A \to \top \sub \top$ also holds
 because any type is a subtype of the maximal type $\top$. This means that $A \to
 \top$ is equivalent to $\top$ and is called \emph{top-like} (i.e. $\rceil A \to
 \top \lceil$) in \autoref{fig:disj}.
 
-In our elaboration rules in \autoref{fig:source-typing}, all top-like terms are
-treated as $\top$ and elaborated to an empty record (see
-\rref{Ela-Top,Ela-TopAbs,Ela-TopRcd}). Moreover, the coercive subtyping
-\rref{S-Top} in \autoref{fig:source-subtype} coerce a target term to an empty
-record if $B$ is top-like in $A <: B$. As a result, side effects in top-like
-terms are erased during elaboration, which is not desired in imperative
-languages.
+In our elaboration rules, all top-like terms are treated as $\top$ and
+elaborated to an empty record (see \rref{Ela-Top,Ela-TopAbs,Ela-TopRcd}).
+Moreover, the coercive subtyping \rref{S-Top} in coerce a target term to an
+empty record if $B$ is top-like in $A <: B$. As a result, side effects in
+top-like terms are erased during elaboration, which is not desired in imperative
+languages. For example, $(\lambda r.\ r := 1) : \mathbf{Ref}\ \mathbb{Z} \to
+\top$ is elaborated to $\{\}$, and the original function is erased. So the
+reference $r$ will never be updated when the coerced function is applied.
 
-One reason we choose this design is to avoid the semantic ambiguity introduced
-by the overlapping of disjoint types on the top-like part. For example...
+One obvious solution is not to erase the top-like terms during the elaboration.
+For example, we can elaborate the previous expression to $\{|\mathbf{Ref}\
+\mathbb{Z} \to \top| \Mapsto \lambda r.\ \epsilon\}$, assuming $r := 1$ is
+elaborated to $\epsilon$. We also need to revise the \rref{A-Top} to call the
+function rather than just return an empty record. However, this change breaks
+the current definition of equivalent types (informally in \autoref{sec:eqty} and
+formally in \autoref{fig:source-equiv}) because different top-like terms can
+have different representations now. Coercions between top-like terms cannot be
+eliminated because, for example, $\{|\top| \Mapsto \dots\}$ is different from
+$\{|\mathbf{Ref}\ \mathbb{Z} \to \top| \Mapsto \dots\}$. An immediate follow-up
+question is how to correctly coerce $\lambda r.\ r := 1$ to type $\top$ or
+$\{\ell:\top\}$, both of which are supertypes of $\mathbf{Ref}\ \mathbb{Z} \to
+\top$.
+
+A first try is to keep the term intact while only changing the type indices. For
+example, $\{|\top| \Mapsto \lambda r.\ \epsilon\}$ and $\{|\{\ell:\top\}|
+\Mapsto \lambda r.\ \epsilon\}$ can be the results of the above-mentioned
+coercions. However, how to project the latter term by label $\ell$ is not clear
+then. Of course, we can do nothing and still keep the term intact, but consider
+another source term $\mathbf{let}\ r = \mathbf{ref}\ 0\ \mathbf{in}\ \{\ell = (r
+:= 1)\} : \{\ell:\top\}$. This term also has type $\{\ell:\top\}$, but we expect
+projecting it by $\ell$ will assign $1$ to $r$ instead of doing nothing.
+Therefore, there is no trivial way to revise the \rref{P-Top} (and the
+\rref{A-Top} similarly).
+
+As discussed briefly above, we believe that it is challenging to redesign the
+relevant rules to support side effects in top-like terms, so we leave it for
+future work.
 
 \paragraph{Reconciliation between eagerness and laziness.}
 As observed by \citet{fan2022direct}, trait instantiation may diverge in CP if a
@@ -132,11 +155,27 @@ follows:
 The evaluation diverges because the variable \lstinline{this} is evaluated
 repeatedly, despite the fact that only \lstinline{this.y} is needed. Therefore,
 we can conclude that the key to laziness is: do not evaluate anything until it
-is needed...
+is needed.
+
+The solution employed in the CP compiler uses smart getters in JavaScript, which
+is essentially adding \emph{thunks} to certain record fields. For example, the
+previous example will be rewritten to something like:
+\begin{lstlisting}
+    fix this. { x = \() -> this.y; y = 48 }
+|-> { x = \() -> (fix this. { x = this.y; y = 48 }).y; y = 48 }
+\end{lstlisting}
+The evaluation terminates because the thunk \lstinline{\() -> (fix ...).y} is
+already a value. A consequence of this approach is that when accessing the
+\lstinline{x} field, we have to invoke the thunk using \lstinline{r.x ()}
+instead of directly using \lstinline{r.x}. This is easy to implement in CP since
+we are compiling the source code to another language and consistently adding
+thunks and invocations in that language. However, it is difficult to formalize a
+hybrid semantics that combines eagerness and laziness directly for the source
+language.
 
 A natural direction is to integrate the call-by-push-value
 model~\citep{levy2012call}, which reconciles the call-by-value and call-by-name
-strategies...
+strategies. We leave this exploration for future work.
 
 \paragraph{Representation of type indices.}
 As discussed in \autoref{sec:index}, we use a shorter representation for

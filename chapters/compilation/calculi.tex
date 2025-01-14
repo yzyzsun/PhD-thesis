@@ -545,14 +545,6 @@ aim to skip some reduction steps, ultimately improving the performance of code
 that relies on coercions. This idea has been discussed in
 \autoref{sec:coercive}, and it is further optimized in \autoref{sec:elim}.
 
-\Rref{S-Top} allows top-like types to be supertypes of any type and generates an
-empty record regardless of the input term. This ensures that the overlapping of
-disjoint types on the top-like part does not introduce ambiguity into the
-semantics. However, this approach is not desirable if the language includes side
-effects, because side effects would be ignored. Even in our purely functional
-setting, a non-terminating expression would not be executed. It would be
-interesting to investigate a better approach in the future.
-
 To understand the subtyping check, we can ignore $[[t1]]$ and $[[t2]]$. In our
 formulation of subtyping, type constructors like arrows and records distribute
 over intersections, e.g. $[[A->B&C]]$ is equivalent to $[[(A->B)&(A->C)]]$. Such
