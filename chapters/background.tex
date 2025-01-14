@@ -308,11 +308,11 @@ among record concatenation, subtyping, and polymorphism can be found in
 
 \section{Union Types}
 
-Union types are the dual concept of intersection types. While an intersection $A
-\tand B$ represent a type that is both $A$ and $B$, a union $A \tor B$
-represents a type that is either $A$ or $B$. Although tagged unions are more
-common in functional languages, as seen in algebraic data types, we focus on
-\emph{un}tagged unions in this thesis.
+Union types are the dual concept of intersection types. While a value of the
+intersection type $A \tand B$ can be assigned both $A$ and $B$, a value of the
+union type $A \tor B$ can be assigned either $A$ or $B$. Although tagged unions
+are more common in functional languages, as seen in algebraic data types, we
+focus on \emph{un}tagged unions in this thesis.
 
 In classic $\lambda$-calculi with union types~\citep{barbanera1995intersection},
 typical typing rules for union types are as follows:
