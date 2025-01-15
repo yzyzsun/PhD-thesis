@@ -1,9 +1,49 @@
 \noindent
+Compositionality is an important principle in software engineering, meaning that
+a complex system can be built by composing simpler parts. However, it is
+non-trivial to achieve compositionality in practice. For example, the expression
+problem poses a challenge for reconciling modularity and extensibility. CP, a
+new statically typed programming language, naturally solves such challenges by
+providing language-level support for compositional programming.
+
+This thesis studies the practical aspects of CP. We first showcase why
+compositional programming matters with two applications. The first one is about
+embedded domain-specific languages. We show that CP enables a new embedding
+technique that combines the advantages of shallow and deep embeddings and
+surpasses other techniques like tagless-final embeddings by supporting modular
+dependencies. The second application is about dynamic inheritance in
+object-oriented programming. CP innovatively embraces a trait model with merging
+and prevents implicit overloading. By comparing with type-unsafe code in
+TypeScript, we show that CP supports dynamic multiple inheritance and family
+polymorphism while preserving type safety.
+
+We then present the design and implementation of the CP compiler. With novel
+language features for compositionality, the efficient compilation of CP code is
+non-trivial, especially when separate compilation is desired. The key idea is to
+compile merges to type-indexed records, which outperforms previous work using
+nested pairs. To ensure the type safety of dynamic inheritance, CP's type system
+employs coercive subtyping, leading to significant slowdown in compiled code. We
+mitigate the issue by several optimizations, including eliminating coercions for
+equivalent types. We evaluate the impact of these optimizations using benchmarks
+and show that the optimized compiler targeting JavaScript can be orders of
+magnitude faster than a naive compilation scheme for merges, obtaining
+performance comparable to class-based JavaScript programs.
+
+Finally, besides ubiquitous intersection types in CP, we explore the extension
+with union types, which provides a solid foundation for named and optional
+arguments. Our approach avoids a critical type-safety issue in popular static
+type checkers for Python and Ruby, particularly in handling first-class named
+arguments in the presence of subtyping. A survey of named and optional arguments
+in other languages shows that CP's design achieves a good balance of simplicity
+and effectiveness.
+
+Both the compilation scheme for CP and the encoding of named and optional
+arguments are formalized in Coq and proven to be type-safe.
 
 \vspace{1.5\baselineskip}
 
 \noindent\makebox[\linewidth]{\rule{0.7\textwidth}{0.4pt}}
 
 \begin{center}
-\textbf{An abstract of ?? words}
+\textbf{An abstract of 374 words}
 \end{center}
