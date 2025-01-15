@@ -62,19 +62,20 @@ programmers can choose whether to attach keywords to arguments or not. There are
 two ways to reconcile positional and named arguments. One way, employed by
 Python and shown in \autoref{fig:python}, is to make parameter names in a
 function definition as non-mandatory keywords. Thus, every argument can be
-passed with or without keywords. As shown in the Python code,
+passed with or without keywords by default. As shown in the Python code,
 \lstinline{exp(10, 2)} is equivalent to \lstinline{exp(x=10, base=2)}. To
 reconcile the two forms in the same call, a restriction is imposed that all
-positional arguments must appear to the left of named ones. The other way, shown
-in \autoref{fig:ruby} and used in Ruby, is to strictly distinguish named
-arguments from positional ones. When defining a Ruby function, a named parameter
-should always end with a colon even if it does not have a default value. By this
-means, they are syntactically distinct from positional parameters, and their
-keywords cannot be omitted in a function call. The two kinds of arguments are
-usually used in different scenarios: positional arguments are used when the
-number of arguments is small and the order is clear, while named arguments are
-used in more complex cases especially when settings or configurations are
-involved.
+named arguments must follow positional ones. The other way, shown in
+\autoref{fig:ruby} and used in Ruby, is to strictly distinguish named arguments
+from positional ones. When defining a Ruby function, a keyword parameter should
+always end with a colon even if it does not have a default value. By this means,
+they are syntactically distinct from positional parameters, and their keywords
+cannot be omitted in a function call. There is also a restriction in Ruby that
+all named arguments must follow positional ones in both function definitions and
+call sites. The two kinds of arguments are usually used in different scenarios:
+positional arguments are used when the number of arguments is small and the
+order is clear, while named arguments are used in more complex cases especially
+when settings or configurations are involved.
 
 More interestingly, named arguments are \emph{first-class} values in Python and
 Ruby: they can be assigned to a variable. As shown at the bottom of

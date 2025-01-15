@@ -80,6 +80,7 @@ class Args(TypedDict):
 
 args0: Args = { "host": "0.0.0.0", "port": 80, "debug": True }
 app.run(**args0) # type-checks in mypy
+
 args1: Args = { "host": "0.0.0.0", "port": 80 }
 app.run(**args1) # type-checks in mypy, too
 \end{lstlisting}

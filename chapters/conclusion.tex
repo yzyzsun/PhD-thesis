@@ -221,8 +221,55 @@ As shown in \autoref{tab:survey}, CP advocate distinctness between named and
 positional arguments. An interesting direction worth exploring is to drop
 distinctness. By this means, we can support omitting keywords if the order of
 arguments is not changed from how they are defined. However, mixing positional
-and named arguments can easily lead to ambiguity, especially when some arguments
-are optional. An important first step is to find an appropriate restriction that
-we should impose to mitigate the ambiguity problem.
-
-One possibility is to follow the restriction in Python: ...
+and named arguments arbitrarily can lead to confusion. For example, consider the
+following pseudo-Python function:
+\begin{lstlisting}[language={[3]Python}]
+def f(x=1, y, z): ...
+f(y=2, 3, 4)
+\end{lstlisting}
+It is not clear which parameters \lstinline{3} and \lstinline{4} in the function
+call correspond to, though \lstinline{f(x=3, y=2, z=4)} could be a plausible
+interpretation. In fact, Python syntactically rejects the code for two reasons:
+\begin{enumerate}
+\item The parameters without default values (\lstinline{y} and \lstinline{z})
+      should not follow a parameter with a default value (\lstinline{x=1}) in
+      the function definition.
+\item Positional arguments (\lstinline{3} and \lstinline{4}) should not follow
+      a keyword argument (\lstinline{y=2}) in the call site.
+\end{enumerate}
+These two restrictions are reasonable and largely improve the code clarity with
+named and positional arguments mixed. Nevertheless, these restrictions are not
+necessarily the best because they are too strict. For example, Scala enforces
+neither restriction for more flexibility. Although the previous confusing code
+is also rejected by Scala, the following code is valid:
+\begin{lstlisting}[language=Scala,otherkeywords={}]
+def f(a: Int, b: Int, c: Int = 3, d: Int, e: Int) = ...
+f(1, d=4, b=2, 5)  //= f(a=1, b=2, c=3, d=4, e=5)
+\end{lstlisting}
+Although this code is clear in general, its counterpart in Python is invalid
+because \lstinline{d} and \lstinline{e} cannot follow \lstinline{c=3} in the
+function definition and \lstinline{5} cannot follow \lstinline{b=2} in the call
+site. In contrast, Scala lifts these restrictions and enforces a weaker one.
+Unfortunately, neither the official
+documentation\footnote{\url{https://docs.scala-lang.org/tour/named-arguments.html}:
+``Once the arguments are not in parameter order, reading from left to right,
+then the rest of the arguments must be named.''} nor the language
+specification\footnote{\url{https://www.scala-lang.org/files/archive/spec/3.4/06-expressions.html\#named-and-default-arguments}:
+``For every named argument $p_i = e_i$ which appears left of a positional
+argument in the argument list $e_1 \dots e_m$, the argument position $i$
+coincides with the position of parameter $p_i$ in the parameter list of the
+applied method.''} can explain why the code above is valid in Scala. According
+to either description, the code should be rejected. Here we try to give an
+intuitive description that is inferred from our experimental observations:
+\begin{quoting}
+For any named argument $p_i = e_i$, positional arguments to the right ($e_j,
+j>i$) should correspond to formal parameters to the right of $p_i$ in the
+function definition. The same applies to the positional arguments to the left.
+\end{quoting}
+No matter how the restriction is formulated, and whether it is stricter or
+weaker, this is an important first step for the design of the source language
+with named and positional arguments mixed. We can give semantics to the source
+language by translating it to \lambdaiu, which is similar to what happens in
+Scala. The translation should be purely syntax-directed. By this means, we
+obtain a more flexible language without changing the type-theoretic foundation
+at all.
