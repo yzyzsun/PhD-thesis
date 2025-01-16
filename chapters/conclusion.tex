@@ -1,6 +1,16 @@
-\chapter{Future Work} \label{ch:conclusion}
+\chapter{Conclusion and Future Work} \label{ch:conclusion}
 
-In this chapter, we discuss some future directions that are worth exploring.
+The contributions of this thesis are threefold. First, it investigates the
+application of compositional programming to embedded domain-specific languages
+and object-oriented programming. Second, it presents our design and
+implementation of the CP compiler, which efficiently compiles CP to JavaScript.
+Third, it explores the extension of CP with union types for named and optional
+arguments. We anticipate that the design principles and implementation
+strategies proposed in this thesis will inform the development of future
+programming languages that prioritize compositionality.
+
+In the following sections, we discuss some future directions that are worth
+exploring.
 
 \section{Formalizing the Document DSL}
 
@@ -190,7 +200,7 @@ of dynamic checks for optional destinations at run time. A quantitative analysis
 is needed to compare the two approaches in terms of time and space complexity.
 We leave this evaluation for future work.
 
-\begin{figure}
+\begin{figure}[b!]
 \small
 \begin{align*}
   &\text{Destinations}&\textit{dst} ::=&~ \ottkw{nil} ~|~ \ottmv{z} \\
