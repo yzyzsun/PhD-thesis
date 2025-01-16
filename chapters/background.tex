@@ -211,7 +211,7 @@ value stored in a reference can only be inferred but not checked:
 \end{mathpar}
 With the rule \textsc{T-Ref-After}, \lstinline{ref 48} can only have type
 \lstinline[morekeywords=Pos]{Ref Pos} because \lstinline{48} is inferred to have
-type \lstinline[morekeywords=Pos]{Pos}. Morever, \lstinline{ref 48} cannot be
+type \lstinline[morekeywords=Pos]{Pos}. Moreover, \lstinline{ref 48} cannot be
 checked against \lstinline[morekeywords=Nat]{Ref Nat} since reference types are
 invariant. As a result, the previous two examples cannot type-check in this
 bidirectional type system. A final note is that, to have a reference of type
