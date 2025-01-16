@@ -580,11 +580,6 @@ In the compilation rules, we have three kinds of destinations:
 \item \textbf{nil} stands for no destination, which means that the context is
       neither a function body nor a merge.
 \end{itemize}
-An alternative approach that avoids the case of optional destinations is to
-compile each function twice: one with a destination and the other without. This
-allows the appropriate version to be chosen statically. We leave the exploration
-of this variant for future work.
-
 Seven rules for type-directed compilation are selected in \autoref{fig:dst1}. A
 rule (\compilation) basically reads as: given a typing context $[[G]]$ and a
 destination $\ottnt{dst}$, the \fiplus term $[[e]]$ is checked/inferred to have

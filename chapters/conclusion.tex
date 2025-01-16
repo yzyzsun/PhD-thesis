@@ -157,24 +157,65 @@ we can conclude that the key to laziness is: do not evaluate anything until it
 is needed.
 
 The solution employed in the CP compiler uses smart getters in JavaScript, which
-is essentially adding \emph{thunks} to certain record fields. For example, the
-previous example will be rewritten to something like:
-\begin{lstlisting}
-    fix this. { x = \() -> this.y; y = 48 }
-|-> { x = \() -> (fix this. { x = this.y; y = 48 }).y; y = 48 }
+is essentially adding \emph{thunks} to certain record fields. A natural
+direction is to formalize the semantics using the call-by-push-value
+model~\citep{levy2012call}. For example, the previous example can be rewritten
+to the following form:
+\begin{lstlisting}[morekeywords=thunk]
+    fix this. { x = thunk this.y; y = 48 }
+|-> { x = thunk (fix this. { x = this.y; y = 48 }).y; y = 48 }
 \end{lstlisting}
-The evaluation terminates because the thunk \lstinline{\() -> (fix ...).y} is
-already a value. A consequence of this approach is that when accessing the
-\lstinline{x} field, we have to invoke the thunk using \lstinline{r.x ()}
-instead of directly using \lstinline{r.x}. This is easy to implement in CP since
-we are compiling the source code to another language and consistently adding
-thunks and invocations in that language. However, it is difficult to formalize a
-hybrid semantics that combines eagerness and laziness directly for the source
-language.
+The evaluation terminates because the thunk is already a value of type $U (F\
+\mathbb{Z})$, meaning a thunk that returns an integer. To obtain the integer
+value from the \lstinline{x} field, we have to force the thunk, while the
+\lstinline{y} field can be directly accessed. This difference can be detected
+statically by their types: \lstinline{x} has type $U (F\ \mathbb{Z})$ while
+\lstinline{y} has type $\mathbb{Z}$. Therefore, we probably need different
+projection rules for different types of fields. We leave further exploration of
+this topic for future work.
 
-A natural direction is to integrate the call-by-push-value
-model~\citep{levy2012call}, which reconciles the call-by-value and call-by-name
-strategies. We leave this exploration for future work.
+\paragraph{A variant of destination-passing style without optional destinations.}
+In \autoref{sec:dst}, we mention that there are three forms of destinations:
+$z$, $y?$, and \textbf{nil}, where $y?$ represents an optional destination in
+the context of a function body. An alternative approach that avoids the case of
+optional destinations is to compile each function twice: one with a destination
+and the other without (see \textsc{J-Abs} in \autoref{fig:dst-nodst}).
+Correspondingly, we need to change the rules for function application to choose
+the appropriate version of a function statically (see \textsc{JA-ArrowEquiv} and
+\textsc{JA-ArrowNil} in \autoref{fig:dst-nodst}).
+
+Although this approach doubles the compilation time of a function body and
+duplicates every function definition in compiled code, it reduces the overhead
+of dynamic checks for optional destinations at run time. A quantitative analysis
+is needed to compare the two approaches in terms of time and space complexity.
+We leave this evaluation for future work.
+
+\begin{figure}
+\small
+\begin{align*}
+  &\text{Destinations}&\textit{dst} ::=&~ \ottkw{nil} ~|~ \ottmv{z} \\
+\end{align*}
+\begin{ottdefnblock}{\compilation}{\ottcom{Type-directed compilation}}
+  \inferrule[J-Abs]
+  {\Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{;}  \ottmv{z}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{B}  \, \rightsquigarrow \,  \texttt{J}  \; | \;  \ottmv{z} \\
+   \Gamma  \ottsym{,}  \ottmv{x}  \ottsym{:}  \ottnt{A}  \ottsym{;}  \ottkw{nil}  \vdash  \ottnt{e} \, \Leftarrow \, \ottnt{B}  \, \rightsquigarrow \,  \texttt{J}  \; | \;  \ottmv{y}}
+  {\Gamma  \ottsym{;}  \ottmv{z}  \vdash   \lambda \ottmv{x} \!:\! \ottnt{A} .\; \ottnt{e} \!:\! \ottnt{B}  \, \Rightarrow \, \ottnt{A}  \rightarrow  \ottnt{B}  \, \rightsquigarrow \\\\
+   \highlight{\texttt{z["func\_|B|\_dst"] = (x, z) => \{ J \};}} \\\\
+   \highlight{\texttt{z["func\_|B|\_nodst"] = (x) => \{ J; return y; \};}}  \; | \;  \ottmv{z}}
+\end{ottdefnblock}
+\begin{ottdefnblock}{\application}{\ottcom{Function application}}
+  \inferrule[JA-ArrowEquiv]
+  {\ottnt{A}  \fallingdotseq  \ottnt{C}}
+  {\Gamma  \ottsym{;}  \ottmv{z}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \\\\
+   \highlight{\texttt{x["func\_|B|\_dst"](y, z);}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}
+
+  \inferrule[JA-ArrowNil]
+  {\ottnt{A}  \fallingdotseq  \ottnt{C}}
+  {\Gamma  \ottsym{;}  \ottkw{nil}  \vdash  \ottmv{x}  \ottsym{:}  \ottnt{A}  \rightarrow  \ottnt{B}  \, \bullet \,  \ottmv{y}  \ottsym{:}  \ottnt{C}  \, \rightsquigarrow \\\\
+   \highlight{\texttt{var z = x["func\_|B|\_nodst"](y);}}  \; | \;  \ottmv{z}  \ottsym{:}  \ottnt{B}}
+\end{ottdefnblock}
+\caption{A variant of destination-passing style without optional destinations.} \label{fig:dst-nodst}
+\end{figure}
 
 \paragraph{Representation of type indices.}
 As discussed in \autoref{sec:index}, we use a shorter representation for
@@ -251,13 +292,13 @@ function definition and \lstinline{5} cannot follow \lstinline{b=2} in the call
 site. In contrast, Scala lifts these restrictions and enforces a weaker one.
 Unfortunately, neither the official
 documentation\footnote{\url{https://docs.scala-lang.org/tour/named-arguments.html}:
-``Once the arguments are not in parameter order, reading from left to right,
-then the rest of the arguments must be named.''} nor the language
+\emph{``Once the arguments are not in parameter order, reading from left to
+right, then the rest of the arguments must be named.''}} nor the language
 specification\footnote{\url{https://www.scala-lang.org/files/archive/spec/3.4/06-expressions.html\#named-and-default-arguments}:
-``For every named argument $p_i = e_i$ which appears left of a positional
+\emph{``For every named argument $p_i = e_i$ which appears left of a positional
 argument in the argument list $e_1 \dots e_m$, the argument position $i$
 coincides with the position of parameter $p_i$ in the parameter list of the
-applied method.''} can explain why the code above is valid in Scala. According
+applied method.''}} can explain why the code above is valid in Scala. According
 to either description, the code should be rejected. Here we try to give an
 intuitive description that is inferred from our experimental observations:
 \begin{quoting}
@@ -272,7 +313,3 @@ language by translating it to \lambdaiu, which is similar to what happens in
 Scala. The translation should be purely syntax-directed. By this means, we
 obtain a more flexible language without changing the type-theoretic foundation
 at all.
-
-% More future work:
-% 1. avoid optional destination by static analysis
-% 2. change Rehman's proofs to use named variables
