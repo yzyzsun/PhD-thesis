@@ -1,0 +1,78 @@
+16/01/2025
+
+# Abstract
+
+Great abstract! No comments.
+
+# Acknowledgements
+
+- who *accepted* to be my external examiner   
+
+# Introduction
+
+I think I lack a little bit of very high-level explanations of why modularity is important
+for software engineering right at the beggining of the introduction. The introduction jumps
+too quicly into Embedded DSLs. Remember that in a thesis you need to "zoom" out a bit
+from your research and give an overall picture.
+
+The introduction also has several concepts that are basically assummed without further explanation,
+such as:
+
+- shallow embeddings
+- deep emebeddings
+- first-class classes
+- ...
+
+It is fine to talk about these, but you need to provide more background/examples so that you explain
+what these are.
+
+Generally speaking, the introduction needed to be extended mostly to provide gentler introductions
+and explain certain technical concepts better (illustrated with concrete examples when needed).
+Avoid assumming that the readers know all the technical
+concepts that you refer to the introduction. You should aim at Computer Scientists that are not
+necessarely Programming Language experts.
+
+At the moment you have 7 pages of intro, I think that doing the zooming out + providing gentler introductions
+to concepts should bring the intro to closer to the double of the size (maybe around 12-14 pages). 
+
+# Background
+
+- Figure 2.2: I think it is best that *all* figures are at the top of the page. Since this Figure is related to Figure
+2.1 you may want to merge the 2 figures.
+
+- (page 14 and later) You need to be clearer about how to parse -> and &. Eitther you should:
+
+1. Specify early (before you start with the examples) which operator has precedence; or
+
+2. You may want to insert redundant brackets to make things easier to parse for readers in several
+of your inference rules/derivations. For example:
+
+(𝐴&𝐶→𝐵)&(𝐴&𝐶→𝐷) <: 𝐴&𝐶→𝐵&𝐷
+
+There are several ways to parse this, such as:
+
+(𝐴&(𝐶→𝐵))&(𝐴&(𝐶→𝐷)) <: 𝐴&(𝐶→𝐵)&𝐷
+
+((𝐴&𝐶)→𝐵)&((𝐴&𝐶)→𝐷) <: (𝐴&𝐶)→(𝐵&𝐷)
+
+page 16:
+
+- solution to this problem based on bidiretional typing [Dunfield and Krishnaswami 2021].
+(also cite: Pierce and Turner's Local Type Inference)
+
+- "Interaction with mutable references": You don't deliver the actual punchline here which is:
+with the restriction that Ye et al. propose, both distributivity and intersection introduction can be retained without
+breaking type-safety.
+
+page 18:
+
+- Applying it to an integer **when the expected type is known** never causes ambiguity.
+
+I think you can give the function a name, like `f` and then show an example, like:
+`f 1 + 2` and `not (f 1)`.
+
+- A more exciting application of disjoint merges --> Another application of disjoint merges
+
+page 20:
+
+- right-antidistributive <- Is this an actual technical term in English? (Apparently so, as I googled it).
