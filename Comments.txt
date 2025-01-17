@@ -19,7 +19,7 @@ The introduction also has several concepts that are basically assummed without f
 such as:
 
 - shallow embeddings
-- deep emebeddings
+- deep embeddings
 - first-class classes
 - ...
 
@@ -36,6 +36,8 @@ At the moment you have 7 pages of intro, I think that doing the zooming out + pr
 to concepts should bring the intro to closer to the double of the size (maybe around 12-14 pages). 
 
 # Background
+
+## Chapter 2
 
 - Figure 2.2: I think it is best that *all* figures are at the top of the page. Since this Figure is related to Figure
 2.1 you may want to merge the 2 figures.
@@ -76,3 +78,56 @@ I think you can give the function a name, like `f` and then show an example, lik
 page 20:
 
 - right-antidistributive <- Is this an actual technical term in English? (Apparently so, as I googled it).
+
+## Chapter 3
+
+- while no term can be annotated with the bottom type theoretically
+
+You can write things like:
+
+`\x. x : Bot -> Bot`
+
+or
+
+`f (x : Bot) = (x : Bot)`
+
+- using the forwarding operator ^.
+
+Perhaps more explanation of the forwarding operator should be provided.
+
+- Due to type-theoretic difficulties, a trait implementing a recursive type
+cannot be inherited or merged with other traits in CP. **There is ongoing research
+how addressing this problem.**
+
+- Modular dependencies
+
+One common trend during your PhD is that you mostly ignore or do not put enough
+emphasis on modular dependencies. Dependency injection is an important
+Software Engineering concern, for which there are not many good solutions around.
+CP's modular dependencies actually provide useful mechanisms to address some
+of these problems. I think your thesis should emphasize this more.
+There are 0 mentions of this issue in the introduction, and here at the overview
+modular dependencies are downplayed. In practice software
+engineers would probably argue that depency injection is actually a significantly more
+relevant problem compared to the Expression Problem.
+
+For this chapter in particular, I think modular dependencies would deserve their own subsection
+and more detailed explanations and examples, instead of being just a paragraph. In particular,
+I think you should connect modular dependencies with the issue of dependency injection.
+
+page 34:
+
+- We would prefer to make use of type classes to decouple them in Haskell.
+
+Actually very few Haskell programmers would do this. Maybe you could say:
+
+We could use type classes to decouple dependencies in Haskell, but this would also
+require planning in advance for the eval function to be reusable. In CP, the natural way to write
+eval is already reusable, so there is no pre-planning needed to make eval reusable.
+
+page 36:
+
+- *Another* way is to define a repo trait with a self-type annotation:
+
+- without *committing** to a concrete ...
+
