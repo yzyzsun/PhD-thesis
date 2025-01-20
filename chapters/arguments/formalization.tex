@@ -119,7 +119,7 @@ by \citet{rehman2023blend} for detailed explanations.
   If $[[ [] |- e : A]]$, then either $[[e]]$ is a value or $\exists [[e']], [[e]] \longrightarrow [[e']]$.
 \end{theorem}
 \begin{theorem}[Preservation]
-  If $[[G |- e : A]]$ and $[[e]] \longrightarrow [[e']]$, then $[[G |- e' : A]]$.
+  If $[[ [] |- e : A]]$ and $[[e]] \longrightarrow [[e']]$, then $[[ [] |- e' : A]]$.
 \end{theorem}
 Putting progress and preservation together, we conclude that \lambdaiu is type-sound:
 a well-typed term can never reach a stuck state.

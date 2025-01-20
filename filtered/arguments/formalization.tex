@@ -119,7 +119,7 @@ by \citet{rehman2023blend} for detailed explanations.
   If $ \cdot   \,\vdash\,  \ottnt{e}  \ottsym{:}  \ottnt{A}$, then either $\ottnt{e}$ is a value or $\exists \ottnt{e'}, \ottnt{e} \longrightarrow \ottnt{e'}$.
 \end{theorem}
 \begin{theorem}[Preservation]
-  If $\Gamma  \,\vdash\,  \ottnt{e}  \ottsym{:}  \ottnt{A}$ and $\ottnt{e} \longrightarrow \ottnt{e'}$, then $\Gamma  \,\vdash\,  \ottnt{e'}  \ottsym{:}  \ottnt{A}$.
+  If $ \cdot   \,\vdash\,  \ottnt{e}  \ottsym{:}  \ottnt{A}$ and $\ottnt{e} \longrightarrow \ottnt{e'}$, then $ \cdot   \,\vdash\,  \ottnt{e'}  \ottsym{:}  \ottnt{A}$.
 \end{theorem}
 Putting progress and preservation together, we conclude that \lambdaiu is type-sound:
 a well-typed term can never reach a stuck state.
