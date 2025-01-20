@@ -196,3 +196,24 @@ I think you can present this in the thesis now, since you have space.
 
 
 - We need to wrap up the chapter with a small conclusion.
+
+
+
+# Chapter 5
+
+- I wonder if It makes sense swapping chapters 4 and 5.
+Chapter 4 seems to already rely on dynamic inheritance, so maybe it
+makes sense to present the material about "type-safe dynamic
+inheritance" before that. Leaving Chapter 5 as a more concrete
+application afterwards.
+
+- Figure 5.4/5.6: move to top
+
+- Section 5.3.1
+
+This seems background material? Does it overlap with some material in
+the background? Would it make sense to cover it on background instead?
+
+I guess that if we do move Section 5.3.1 to the background then we
+would need to reformulate the start of 5.3.2 a bit, probably having a
+backreference to some of that material and recalling some important bits.
