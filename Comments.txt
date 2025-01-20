@@ -131,3 +131,68 @@ page 36:
 
 - without *committing** to a concrete ...
 
+20/01/2025
+
+# Chapter 4
+
+- The start of the chapter should give a better summary of the content
+in the chapter. I see that you reused some of the text of the
+introduction of the paper in the introduction, but you have not used
+the text in the abstract of the paper anywhere, I think. We need to
+have something like the abstract of the paper here so that the readers
+can have a crisp summary of the contributions of the paper. You should
+probably also include some other text from the introduction of the
+paper, perhaps the one that focuses on listing the more detailed
+contribution of the chapter.
+
+Overall, the main comment is that a nice, crisp and concise summary
+of what is covered in the chapter and the contributions is missing.
+
+This should be Section 4.1, and the current 4.1 would become 4.2.
+
+Another quick comment here is that you keep overemphasizing solving
+the EP. Basically everytime you describe your work it is: we show how
+to solve the EP. As I said many times before, there are many solutions
+to the EP already. So, saying this, does not say that much. In the text
+that we have in the paper, we emphasize various other things, which
+is also what needs to be said here.
+
+- The term linguistic reuse has never been explained, I think. It is
+  mentioned in the introduction and now in this chapter, but it is not
+  described. This relates to the previous point.
+
+- For point 5 in S4.1.1, you also need to make sure you make it clear
+what we mean by dependent interpretations ... I guess
+these should be well-defined before we reach this text.
+
+- Title of 4.1.6: Maybe use:
+
+ Dependencies, Complex Interpretations, and Optimizations
+
+ So that it fits nicely in one line.
+
+- Figure 4.2, Table 4.1/4.2: like all other figures they should be placed at the top.
+
+Btw, a few things to be careful when putting Figures at the top:
+
+1. The figure should not appear in a page that comes *before* the text
+that explains it. Same page or following page is ok.
+
+2. You also need to be careful to make sure that the figure does not
+come too far from the text that explains it. Sometimes, when you have
+pages with many figures, a figure can be placed far away. So you need
+to play with formatting, or maybe merge some figures, to avoid this.
+
+- We have implemented an example of common subexpression elimination
+  in- spired by Kiselyov [2011] (which can be found in our online
+  implementation).
+
+I think you can present this in the thesis now, since you have space.
+
+- Section 4.4.1: I think it would be nice to have a figure here with a
+  screenshot of a Minipedia page to show how it looks.
+
+- Sections 4.4.2/4.4.3: Same as previous point. A figure would be nice.
+
+
+- We need to wrap up the chapter with a small conclusion.
