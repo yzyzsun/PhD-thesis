@@ -42,7 +42,9 @@ some functions that cannot be typed in the simply typed $\lambda$-calculus (\`a
 la Curry), such as the $\Omega$-combinator ($\lambda x.\ x\ x$). The
 $\Omega$-combinator can be typed using the two elimination rules for
 intersection types in \autoref{fig:typ-and} (\textsc{T-Abs} and \textsc{T-App}
-are standard rules for functions and thus omitted):
+are standard rules for functions and thus omitted):\footnote{In this thesis, we
+assume that $\&$ has precedence over $\to$. For example, $(A \to B) \tand A \to B$
+is parsed as $((A \to B) \tand A) \to B$.}
 \begin{mathpar}
 \inferrule*[right=T-Abs]{\inferrule*[right=T-App]{\inferrule[T-AndElimL]{\dots}
                                                                         {x : (A \to B) \tand A \;\vdash\; x : A \to B} \\
@@ -57,20 +59,7 @@ Because of the correspondence with termination, type inference with intersection
 types is \emph{not} decidable; neither is type
 inhabitation~\citep{urzyczyn1999emptiness}.
 
-In light of the analogy with set intersection, it is tempting to add subtyping
-to an intersection type system. \autoref{fig:sub-and} shows three subtyping
-rules for intersection types, which are naturally induced by set inclusion.
-Besides the subtyping rules, we also need to add the standard subsumption rule
-to the typing rules in \autoref{fig:typ-and}:
-\begin{mathpar}
-\inferrule[T-Sub]{e : A \\ A <: B}
-                 {e : B}
-\end{mathpar}
-With \textsc{T-Sub}, the previous elimination rules \textsc{T-AndElimL} and
-\textsc{T-AndElimR} can now be derived from the subtyping rules \textsc{S-AndL}
-and \textsc{S-AndR}.
-
-\begin{figure}[t]
+\begin{figure}
 \begin{mathpar}
 \inferrule[T-AndIntro]{e : A \\ e : B}
                       {e : A \tand B}
@@ -84,7 +73,7 @@ and \textsc{S-AndR}.
 \caption{Typing rules for intersection types.} \label{fig:typ-and}
 \end{figure}
 
-\begin{figure}[b]
+\begin{figure}
 \begin{mathpar}
 \inferrule[S-AndL]{}{A \tand B \sub A}
 
@@ -95,6 +84,19 @@ and \textsc{S-AndR}.
 \end{mathpar}
 \caption{Subtyping rules for intersection types.} \label{fig:sub-and}
 \end{figure}
+
+In light of the analogy with set intersection, it is tempting to add subtyping
+to an intersection type system. \autoref{fig:sub-and} shows three subtyping
+rules for intersection types, which are naturally induced by set inclusion.
+Besides the subtyping rules, we also need to add the standard subsumption rule
+to the typing rules in \autoref{fig:typ-and}:
+\begin{mathpar}
+\inferrule[T-Sub]{e : A \\ A <: B}
+                 {e : B}
+\end{mathpar}
+With \textsc{T-Sub}, the previous elimination rules \textsc{T-AndElimL} and
+\textsc{T-AndElimR} can now be derived from the subtyping rules \textsc{S-AndL}
+and \textsc{S-AndR}.
 
 \paragraph{Distributive subtyping.}
 It is well known that $\lambda$-calculi have a close relationship with logical
@@ -197,7 +199,7 @@ code as the previous example. To address this type-safety issue,
 \citeauthor{davies2000intersection} have to drop the distributivity rule.
 
 Recently, \citet{ye2024imperative} proposed a simpler solution to this problem
-based on \emph{bidirectional typing}~\citep{dunfield2021bidirectional}.
+based on \emph{bidirectional typing}~\citep{pierce2000local,dunfield2021bidirectional}.
 Bidirectional type system divides traditional type assignment ($e : A$) into two
 modes: type checking ($e \Leftarrow A$) and type inference ($e \Rightarrow a$).
 The key idea of \citeauthor{ye2024imperative}'s solution is that the type of the
@@ -214,9 +216,12 @@ With the rule \textsc{T-Ref-After}, \lstinline{ref 48} can only have type
 type \lstinline[morekeywords=Pos]{Pos}. Moreover, \lstinline{ref 48} cannot be
 checked against \lstinline[morekeywords=Nat]{Ref Nat} since reference types are
 invariant. As a result, the previous two examples cannot type-check in this
-bidirectional type system. A final note is that, to have a reference of type
-\lstinline[morekeywords=Nat]{Ref Nat} with the initial value \lstinline{48},
-one can write \lstinline[morekeywords=Nat]{ref (48 : Nat)} instead.
+bidirectional type system. By this means, the type-safety issue is resolved
+without enforcing the value restriction on intersection introduction or
+sacrificing distributive intersection subtyping. A final note is that, to have a
+reference of type \lstinline[morekeywords=Nat]{Ref Nat} with the initial value
+\lstinline{48}, one can write \lstinline[morekeywords=Nat]{ref (48 : Nat)}
+instead.
 
 \section{Merging and Disjointness}
 
@@ -289,22 +294,114 @@ left-hand side or $0$ if we choose the right-hand side. In contrast,
 \citeauthor{oliveira2016disjoint}'s system with disjoint intersection types.
 For example, consider this exotically overloaded function:
 \begin{equation*}
-(\lambda x.\ x + 1)\bbcomma(\lambda x.\ x > 0)
+f =\; (\lambda x.\ x + 1)\bbcomma(\lambda x.\ x > 0)
 : (\mathbf{Int} \to \mathbf{Int}) \tand (\mathbf{Int} \to \mathbf{Bool})
 \end{equation*}
-Applying it to an integer never causes ambiguity.
+Applying it to an integer never causes ambiguity when the expected type is
+known. For example, $f\ 1 + 2$ yields $4$, while $\mathbf{not}\ (f\ 1)$ yields
+$\mathbf{false}$.
 
-A more exciting application of disjoint merges is to model record concatenation.
-The merge $r_1 \bbcomma r_2$ is concatenating two records if $r_1$ and $r_2$ are
-non-overlapping records. The inherent difficulty of unambiguous record
-concatenation with subtyping has been mentioned by
-\citet{cardelli1991operations}. \citet{alpuim2017disjoint} further provide a
-type-sound and coherent foundation for polymorphic record concatenation. With
-parametric polymorphism, disjointness can also be used as a constraint on
-quantified types, exhibiting similar expressiveness to bounded
-polymorphism~\citep{xie2020row}. A detailed discussion about the interaction
-among record concatenation, subtyping, and polymorphism can be found in
-\autoref{sec:merge}.
+Another application of disjoint merges is to model record concatenation: if
+specializing the operands to records, the merge operator is essentially
+concatenating two records. As shown previously in \textsc{T-Merge-Disjoint}, the
+two records must have disjoint types to avoid ambiguity. For example,
+\lstinline|{ x: Int }| and \lstinline|{ x: Int }| itself are not disjoint, so
+the merge \lstinline{r,s} is rejected in the following code:
+\begin{lstlisting}
+let merge (r: { x: Int }) (s: { x: Int }) = r,s in  -- Type Error!
+merge { x = 1 } { x = 3 }  --> { x = ? }
+\end{lstlisting}
+
+\paragraph{Interaction between merging and subtyping.}
+If we further consider subtyping, the merge operator is still problematic, and
+disjointness alone is not sufficient to prevent ambiguity. For example, consider
+the following code:
+\begin{lstlisting}
+let merge (r: { x: Int }) (s: { y: Int }) = r,s in
+merge { x = 1; y = 2 } { x = 3; y = 4 }  --> { x = ?; y = ? }
+\end{lstlisting}
+Note that we change the type of \lstinline{s} from \lstinline|{ x: Int }| to
+\lstinline|{ y: Int }|. Although the type of \lstinline{s} is now disjoint with
+that of \lstinline{r}, we can pass terms of their subtypes to \lstinline{merge}.
+In this case, \lstinline{r} has an extra field \lstinline{y} and \lstinline{s}
+has an extra \lstinline{x}. Now the issue of ambiguity occurs again.
+
+If we look at the function \lstinline{merge} statically, we would expect that
+the field \lstinline{x} is from \lstinline{r} and \lstinline{y} from
+\lstinline{s}. Therefore, the most reasonable result for the code above is
+\lstinline|{ x = 1; y = 4 }|. However, there is no naive way to implement the
+merge operator to achieve this result. \emph{Neither} left-biased \emph{nor}
+right-biased overriding is able to handle this case. Furthermore, selecting
+other fields at run time can actually lead to type unsoundness. For example,
+consider a variant of the previous merge:
+\begin{lstlisting}
+merge { x = 1; y = "Hi" } { x = "Bye"; y = 4 }  --> { x = ?; y = ? }
+\end{lstlisting}
+Statically, the function is expected to compute a value of type
+\lstinline|{ x: Int; y: Int }|, but fields of type \lstinline{String} could be
+selected. The interaction between record concatenation and subtyping is
+inherently difficult and was the reason preventing
+\citet{cardelli1991operations} from choosing concatenation as the primitive
+operator in their calculus.
+
+The solution found in the line of work by \citet{oliveira2016disjoint} is to
+employ a \emph{coercive} semantics of subtyping, where a subtyping relationship
+$A <: B$ implies a coercion function of type $A \to B$. This solution picks the
+field \lstinline{x} from \lstinline{s} and \lstinline{y} from \lstinline{r}, by
+being aware of the static types when selecting components. In the previous
+example, during the function application, \lstinline{r} is coerced to a
+single-field record \lstinline|{ x = 1 }|, corresponding to the parameter type
+\lstinline|{ x: Int }|. A similar coercion is inserted for \lstinline{s} as
+well, coercing it to \lstinline|{ y = 4 }|. Then the merge operator simply
+concatenates \lstinline|{ x = 1 }| and \lstinline|{ y = 4 }|, which has no
+ambiguity. Thus, a combination of disjointness and a coercive approach to
+subtyping is able to eliminate the ambiguity introduced by an unrestricted merge
+operator.
+
+\paragraph{Disjoint polymorphism and disjointness constraints.}
+In the previous example, some type information about the records being merged is
+lost. But we may wish to preserve other fields in the records that do not create
+ambiguity. This can be achieved by merging polymorphic terms, whose static types
+are not fully known. For example, consider a variant of the previous example:
+\begin{lstlisting}
+let mergeSub (A <: { x: Int }) (B <: { y: Int }) (r: A) (s: B) = r,s in
+mergeSub @{ x: Int; y: Int } @{ x: Int; y: Int }  -- explicit type application
+          { x = 1;  y = 2  }  { x = 3;  y = 4  }
+\end{lstlisting}
+The code is written in pseudo-CP, where \lstinline{<:} denotes the upper bound
+of a type parameter. In this example, \lstinline{A} and \lstinline{B} are
+declared to be subtypes of \lstinline|{ x: Int }| and \lstinline|{ y: Int }|
+respectively. Since CP does not yet support implicit polymorphism, both type
+parameters are instantiated explicitly on the second line. Like in Haskell,
+\lstinline|@| is the prefix of type arguments in CP. With bounded
+quantification~\citep{cardelli1985understanding}, we cannot guarantee the
+disjointness of \lstinline{A} and \lstinline{B}, so the issue of ambiguity comes
+back again. This issue can be solved by \emph{disjoint
+quantification}~\citep{alpuim2017disjoint}:
+\begin{lstlisting}
+let mergeDis (A * { y: Int }) (B * A & { x: Int })  -- B * A and B * { x: Int }
+             (r: A & { x: Int }) (s: B & { y: Int }) = r,s in
+mergeDis @{y: Int} @{x: Int} { x = 1; y = 2 } { x = 3; y = 4 }  -- Type Error!
+mergeDis @Top @Top { x = 1 } { y = 4 }  --> { x = 1; y = 4 }
+\end{lstlisting}
+Note that the type of \lstinline{r} is now \lstinline|A & { x: Int }| instead of
+\lstinline{A}. This is how we usually translate subtype-bounded quantification
+to disjoint quantification~\citep{xie2020row}. The type parameter \lstinline{A}
+is declared to be disjoint with \lstinline|{ y: Int }| to avoid the overlap, and
+\lstinline{B} is disjoint with \lstinline|{ x: Int }| similarly. Another
+important constraint here is the disjointness of \lstinline{A} and
+\lstinline{B}, ensuring that other fields will never conflict as well. For
+example, consider a third field of type \lstinline|{ z: Int }|:
+\begin{lstlisting}
+mergeDis @{z: Int} @{z: Int} { x = 1; z = 5 } { y = 4; z = 6 }  -- Type Error!
+mergeDis @Top @{z: Int} { x = 1 } { y = 4; z = 6 }  --> { x = 1; y = 4; z = 6 }
+\end{lstlisting}
+The first line of code fails to type-check because \lstinline{A} and
+\lstinline{B} are not disjoint and both contain a field of type
+\lstinline|{ z: Int }|. The second line resolves the conflict, and we can access
+all three fields after merging. The absence of certain fields is not expressible
+in TypeScript. As we shall see in \autoref{sec:dynamic}, this is important for
+CP to safely handle dynamic inheritance.
 
 \section{Union Types}
 
@@ -355,7 +452,7 @@ declared. With occurrence typing, the type of \lstinline{x} is refined to
 \citeauthor{castagna2022revisiting} generalize the \lstinline{null}-test to
 \emph{type-cases} and develop a theoretic framework to refine the type of
 expressions occurring in type-cases. CP follows a simpler treatment proposed by
-\citet{rehman2023blend}, where a type-case is written as
+\citet{rehman2023blend} and represents a type-case as
 \lstinline{switch e0 as x case A => e1 case B => e2}. For example, the previous
 function can be rewritten as:
 \begin{lstlisting}
