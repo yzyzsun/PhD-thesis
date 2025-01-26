@@ -162,13 +162,6 @@ foundations for named and optional arguments.
 presenting two applications of compositional programming that illustrate the
 importance of the paradigm:
 \begin{itemize}
-\item \textbf{Compositional embeddings.} Compositional programming, together
-      with the CP language, enables a new form of embedding, which we call a
-      compositional embedding. We reveal that compositional embeddings have most
-      of the advantages of shallow and deep embeddings. We also make a detailed
-      comparison between compositional embeddings and various other techniques
-      used in embedded language implementations, including hybrid, polymorphic,
-      and tagless-final embeddings.
 \item \textbf{Dynamic inheritance via merging.} We identify a type-safety issue
       in TypeScript which we call the inexact superclass problem. We model
       family-polymorphic dynamic multiple inheritance as nested trait
@@ -176,6 +169,13 @@ importance of the paradigm:
       problem and semantic ambiguity by avoiding implicit overriding.
       Disjointness plays a crucial role in ensuring type safety in the presence
       of dynamic inheritance.
+\item \textbf{Compositional embeddings.} Compositional programming, together
+      with the CP language, enables a new form of embedding, which we call a
+      compositional embedding. We reveal that compositional embeddings have most
+      of the advantages of shallow and deep embeddings. We also make a detailed
+      comparison between compositional embeddings and various other techniques
+      used in embedded language implementations, including hybrid, polymorphic,
+      and tagless-final embeddings.
 \end{itemize}
 The main body of this thesis significantly improves the implementation of the CP
 language in several aspects:\footnote{The latest version of CP is available at
@@ -238,9 +238,9 @@ following formalization mechanized using the Coq proof assistant:
       language, which implements the compositional programming paradigm.
 \item[\autoref{pt:why}] explains why compositional programming matters. We
       illustrate the reasons with two applications of compositional programming
-      in this part: \autoref{ch:embedding} proposes a new embedding of
-      domain-specific languages; \autoref{ch:inheritance} presents a type-safe
-      approach to dynamic inheritance via merging in CP.
+      in this part: \autoref{ch:inheritance} presents a type-safe approach to
+      dynamic inheritance via merging in CP; \autoref{ch:embedding} proposes a
+      new embedding technique for domain-specific languages.
 \item[\autoref{pt:compile}] focuses on the compilation of compositional
       programming. \autoref{ch:key} describes the key ideas in our compilation
       scheme and its implementation in the CP compiler. \autoref{ch:calculi}
@@ -268,18 +268,18 @@ The main content of this thesis is based on three of my papers.
 \textit{(ACM SIGPLAN International Conference on Object-Oriented Programming
 Systems, Languages, and Applications)}.
 \end{itemize}
+\autoref{ch:arguments} is based on another conference paper:
+\begin{itemize}
+\item Yaozhu Sun and Bruno C.~d.~S.~Oliveira. 2025.
+\textbf{Named Arguments as Intersections, Optional Arguments as Unions}.
+In ESOP \textit{(European Symposium on Programming)}.
+\end{itemize}
 \autoref{ch:inheritance} and the whole \autoref{pt:compile} are based on an
 unpublished paper:
 \begin{itemize}
 \item Yaozhu Sun, Xuejing Huang, and Bruno C.~d.~S.~Oliveira. 2025.
 \textbf{Type-Safe Compilation of Dynamic Inheritance via Merging}.
 In submission to \textit{ACM Transactions on Programming Languages and Systems}.
-\end{itemize}
-\autoref{ch:arguments} is based on another conference paper:
-\begin{itemize}
-\item Yaozhu Sun and Bruno C.~d.~S.~Oliveira. 2025.
-\textbf{Named Arguments as Intersections, Optional Arguments as Unions}.
-In ESOP \textit{(European Symposium on Programming)}.
 \end{itemize}
 In addition, \autoref{ch:cp} in the background part also adapts some material
 about modular dependencies from my co-authored journal paper:

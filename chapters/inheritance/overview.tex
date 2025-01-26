@@ -1,21 +1,18 @@
 \section{Dynamic Inheritance in CP} \label{sec:overview}
 
 CP is a statically typed language that supports dynamic inheritance via merging
-and still guarantees type safety. In this section, we first give an overview of
-the key features of CP: merges and disjointness. We then show how potential
-conflicts in dynamic inheritance are resolved in CP, and how CP solves the
-inexact superclass problem. Finally, we demonstrate a form of \emph{dynamic}
-family polymorphism in CP.
+and still guarantees type safety. In this section, we first show how inheritance
+is modeled as merging in CP. We then demonstrate how CP resolves potential
+conflicts in dynamic inheritance and addresses the inexact superclass problem.
+Finally, we present a form of \emph{dynamic} family polymorphism in CP.
 
 \subsection{From Merging to Inheritance} \label{sec:inheritance}
 
-Let us now turn to the topic of how we model inheritance as merging. According
-to the denotational semantics of inheritance~\citep{cook1989denotational}, an
-object is essentially a record, and a class (or a trait in CP) is essentially a
-function over records. Also note that, since CP is a purely functional language,
-there is no distinction between object fields and methods -- a method is just a
-field that may have a function type. Class \lstinline{A} in
-\autoref{fig:dynamic} can be encoded as:
+Let us first discuss how inheritance is modeled in CP. According to the
+denotational semantics of inheritance~\citep{cook1989denotational}, an object is
+essentially a record, and a class (or a trait in CP) is essentially a function
+over records. Therefore, class \lstinline{A} in \autoref{fig:dynamic} can be
+encoded as:
 \begin{lstlisting}
 type Rcd = { m: String; n: String };
 
@@ -68,60 +65,9 @@ keyword:
 o = new mkB;  o.n  --> "FOOBAR"
 \end{lstlisting}
 
-\paragraph{Merging versus overriding.}
-So far we have discussed how disjointness prevents ambiguity in merging.
-Basically we avoid any overlap between the two terms to be merged. According to
-the model of inheritance that we use, this constraint automatically applies to
-inheritance as well. One may ask whether this means that overriding is forbidden
-in CP. This is not true: programmers can explicitly declare overriding using the
-\lstinline{override} keyword. For example, we can have:
-\begin{lstlisting}
-base = trait => { m = 48 };
-derived = trait inherits base => { override m = super.m - 2 };
-\end{lstlisting}
-This forces programmers to think about the potential conflict and make a
-decision. Scala and other programming languages also require programmers to
-write \lstinline{override} explicitly. Accidentally overriding a field or a
-method in the base class can lead to unexpected behavior, which is a common
-source of bugs in OOP languages. For example, \lstinline{base} may have other
-fields that assume \lstinline{m} is exactly 48 and will not work properly if
-\lstinline{m} is overridden. This issue is also known as the \emph{fragile base
-class problem}~\citep{mikhajlov1998study}. At run time, CP will exclude the
-overridden field from the base trait before merging.
-
-\paragraph{Multiple inheritance.}
-CP supports a form of multiple trait inheritance, which makes the treatment of
-conflicts more complicated. For example, consider the following code:
-\begin{lstlisting}
-base1 = trait => { m = 48; n = "Hi" };
-base2 = trait => { m = 46; n = "Bye" };
-derived = trait inherits base1 , base2 => { ... };  -- Type Error!
-\end{lstlisting}
-In some OOP languages that support multiple inheritance, such as Scala and
-Python, the order of inheritance determines which field is chosen if fields in
-different base classes have the same name. However, the default resolution order
-may not be what programmers desire. It easily causes bugs if programmers are not
-aware of the implicit overriding. What is worse, there is no way to pick
-\lstinline{n} from \lstinline{base1} and \lstinline{m} from \lstinline{base2} at
-the same time. In CP, programmers are again required to explicitly resolve the
-conflicts, while having more flexibility to choose the desired fields:
-\begin{lstlisting}
-derived = trait inherits base1\m , base2\n => { ... };  -- OK!
-      --> trait =>  { n = "Hi" } , { m = 46 } , { ... }
-\end{lstlisting}
-With the record restriction operator (\lstinline{\}) powered by \emph{type
-difference}~\citep{xu2023making}, we can easily remove \lstinline{m} from
-\lstinline{base1} and \lstinline{n} from \lstinline{base2}. In traditional OOP
-languages, inheritance involves two things: inheriting all fields from the base
-classes, and overriding some of them. In contrast, symmetric merging in CP does
-not imply any overriding. Nevertheless, for the sake of convenience, CP also
-provides biased versions of merging (e.g. \lstinline{base1 ,+ base2} or
-\lstinline{base1 +, base2}) if left-to-right or right-to-left overriding is
-desired. They are also powered by type difference under the hood.
-
 \subsection{Dynamic Inheritance in CP} \label{sec:dynamic}
 
-\begin{figure}[b]
+\begin{figure}
 \begin{lstlisting}[xleftmargin=.2\textwidth]
 mixin (TBase * { m: Int }) (base: Trait<TBase>) =
   trait [this: TBase] inherits base => { m = 48 };

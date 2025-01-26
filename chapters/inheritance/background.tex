@@ -321,6 +321,7 @@ is why we have to capture the reference to the outer
 \lstinline[language=TypeScript]{this} in a variable \lstinline{outer} before
 using it in the nested class. Then, the properties declared in the outer class,
 \lstinline{length} for example, can be accessed via \lstinline{outer.length}.
+
 The second reason for using a factory method is to make access to
 \lstinline[language=TypeScript]{super.Iterator} possible in a subclass of
 \lstinline{ANSIString}. In JavaScript, a class field defined by the superclass
@@ -376,7 +377,7 @@ const UTF8String = Mixin(ANSIString);
 the inexact superclass problem. Thus, nested classes can have type-soundness
 issues as well.
 
-\begin{figure}[b!]
+\begin{figure}
 \begin{lstlisting}[language=Java]
 class ANSIString {
     int length;
