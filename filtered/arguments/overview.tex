@@ -122,12 +122,12 @@ args = f({ "host": "0.0.0.0", "port": 80, "debug": "Oops!" })
 app.run(**args) #= app.run(host="0.0.0.0", port=80, debug="Oops!")
 \end{lstlisting}
 Recall that \lstinline{args} has type \lstinline{Out}, which is similar to
-\lstinline|{ host: str, port: int }|. The \lstinline{debug} key is forgotten in
+\lstinline[language={[3]Python}]|{ host: str, port: int }|. The \lstinline{debug} key is forgotten in
 the static type but is still present at run time. It passes mypy's type checking
 but raises a runtime error. In our translation scheme, the call site will be
 rewritten to the following form based on the type of \lstinline{args} (i.e.
 \lstinline{Out}):
-\begin{lstlisting}[language={[3]Python}]
+\begin{lstlisting}
 app.run(host=args.host, port=args.port, debug=null)
 \end{lstlisting}
 Therefore, type safety is recovered in our translation scheme.
