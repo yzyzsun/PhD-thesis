@@ -205,7 +205,7 @@ shapes = new repo @(Eval&Size) , eval , sz , sz';  -- nested trait composition
 --> "The elliptical region of size 2 contains the origin."
 \end{lstlisting}
 
-\begin{figure}[b]
+\begin{figure}
   \includegraphics[width=\textwidth]{merge.pdf}
   \caption{A visualization of nested trait composition.} \label{fig:compose}
 \end{figure}
@@ -383,7 +383,7 @@ DSL.
 
 \subsection{A Detailed Comparison between Different Embedding Approaches} \label{sec:comparison}
 
-\begin{table}[b!]
+\begin{table}
 \caption{A detailed comparison between different embedding approaches.} \label{tab:comparison}
 \centering
 \begin{tabular}{*{6}{c}}
@@ -524,7 +524,7 @@ they become non-modular with respect to dependencies, and programming with
 dependencies becomes significantly more awkward compared to conventional FP or
 OOP.
 
-\begin{table}[b]
+\begin{table}
 \caption{A briefer comparison regarding the three dimensions of the expression problem.} \label{tab:3d}
 \centering
 \begin{tabular}{*{5}{c}}
@@ -571,16 +571,55 @@ demonstrated that several challenging transformations can be written with
 tagless-final embeddings. Compositional programming is a generalization of such
 forms of embeddings, and therefore all the transformations are possible with
 tagless-final embeddings are also possible in CP. Even for structurally
-non-local transformations, we can instantiate a sort with a function type (e.g.
-\lstinline{RegionSig<Ctx->Region>}) and pass down the context when traversing
-the AST. Such contextual transformations can also be modular with the help of
-\emph{polymorphic contexts}~\citep{zhang2021compositional}. We have implemented
-an example of common subexpression elimination inspired by
-\citet{kiselyov2011implementing} (which can be found in our online
-implementation). Both our code and \citeauthor{kiselyov2011implementing}'s are
-not fully modular with respect to an auxiliary data structure (his
-implementation relies on a closed algebraic data type). In our case, this is
-because nested composition for recursive types is currently not supported, which
-relies on future theoretical progress of reconciling distributive subtyping and
-recursive types. Nevertheless, our approach is less entangled than tagless final
-embeddings since we can handle dependent transformations modularly.
+non-local transformations, we can instantiate a sort similarly to the
+\lstinline{Reader} or \lstinline{State} monad in Haskell, passing down and
+possibly updating a context when traversing the AST. In \autoref{fig:cse}, we
+show an example of common subexpression elimination based on hash consing, which
+is inspired by \citet{kiselyov2011implementing}. Here the sort is instantiated
+with type \lstinline{HashCons}, which imitates the \lstinline{State} monad by
+taking a hash table of \lstinline{Node}s as a parameter and returning a pair of
+\lstinline{NodeID} and the updated hash table. The method pattern for
+\lstinline{Add} demonstrates how to chain the ``monadic'' computations. The
+implementation of \lstinline{hashcons} is omitted for brevity, but the complete
+code can be found online.\footnote{\url{https://plground.org/nobody/CSE}} Both
+our code and \citeauthor{kiselyov2011implementing}'s are not fully modular with
+respect to type \lstinline{Node}: his definition of \lstinline{Node} is a
+\emph{closed} algebraic data type; our definition of \lstinline{Node} cannot be
+extended either, because nested composition for recursive types is currently not
+supported, which relies on future theoretical progress of reconciling
+distributive subtyping and recursive types. Nevertheless, our approach is less
+entangled than tagless final embeddings since we can handle dependent
+transformations modularly.
+
+\begin{figure}
+\begin{lstlisting}
+type ExpSig<Exp> = {
+  Var : String -> Exp;
+  Lit : Int -> Exp;
+  Add : Exp -> Exp -> Exp;
+};
+
+type HashCons = { hc : [Node] -> Pair NodeId [Node] };
+
+hc = trait [self : NodeSig<Node>] implements ExpSig<HashCons> => {
+  (Var s).hc m = hashcons (NVar s) m;
+  (Lit n).hc m = hashcons (NLit n) m;
+  (Add e1 e2).hc m = let p1 = e1.hc m in
+                     let p2 = e2.hc p1.snd in
+                     hashcons (NAdd p1.fst p2.fst) p2.snd;
+};
+\end{lstlisting}
+\caption{Common subexpression elimination implemented in CP.} \label{fig:cse}
+\end{figure}
+
+A final note is that if the context (e.g. \lstinline{[Node]}) needs extending
+during the extension of the AST, CP can still handle it modularly with the help
+of \emph{polymorphic contexts}~\citep{zhang2021compositional}, though this
+technique is not employed in \autoref{fig:cse} to keep the code simple. The
+basic idea is to make the definition of \lstinline{HashCons} polymorphic:
+\begin{lstlisting}
+type HashCons Ctx = { hc : Ctx -> Pair NodeId Ctx };
+hc (Ctx * [Node]) = trait implements ExpSig<HashCons ([Node] & Ctx)> => ...
+\end{lstlisting}
+In this way, \lstinline{hc} can make use of the \lstinline{[Node]} part while
+leaving the unknown \lstinline{Ctx} part open for extension.
