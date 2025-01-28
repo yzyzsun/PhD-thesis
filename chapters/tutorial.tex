@@ -108,10 +108,9 @@ There are also two special types originating from subtyping: \lstinline{Top} for
 the top type and \lstinline{Bot} for the bottom type. They are the maximal and
 minimal types in the type lattice respectively. The top type is a supertype of
 any type, and the bottom type is a subtype of any type. In other words, all
-terms can be annotated with the top type, while no term can be annotated with
-the bottom type theoretically. However, for practical convenience,
-\lstinline{undefined} can be used in any type context, including the bottom
-type.
+terms can be assigned the top type, while the bottom type is uninhabited
+theoretically. However, for practical convenience, \lstinline{undefined} can be
+assigned any type, including the bottom type.
 
 \section{Compound Types}
 
@@ -480,7 +479,8 @@ declared interface \lstinline{EqPoint}.
 
 \begin{tipblock}
 Due to type-theoretic difficulties, a trait implementing a recursive type cannot
-be inherited or merged with other traits in CP.
+be inherited or merged with other traits in CP. There is ongoing research on how
+to address this problem.
 \end{tipblock}
 
 \section{Self-References}
@@ -590,7 +590,8 @@ below evaluates all \lstinline{Lit} and \lstinline{Add} expressions to \lstinlin
 evalDummy = trait implements ExpSig<Eval> => { _.eval = 0 };  -- eval _ = 0
 \end{lstlisting}
 
-\paragraph{Modular dependencies.}
+\section{Modular Dependencies}
+
 A merit of compositional interfaces is that they can modularly handle
 dependencies between different methods for the constructors. Consider a funny
 pretty-printer below:
@@ -631,8 +632,11 @@ directly writing the following code in Haskell:
 print (Add e1 e2) = if eval e2 == 0 then ...
 \end{lstlisting}
 The definition of \lstinline{print} is tightly coupled with a concrete function
-\lstinline{eval}. We would prefer to make use of type classes to decouple them
-in Haskell.
+\lstinline{eval}. We could use type classes to decouple dependencies in Haskell,
+as seen in tagless-final embeddings, but this would require planning in advance
+for \lstinline{eval} and \lstinline{print}. In CP, the natural way to implement
+\lstinline{eval} and \lstinline{print} is already modular and extensible,
+requiring no pre-planning.
 
 \paragraph{Combination with self-references.}
 As introduced previously, self-type annotations are also a powerful mechanism
@@ -669,8 +673,7 @@ Note that we do not need to add \lstinline{new} before \lstinline{Add} and
 not desired, \lstinline{$Add} and \lstinline{$Lit} can be used instead. In other
 words, \lstinline{Lit 0} is equivalent to \lstinline{new $Lit 0}.
 
-A more recommended way is to define a \lstinline{repo} trait with a self-type
-annotation:
+Another way is to define a \lstinline{repo} trait with a self-type annotation:
 \begin{lstlisting}
 repo Exp = trait [self: ExpSig<Exp>] => open self in {
   e1 = Add (Lit 4) (Lit 8);
@@ -678,7 +681,7 @@ repo Exp = trait [self: ExpSig<Exp>] => open self in {
 };
 \end{lstlisting}
 This trait allows us to use constructors \emph{virtually} to construct
-expressions without sticking to a concrete implementation of \lstinline{ExpSig}.
+expressions without committing to a concrete implementation of \lstinline{ExpSig}.
 Then we can, for example, apply \lstinline{repo} to type \lstinline{Eval&Print}
 and merge it with \lstinline{evalExp} and \lstinline{printSelf}:
 \begin{lstlisting}

@@ -399,9 +399,9 @@ mergeDis @Top @{z: Int} { x = 1 } { y = 4; z = 6 }  --> { x = 1; y = 4; z = 6 }
 The first line of code fails to type-check because \lstinline{A} and
 \lstinline{B} are not disjoint and both contain a field of type
 \lstinline|{ z: Int }|. The second line resolves the conflict, and we can access
-all three fields after merging. The absence of certain fields is not expressible
-in TypeScript. As we shall see in \autoref{sec:dynamic}, this is important for
-CP to safely handle dynamic inheritance.
+all three fields after merging. As we shall see in \autoref{sec:dynamic}, the
+ability to express absence of certain fields is important for CP to safely
+handle dynamic inheritance.
 
 \section{Union Types}
 
