@@ -72,7 +72,7 @@ The example of horizontally aligned circles in \autoref{sec:meta} can be
 translated to CP as:
 
 \begin{lstlisting}
-sharing Region = trait [self: HudakSig<Region>] => {
+sharing Region = trait [self: HudakSig<Region>] => open self in {
   circles = letrec go (n: Int) (offset: Double): Region =
               if n == 0 then Circle 1.0
               else let shared = go (n-1) (offset/2.0)
@@ -91,10 +91,9 @@ and annotated with a self-type \lstinline{HudakSig<Region>}. Like Scala traits,
 CP traits can be annotated with self-types to express abstract dependencies.
 This serves as an elegant way to inject region constructors. All of the
 constructors formerly declared in the interface are available through
-self-references, for instance, \lstinline{self.Circle} (``\lstinline{self.}''
-can be omitted for the sake of convenience). These constructors are
-\emph{virtual}~\citep{madsen1989virtual,ernst2006virtual}: they are not attached
-to a specific implementation.
+self-references, for instance, \lstinline{open self in ... Circle 1.0}. These
+constructors are \emph{virtual}~\citep{madsen1989virtual,ernst2006virtual}: they
+are not attached to a specific implementation.
 
 With the self-type dependency on \lstinline{HudakSig<Region>}, the static type
 checker of CP rejects a direct instantiation like \lstinline{new sharing @Size}
@@ -152,7 +151,7 @@ both interfaces:
 
 \begin{lstlisting}
 type RegionSig<Region> = HudakSig<Region> & HoferSig<Region>;
-repo Region = trait [self: RegionSig<Region>] => {
+repo Region = trait [self: RegionSig<Region>] => open self in {
   ellipse = Scale { x = 4.0; y = 8.0 } (Circle 1.0);
   universal = Union (Outside Empty) (Circle 1.0);
 };
@@ -304,7 +303,7 @@ always be separated into two traits):
 type Eliminate Region = { eliminate: Region; delOutside: Region };
 
 elim Region = trait [fself: RegionSig<Region>]
-              implements RegionSig<Region => Eliminate Region> => {
+              implements RegionSig<Region=>Eliminate Region> => open fself in {
   (Outside     a).eliminate = a.delOutside;
   (Union     a b).eliminate = Union a.eliminate b.eliminate;
   (Intersect a b).eliminate = Intersect a.eliminate b.eliminate;
@@ -601,7 +600,7 @@ type ExpSig<Exp> = {
 
 type HashCons = { hc : [Node] -> Pair NodeId [Node] };
 
-hc = trait [self : NodeSig<Node>] implements ExpSig<HashCons> => {
+hc = trait [self : NodeSig<Node>] implements ExpSig<HashCons> => open self in {
   (Var s).hc m = hashcons (NVar s) m;
   (Lit n).hc m = hashcons (NLit n) m;
   (Add e1 e2).hc m = let p1 = e1.hc m in

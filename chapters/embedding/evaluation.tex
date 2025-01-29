@@ -104,7 +104,7 @@ open LibTable;
 open Database;
 
 sortedStates = sort states;
-doc T = trait [self: DocSig<T>&TableSig<T>] => {
+doc T = trait [self: DocSig<T>&TableSig<T>] => open self in {
   table = letrec rows (i: Int): T =
       if i == 0 then `\Trow[
         \Theader[No.]   \Theader[Country]      \Theader[Area (km^2)]
@@ -163,7 +163,7 @@ an example:
 \begin{lstlisting}
 fractal T C =
   trait [self: DocSig<T> & GraphicSig<T><C> & ColorSig<C> & Draw T C]
-  implements Draw T C => {
+  implements Draw T C => open self in {
     draw {..} =
       let center = Rect { x = x + width/3; y = y + height/3;
                           width = width/3; height = height/3; color = White} in
@@ -243,10 +243,10 @@ the strategy we want, without the need for mutable references:
 
 \begin{lstlisting}
 type Render = { render: HTML };
-lineStrategy = trait [self: Base] implements Render => {
+lineStrategy = trait [self: Base] implements Render => open self in {
   render = let lines = ... in `\xAxis \yAxis \lines \caption`
 };
-barStrategy = trait [self: Base] implements Render => {
+barStrategy = trait [self: Base] implements Render => open self in {
   render = let bars = ... in `\xAxis \yAxis \bars \caption`
 };
 chart = baseChart data , if config.line then lineStrategy else barStrategy;
