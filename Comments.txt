@@ -217,3 +217,24 @@ the background? Would it make sense to cover it on background instead?
 I guess that if we do move Section 5.3.1 to the background then we
 would need to reformulate the start of 5.3.2 a bit, probably having a
 backreference to some of that material and recalling some important bits.
+
+
+
+31/01/2025
+
+
+# Chapter 6
+
+This chapter seems fine
+
+# Chapter 7
+
+- Figures 7.4, 7.5: Bring to top.
+
+- Coherence Proof for NeColus and Its Adaptation to Our Source Language
+
+Too long for a title (uses 2 lines). Perhaps use: A Sketch of a Coherence Proof
+
+Perhaps also change the first paragraph to emphasize that there are
+two parts: first revise the Necolus proof, and then show how to adapt
+these ideas to our setting.
