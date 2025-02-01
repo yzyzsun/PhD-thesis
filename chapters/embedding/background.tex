@@ -286,6 +286,7 @@ to define multiple interpretations simultaneously. For example, we can define
 
 \begin{lstlisting}[language=Haskell,deletekeywords={union,intersect}]
 type Region = (Int, String) -- (size, text)
+
 circle      r  =  (1, "circular region of radius " ++ show r)
 outside     a  =  (fst a + 1, "outside a region of size " ++ show (fst a))
 union     a b  =
