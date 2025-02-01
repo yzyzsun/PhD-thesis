@@ -222,7 +222,6 @@ backreference to some of that material and recalling some important bits.
 
 31/01/2025
 
-
 # Chapter 6
 
 This chapter seems fine
@@ -238,3 +237,43 @@ Too long for a title (uses 2 lines). Perhaps use: A Sketch of a Coherence Proof
 Perhaps also change the first paragraph to emphasize that there are
 two parts: first revise the Necolus proof, and then show how to adapt
 these ideas to our setting.
+
+- There should be a conclusion at the end of this chapter, summarizing
+  the key ideas, achievements and limitations in this Chapter.
+
+
+01/02/2025
+
+# Chapter 8
+
+Title 8.1: Drop "generation" to firt in 1 line
+
+- There should be a conclusion at the end of this chapter, summarizing
+  the key ideas, achievements and limitations in this Chapter.
+
+# Chapter 9
+
+- There should be a conclusion at the end of this chapter, summarizing
+  the key ideas, achievements and limitations in this Chapter.
+
+# Chapter 10
+
+- "We conclude this chapter with a discussion of related work in
+  Section 10.5."
+
+Shouldn't all related work be unfied in a Related Work chapter? You
+should be consistent.
+
+However, the early parts of Section 10.5 is more specific: it compares
+existing approaches to named/default arguments in detail. You should
+rephrase your description along the lines that Section 10.5 provides a
+detailed comparasion with some of the existing desings (OCaml, Scala,
+Racket, Haskell)
+
+I think that the other Related work (from 10.5.5) can go to the main
+related work discussion in the thesis. 
+
+- Figure 10.3 on top
+
+- There should be a conclusion at the end of this chapter, summarizing
+  the key ideas, achievements and limitations in this Chapter.
