@@ -2,14 +2,16 @@
 
 This chapter presents the second case study: compositional embeddings of
 domain-specific languages (DSLs). We concentrate on how to embed DSLs in a
-modular way and compose them to build larger DSLs. We first introduce existing
-embedding techniques and their limitations in \autoref{sec:embed}. Then we show
-in \autoref{sec:lang} that \emph{compositional embeddings} leverage the
-strengths of both shallow and deep embeddings and essentially solves the
-\emph{expression problem} for embedded DSLs. We validate our approach by
-showcasing a compositionally embedded DSL for document authoring called \ExT in
+modular way and compose them to build larger DSLs. We start with an introduction
+to the problem that we aim to solve in \autoref{sec:problem}. Then we
+demonstrate existing embedding techniques in \autoref{sec:embed} and show in
+\autoref{sec:lang} that \emph{compositional embeddings} combine the advantages
+of shallow and deep embeddings and surpasses other techniques like tagless-final
+embeddings by supporting modular dependencies. We validate our approach by
+showcasing a compositionally embedded DSL for document authoring in
 \autoref{sec:dsl} and further evaluating it in \autoref{sec:evaluation}.
 
+\input{chapters/embedding/introduction}
 \input{chapters/embedding/background}
 \input{chapters/embedding/compositional}
 \input{chapters/embedding/ext}

@@ -104,6 +104,7 @@ open LibTable;
 open Database;
 
 sortedStates = sort states;
+
 doc T = trait [self: DocSig<T>&TableSig<T>] => open self in {
   table = letrec rows (i: Int): T =
       if i == 0 then `\Trow[
@@ -116,6 +117,26 @@ doc T = trait [self: DocSig<T>&TableSig<T>] => open self in {
 document = new doc @HTML , html , table;
 document.table.html
 \end{lstlisting}
+
+\noindent
+A table of the smallest countries by area rendered by the code above is shown in
+\autoref{fig:minipedia-1}.
+
+\begin{figure}
+\begin{subfigure}{.5\textwidth}
+\centering
+\includegraphics[width=\textwidth]{minipedia-1.png}
+\caption{The smallest countries by area.}
+\label{fig:minipedia-1}
+\end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\centering
+\includegraphics[width=.9\textwidth]{minipedia-2.png}
+\caption{Table of contents of the Tuvalu page.}
+\label{fig:minipedia-2}
+\end{subfigure}
+\caption{Screenshots of Minipedia pages.}
+\end{figure}
 
 \paragraph{Adding a table of contents (TOC).}
 We have introduced how to write Minipedia pages using \ExT libraries, but now
@@ -149,6 +170,12 @@ and the self-reference specified in \lstinline{[self]}, we can call
 call \lstinline{e.html} when generating the TOC since the interface type is
 refined. A minor remark is that \lstinline{listItem} is an auxiliary function to
 generate an appropriate \lstinline{<li>} wrapping for a given nesting level.
+
+An example of a TOC is shown in \autoref{fig:minipedia-2}. The TOC is generated
+automatically from the section titles in the Tuvalu page. The TOC is a
+compositional part of the document and is not hard-coded in the document body.
+This is a good example of how to modularly handle dependencies in compositional
+embeddings.
 
 \subsection{Fractals and Sharing} \label{sec:fractal}
 
@@ -196,6 +223,25 @@ makes use of the \lstinline{<use>} element in SVG to avoid the exponential
 growth of output. Therefore, the duplication of SVG elements is also eliminated.
 These optimizations are available for free thanks to the linguistic reuse in
 compositional embeddings.
+
+A screenshot of the Sierpiński carpet with \lstinline{level = 4} is shown in
+\autoref{fig:carpet}.
+
+\begin{figure}
+\begin{subfigure}{.4\textwidth}
+\centering
+\includegraphics[width=.9\textwidth]{fractal.png}
+\caption{Sierpiński carpet.}
+\label{fig:carpet}
+\end{subfigure}%
+\begin{subfigure}{.6\textwidth}
+\centering
+\includegraphics[width=.9\textwidth]{chart.png}
+\caption{A bar chart of stock prices.}
+\label{fig:chart}
+\end{subfigure}
+\caption{Screenshots of fractals and charts.}
+\end{figure}
 
 \subsection{Customizing Charts} \label{sec:charts}
 
@@ -309,6 +355,9 @@ warn readers that ``a decorator and its component aren't identical''. However,
 in CP, \lstinline{chart.render} can access the overridden \lstinline{caption}
 through the late-bound self-reference. This solution makes our code clean and
 easy to maintain.
+
+A bar chart of stock prices with borders and legends is shown in
+\autoref{fig:chart}.
 
 \paragraph{True delegation via trait composition.}
 The chart application shows how other aspects of the modularity of CP are
