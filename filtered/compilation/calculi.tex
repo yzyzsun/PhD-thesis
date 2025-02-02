@@ -859,13 +859,15 @@ unoptimized to show the correspondence with the \lambdar terms. In the optimized
 code for the first version, for instance, the creation of \lstinline{$4} and
 \lstinline{$6} can be eliminated.
 
-\section{Coherence Proof for \necolus and Its Adaptation to Our Source Language}
-\label{sec:coherence}
+\section{A Sketch of the Coherence Proof} \label{sec:coherence}
+
+In this section, we will provide a summary of the key steps in the coherence
+proof for \necolus~\citep{bi2018essence}. After that, we will discuss how to
+adapt the proof to our setting.
 
 The coherence result in \necolus is established using a semantic approach based
 on \emph{logical relations}~\citep{tait1967intensional,biernacki2015logical}.
-Here we provide a summary of the key steps in that coherence proof. We will use
-$E$, $V$, $\tau$, and $\Delta$ to represent the expressions, values, types, and
+We will use $E$, $V$, $\tau$, and $\Delta$ to represent the expressions, values, types, and
 typing contexts in \lambdac, the target language for \necolus.
 
 \paragraph{Coherence via contextual equivalence.}
