@@ -402,7 +402,7 @@ or biased merging in \autoref{tab:rcd}. Below we show a fine-grained resolution
 with restriction operators:
 \begin{lstlisting}
 mixedPoint = trait [self] inherits blackPoint\color , reflected\\Point => {
-  override x = super.x + (reflected ^ self).x;
+  override x = super.x + (reflected^self).x;
 };
 new mixedPoint  --> { x = 0; y = 2; color = "black" }
 \end{lstlisting}
@@ -411,7 +411,8 @@ Here \lstinline{blackPoint\color} removes the \lstinline{color} field, while
 \lstinline{x} and \lstinline{y}). In the trait body, we intentionally override
 \lstinline{x} to show that the excluded \lstinline{x} field in
 \lstinline{reflected} can still be accessed using the forwarding operator
-\lstinline{^}.
+\lstinline{^}. Basically, \lstinline{t^self} is the way to access all fields in
+another trait \lstinline{t}. We will explain what \lstinline{self} means soon.
 
 \paragraph{Dynamic inheritance.}
 Traits in CP are first-class and allow dynamic inheritance, where
