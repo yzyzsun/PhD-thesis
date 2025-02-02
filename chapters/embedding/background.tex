@@ -100,11 +100,9 @@ the five language constructs are implemented as functions (called denotation
 functions), which implement the respective semantics of the language constructs.
 Thus, the language interface is essentially the signature of the denotation
 functions and is entangled with the definition of a particular semantic domain.
-In the deep embedding, \lstinline{Region} is defined as an algebraic data
-type.\footnote{We use the notation of \emph{generalized} algebraic data types to
-make type annotations clear.} Algebraic data types only capture the abstract
-syntax, thus enabling the language interface to be separated from any concrete
-semantics.
+In the deep embedding, \lstinline{Region} is defined as an algebraic data type.
+Algebraic data types only capture the abstract syntax, thus enabling the
+language interface to be separated from any concrete semantics.
 
 \paragraph{Semantic interpretations.}
 There can be many semantic interpretations, which associate language constructs
