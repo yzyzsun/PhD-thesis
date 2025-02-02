@@ -140,7 +140,7 @@ future work.
 
 \paragraph{Reconciliation between eagerness and laziness.}
 As observed by \citet{fan2022direct}, trait instantiation may diverge in CP if a
-call-by-value evaluation strategy is used. More than a score of years ago, a
+call-by-value evaluation strategy is used. Several years ago, a
 similar observation was made by \citet{bruce1999comparing} in the context of
 object encodings. \citeauthor{fan2022direct} fixed the divergence issue by
 switching to a call-by-name evaluation strategy completely, which is inefficient
@@ -167,7 +167,7 @@ we can conclude that the key to laziness is: do not evaluate anything until it
 is needed.
 
 The solution employed in the CP compiler uses smart getters in JavaScript, which
-is essentially adding \emph{thunks} to certain record fields. A natural
+are essentially adding \emph{thunks} to certain record fields. A natural
 direction is to formalize the semantics using the call-by-push-value
 model~\citep{levy2012call}. For example, the previous example can be rewritten
 to the following form:
@@ -256,9 +256,9 @@ leads to slightly different compilation results for \lstinline{f:A} and
 \lstinline{f:B}. The code above would go wrong as we do not distinguish them and
 misuse \lstinline{f:B} as \lstinline{f:A}.
 
-The fix can be easy. Our formalization in \autoref{ch:calculi} uses a more
+The fix is easy. Our formalization in \autoref{ch:calculi} uses a more
 precise representation for function types: both the parameter and return types
-are included in the type indices. Nevertheless, the issue is really rare, and we
+are included in the type indices. Nevertheless, the issue is rare, and we
 have never encountered such a case in benchmarks. For the considerations of
 performance and code size, we still use the shorter type indices that only
 include return types in our implementation. It is worthwhile to investigate the
