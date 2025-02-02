@@ -3,11 +3,10 @@
 In this section, we first discuss OCaml, the only language we know of that has
 well-studied support for named and optional arguments, though its mechanism does
 not go well with higher-order functions. Then we briefly show how named
-arguments are handled very differently in Scala and Racket. After that, we
+arguments are handled very differently in Scala and Racket. Finally, we
 illustrate how named arguments can be encoded as records in Haskell while not
-natively supported. Finally, we discuss two more approaches we find in record
-calculi~\citep{ohori1995polymorphic,osinski2006polymorphic}. We will also
-explain why all these approaches have drawbacks.
+natively supported. We will also explain why all these approaches have
+drawbacks.
 
 \subsection{OCaml}
 
@@ -324,47 +323,3 @@ few. It is worth mentioning that these languages have first-class support for
 record types, so no separate type declarations are needed like in
 \autoref{fig:settings}. However, they still suffer from lack of native support
 for optional arguments.
-
-\subsection{Record Calculi}
-
-\citet{ohori1995polymorphic} discussed how to model optional arguments in the
-future work of his seminal paper on compiling a polymorphic record calculus. He
-proposed to extend a record calculus with optional-field selection
-($e.\ell\;?\;d$) which behaves like $e.\ell$ if $\ell$ is present in the record
-$e$ or evaluates to $d$ otherwise. However, his proposal is subject to a similar
-type-safety issue as mypy. The static type of $e$ can easily lose track of the
-optional field $\ell$ and fail to ensure that $e.\ell$ has the same type as $d$
-at run time. Since \citeauthor{ohori1995polymorphic} did not explicitly mention
-how to type-check optional-field selection, we cannot make any firm conclusion
-about the type safety of his proposal.
-
-\citet{osinski2006polymorphic} also discussed the support for optional arguments
-in Section 3.5 of his dissertation on compiling record concatenation. His
-approach is based on row polymorphism and makes use of a sort of predicate on
-rows: $\mathit{row}_1\blacktriangleright\mathit{row}_2$, which means that
-$\mathit{row}_1$ consists of all the fields in $\mathit{row}_2$. With this
-predicate, a function has type
-$\forall\rho.\;\mathit{row}_o\blacktriangleright\rho\Rightarrow\{\mathit{row}_r,\rho\}\to\tau$
-if the required and optional arguments are denoted by $\mathit{row}_r$ and
-$\mathit{row}_o$, respectively. Roughly speaking, it means the parameter has a
-type between $\{\mathit{row}_r\}$ and $\{\mathit{row}_r,\mathit{row}_o\}$. At
-the term level, he introduced a compatible concatenation operator
-\lstinline{|&|}, which allows overlapping fields with the same types and prefers
-the fields on the right-hand side when overlapping occurs. An example of their
-translation is as follows:
-\begin{lstlisting}[language=Caml]
-fun add { x, y = 0 } = ...
-(* is translated to *)
-fun add r = let r' = { y = 0 } |&| r in
-            let x = r'.x in
-            let y = r'.y in ...
-\end{lstlisting}
-His approach is free from the type-safety issue, though based on a more
-sophisticated row-polymorphic system. There are two sorts of predicates and
-three variants of record concatenation operators in his calculus, for example,
-demonstrating some sophistication of his calculus.
-
-It is worth noting that neither \citeauthor{ohori1995polymorphic}'s nor
-\citeauthor{osinski2006polymorphic}'s calculus supports subtyping. This is a
-significant limitation since subtyping is a common feature in many popular
-languages, especially object-oriented languages.
