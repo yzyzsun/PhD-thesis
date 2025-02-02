@@ -277,3 +277,18 @@ related work discussion in the thesis.
 
 - There should be a conclusion at the end of this chapter, summarizing
   the key ideas, achievements and limitations in this Chapter.
+
+02/02/2025
+
+Chapter 11: Looks good
+
+Chapter 12:
+
+More than a score of years ago --> Several years ago
+which is essentially adding --> which are essentially adding
+
+Figure 12.1 (move to top)
+
+The fix can be easy --> The fix is easy.
+
+Nevertheless, the issue is ** rare (delete "really")
