@@ -21,3 +21,21 @@ designs in \autoref{sec:related}.
 \input{filtered/arguments/overview}
 \input{filtered/arguments/formalization}
 \input{filtered/arguments/related}
+
+\section{Conclusion}
+
+The benefits from named arguments are twofold. On the one hand, argument
+keywords serve as extra documentation at the language level. On the other hand,
+they lay the foundation for supporting commutativity and optionality.
+
+Named and optional arguments are widely supported in mainstream programming
+languages but are hardly formalized. Our approach is inspired by existing
+mechanisms in OCaml and Haskell but further considers the interaction between
+first-class named arguments and subtyping. Static type checkers for Python and
+Ruby both suffer from a type-safety issue in this regard. We show that \lambdaiu
+can serve as a type-safe core calculus with compact support for intersection and
+union types.
+
+We hope that this chapter will call more attention to the foundation for named
+and optional arguments and inspire future language developers to consider
+potential type-safety issues more carefully in their designs.
