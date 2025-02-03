@@ -186,20 +186,37 @@ technique that not only combines the advantages of deep and shallow embeddings
 but also supports modular dependencies.
 
 \paragraph{The 5\th challenge: efficient compilation for CP.}
-Previous work on compositional programming enables the solution to the four
-challenges of compositionality.
-However, no previous work has studied practical implementability
-questions, such as how to have a reasonably efficient compilation model with
-separate compilation. Although there is an implementation of the CP language,
-this implementation is based on an interpreter. Moreover, the semantics for
-compositional programming languages is based on \emph{coercive
-subtyping}~\citep{luo2013coercive}, which raises immediate questions in terms of
-efficiency, since upcasts have a computational cost. A naive implementation that
-inserts coercions every time upcasting is needed has a prohibitive cost, which
-can be \emph{orders of magnitude} slower than JavaScript programs.
-Therefore, we need to investigate how to address the 5\th challenge, that is,
-how to compile compositional programming much more efficiently while also supporting
-separate compilation.
+While previous work on compositional programming enables a solution to the four
+challenges of compositionality, a critical gap remains in terms of practical
+implementability -- especially, how to achieve efficient compilation with
+separate compilation. To date, the only implementation of the CP language is
+based on an interpreter, which, while functional, does not provide the
+performance necessary for practical applications.
+
+It is non-trivial to compile CP efficiently and separately because CP supports
+several novel features that are not present in mainstream programming languages.
+As mentioned earlier, \emph{dynamic inheritance} and \emph{compositional
+embeddings} are two key features of compositional programming. They already pose
+significant challenges to type-safe compilation, let alone efficiency and
+separate compilation. Another challenging feature is \emph{nested
+composition}~\citep{bi2018essence}. This feature enables a form of family
+polymorphism~\citep{ernst2001family}, providing an elegant solution to the
+expression problem~\citep{ernst2004expression}, so it is crucial to modularity
+and extensibility in CP. Finally, though \emph{parametric polymorphism} is a
+common feature in mainstream languages, it raises additional challenges in the
+context of compilation for CP. The reason why this feature is challenging is a
+bit more technical: the compilation scheme for CP relies on the concrete type of
+each term, while parametric polymorphism allows abstracting over types and
+delays type instantiation until run time. All these features are worth further
+investigation to understand how to compile CP efficiently.
+
+Moreover, the semantics underlying compositional programming languages rely on
+\emph{coercive subtyping}~\citep{luo2013coercive}, which introduces inherent
+efficiency concerns, since upcasts lead to computational overhead. A naive
+implementation that inserts coercions every time upcasting is needed has a
+prohibitive cost, which can be \emph{orders of magnitude} slower than JavaScript
+programs. Therefore, how to reduce the overhead of coercive subtyping is also an
+inevitable part of the 5\th challenge.
 
 \paragraph{Compositional programming with union types.}
 The modularity and extensibility of compositional programming are supported by
