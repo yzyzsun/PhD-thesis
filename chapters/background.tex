@@ -518,7 +518,7 @@ the four distributivity axioms. The one employed in CP is proposed by
 \citet{huang2021distributing}, having the advantage of not requiring types to be
 normalized and being relatively simple to implement.
 
-\section{Traits and Mechanisms for Code Reuse}
+\section{Traits and Dependency Injection}
 
 Traits are an overloaded term in the literature, referring to various mechanisms
 for code reuse. The earliest use of the term ``traits'' in the context of
@@ -554,16 +554,33 @@ follows the principle of the traits mechanism proposed by
 \citeauthor{ducasse2006traits}
 
 \paragraph{Dependency injection.}
+Dependency injection is a design pattern that addresses the challenge of modular
+dependencies by decoupling component creation from component usage. Instead of
+hard-coding dependencies within a component, dependencies are provided
+externally. This pattern is widely used in object-oriented programming to
+enhance modularity and testability. As previously mentioned, traits can
+\emph{require} methods that are used but not implemented. In CP, a trait type is
+denoted by \lstinline{Trait<Required => Provided>}, where \lstinline{Required}
+represents the dependencies of a trait. The trait type serves as an explicit
+contract between the trait and its dependencies or dependents.
+
+Before a trait is instantiated, trait composition or inheritance injects the
+required methods into the trait, following the principle of inversion of control
+in dependency injection. CP even supports dynamic composition of traits,
+allowing dependencies to be resolved at run time, potentially guided by user
+input or configuration. This powerful feature is closely related to first-class
+traits, which are discussed next.
 
 \paragraph{First-class traits.}
 CP-flavored traits are first-class~\citep{bi2018typed} in the sense that they
-can be passed around like other values. For example, we can write a function
-that takes a trait (not an instance of a trait) and returns a new trait, or
-assigns a trait to a variable. First-class traits usually imply dynamic trait
-inheritance, where a trait can inherit from a trait expression, whose result is
-determined dynamically. The dynamic nature of first-class traits poses a
-challenge for static typing. The aforementioned notions of merging and
-disjointness play a crucial role in ensuring that the dynamic trait inheritance
-is type-safe. A type-safety issue of dynamic inheritance can be found in
-\autoref{sec:override}, and CP's solution is later presented in
-\autoref{sec:dynamic}.
+can be passed around like other values. For example, it is possible to write a
+function that takes a trait (rather than an instance of a trait) and returns a
+new trait, or assign a trait to a variable. First-class traits usually imply
+dynamic trait inheritance, where a trait may inherit from a trait expression,
+whose result is determined dynamically.
+
+However, the dynamic nature of first-class traits poses a challenge for static
+typing. Ensuring type safety in this context relied heavily on the notions of
+merging and disjointness, which are essential for handling dynamic inheritance
+safely. \autoref{sec:override} explores type-safety issues related to dynamic
+inheritance, and \autoref{sec:dynamic} presents CP's solution to this challenge.
