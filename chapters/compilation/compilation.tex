@@ -2,8 +2,7 @@
 
 This chapter introduces our concrete implementation of the CP compiler that
 targets JavaScript. The full set of compilation rules can be found in
-\autoref{sec:fiplus-js}. Our implementation is available in the supplementary
-materials.
+\autoref{sec:fiplus-js}.
 
 \section{From Elaboration Semantics to JavaScript Code}
 
@@ -704,3 +703,11 @@ Both sets of elaboration rules are syntax-directed and compositional, and the
 elaboration contexts only include type information from header files in our
 implementation. That is why CP code can be separately compiled with the help of
 header files.
+
+In summary, the chapter provides a detailed explanation of how the CP compiler
+translates a functional language into efficient JavaScript code while tackling
+key challenges like language paradigm mismatch, performance optimizations, and
+maintaining modularity with separate compilation. While the implementation
+successfully meets performance goals, certain areas, such as parametric
+polymorphism and further optimizations, remain as potential future directions
+for improvement.

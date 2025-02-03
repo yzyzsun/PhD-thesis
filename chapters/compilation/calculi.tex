@@ -27,8 +27,7 @@ type-indexed records, and the following improvements:
 \end{itemize}
 Technical results include proofs of type safety, as well as several interesting
 properties about our translation of types into record labels. All proofs are
-mechanically checked using the Coq proof assistant and are available in the
-supplementary materials.
+mechanically checked using the Coq proof assistant.
 
 \section{Target Calculus with Extensible Records}
 
@@ -1068,3 +1067,11 @@ the derived logical equivalence. We anticipate a similar theorem asserting that
 logical equivalence implies contextual equivalence, provided that contextual
 equivalence is defined in a manner analogous to \necolus. Consequently, the
 coherence theorem would follow, in the style of \autoref{thm:coherence}.
+
+In summary, this chapter presents a mechanized formalization of a compilation
+scheme that ensures type safety in the translation from \lambdaiplus to
+\lambdar. By focusing on the key ideas of the elaboration semantics, it
+establishes a foundation for understanding the compilation based on type-indexed
+records. The issue of coherence is also discussed, and a sketch of the coherence
+proof is provided. However, the exclusion of parametric polymorphism and
+optimizations limits the scope of this chapter, leaving room for future work.
