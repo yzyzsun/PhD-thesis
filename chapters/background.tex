@@ -16,7 +16,7 @@ assigning infinite possibilities of types to a single definition. This kind of
 polymorphism is \emph{uniform} in that all possibilities behave identically
 despite different types instantiated.
 
-In contrast, intersection types allows explicitly enumerating all possible types
+In contrast, intersection types allow explicitly enumerating all possible types
 that a single definition can have. In recently developed
 theories~\citep{dunfield2014elaborating,castagna2023programming}, intersection
 types are closely related to overloading or \emph{ad-hoc} polymorphism. For
@@ -332,7 +332,7 @@ the field \lstinline{x} is from \lstinline{r} and \lstinline{y} from
 \lstinline|{ x = 1; y = 4 }|. However, there is no naive way to implement the
 merge operator to achieve this result. \emph{Neither} left-biased \emph{nor}
 right-biased overriding is able to handle this case. Furthermore, selecting
-other fields at run time can actually lead to type unsoundness. For example,
+other fields at run time can lead to type unsoundness. For example,
 consider a variant of the previous merge:
 \begin{lstlisting}
 merge { x = 1; y = "Hi" } { x = "Bye"; y = 4 }  --> { x = ?; y = ? }
