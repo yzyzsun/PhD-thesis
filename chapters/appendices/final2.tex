@@ -4,7 +4,8 @@
 
 \subsubsection{Generic Definitions for Records}
 
-First of all, we need to define a type-indexed record as follows:
+First of all, we implement a type-indexed record as a \emph{typeful
+heterogeneous list}~\citep{kiselyov2004strongly}:
 
 \begin{lstlisting}[language=Haskell]
 data Record :: [*] -> * where
