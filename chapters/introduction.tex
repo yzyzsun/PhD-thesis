@@ -173,7 +173,7 @@ add l r = l + r
 
 The two approaches have different trade-offs. Deep embeddings support
 definitions by pattern matching, including optimizations and transformations
-over the abstract syntax, and allows for multiple interpretations. Shallow
+over the abstract syntax, and allow for multiple interpretations. Shallow
 embeddings have the ability to reuse host-language optimizations in the DSL and
 easily add new DSL constructs. Owing to these trade-offs, many embedded DSLs end
 up using a mix of approaches in practice, requiring a substantial amount of
@@ -188,7 +188,7 @@ but also supports modular dependencies.
 \paragraph{The 5\th challenge: efficient compilation for CP.}
 While previous work on compositional programming enables a solution to the four
 challenges of compositionality, a critical gap remains in terms of practical
-implementability -- especially, how to achieve efficient compilation with
+implementability -- specifically, how to achieve efficient compilation with
 separate compilation. To date, the only implementation of the CP language is
 based on an interpreter, which, while functional, does not provide the
 performance necessary for practical applications.
