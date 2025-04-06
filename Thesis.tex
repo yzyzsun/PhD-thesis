@@ -140,7 +140,8 @@
 
 \usepackage{listings}
 \lstdefinelanguage{CP}{
-  keywords={as,case,else,extends,false,fix,fold,forall,if,implements,inherits,interface,in,let,letrec,new,null,open,override,ref,super,switch,then,toString,trait,true,type,undefined,unfold,with,Bool,Bot,Double,Int,Null,Ref,String,Top,Trait},
+  keywords={as,case,else,extends,false,fix,fold,forall,if,implements,inherits,interface,in,let,letrec,new,open,override,ref,super,switch,then,toString,trait,true,type,undefined,unfold,with,Bool,Bot,Double,Int,Ref,String,Top,Trait},
+  morekeywords={null,Null}, % for pseudocode in Chapter 10
   alsoother={@},
   comment=[l]{--},
   morecomment=[n]{\{-}{-\}},
@@ -194,7 +195,7 @@
 
 \title{Compositional Programming in Action}
 \author{Yaozhu Sun}
-\date{February 2025}
+\date{8 April 2025}
 
 
 %%----------------------------------------------------------------------------%%
@@ -266,7 +267,7 @@
                                          \vspace*{0.2in}
   for the degree of Doctor of Philosophy \\
   at the University of Hong Kong         \\
-  in \@date
+  on \@date
   \end{center}
   \vspace*{0.5in}
 }%

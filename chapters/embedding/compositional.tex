@@ -382,21 +382,23 @@ DSL.
 
 \subsection{A Detailed Comparison between Different Embedding Approaches} \label{sec:comparison}
 
+\newcommand\super[1]{\makebox[0pt]{$\;^#1$}}
+
 \begin{table}
 \caption{A detailed comparison between different embedding approaches.} \label{tab:comparison}
 \centering
 \begin{tabular}{*{6}{c}}
 \toprule
-                                       &\textsc{Shallow}& \textsc{Deep} &\textsc{Hybrid}& \textsc{Poly.}& \textsc{Comp.}\\
+                                       &\textsc{Shallow}&    \textsc{Deep}   &    \textsc{Hybrid} &    \textsc{Poly.}  &    \textsc{Comp.}  \\
 \midrule \midrule
-Transcoding free                       &    \CIRCLE     &    \CIRCLE    &    \Circle    &    \CIRCLE    &    \CIRCLE    \\
-Linguistic reuse                       &    \CIRCLE     &    \Circle    &    \CIRCLE    &    \CIRCLE    &    \CIRCLE    \\
-Language construct extensibility       &    \CIRCLE     &    \Circle    &\LEFTcircle$^1$&    \CIRCLE    &    \CIRCLE    \\
-Interpretation extensibility           &    \Circle     &    \CIRCLE    &    \CIRCLE    &    \CIRCLE    &    \CIRCLE    \\
-Transformations and optimizations      &    \Circle     &    \CIRCLE    &    \CIRCLE    &\LEFTcircle$^2$&\LEFTcircle$^2$\\
-Linguistic reuse after transformations &    \em n/a     &    \Circle    &    \Circle    &    \CIRCLE    &    \CIRCLE    \\
-Modular dependencies                   &    \Circle     &\LEFTcircle$^3$&\LEFTcircle$^3$&    \Circle    &    \CIRCLE    \\
-Nested pattern matching                &    \Circle     &    \CIRCLE    &    \CIRCLE    &    \Circle    &\LEFTcircle$^4$\\
+Transcoding free                       &    \CIRCLE     &    \CIRCLE         &    \Circle         &    \CIRCLE         &    \CIRCLE         \\
+Linguistic reuse                       &    \CIRCLE     &    \Circle         &    \CIRCLE         &    \CIRCLE         &    \CIRCLE         \\
+Language construct extensibility       &    \CIRCLE     &    \Circle         &\LEFTcircle\super{1}&    \CIRCLE         &    \CIRCLE         \\
+Interpretation extensibility           &    \Circle     &    \CIRCLE         &    \CIRCLE         &    \CIRCLE         &    \CIRCLE         \\
+Transformations and optimizations      &    \Circle     &    \CIRCLE         &    \CIRCLE         &\LEFTcircle\super{2}&\LEFTcircle\super{2}\\
+Linguistic reuse after transformations &    \em n/a     &    \Circle         &    \Circle         &    \CIRCLE         &    \CIRCLE         \\
+Modular dependencies                   &    \Circle     &\LEFTcircle\super{3}&\LEFTcircle\super{3}&    \Circle         &    \CIRCLE         \\
+Nested pattern matching                &    \Circle     &    \CIRCLE         &    \CIRCLE         &    \Circle         &\LEFTcircle\super{4}\\
 \bottomrule
 \end{tabular}
 \vskip 1ex
