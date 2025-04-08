@@ -138,6 +138,21 @@ As discussed briefly above, we believe that it is challenging to redesign the
 relevant rules to support side effects in top-like terms, so we leave it for
 future work.
 
+\paragraph{Side effects with unrestricted intersection types.}
+In this thesis, we allow unrestricted intersection types like
+$\mathbb{Z}\tand\mathbb{Z}$. When coercing a term of type $\mathbb{Z}$ into
+$\mathbb{Z}\tand\mathbb{Z}$, the content of the term is duplicated. If there are
+side effects in the term, they will be executed twice too. This problem is
+similar to the one discussed previously on top-like terms: side effects are
+unexpectedly erased there and duplicated here. We can fix the issue by
+restricting the intersection types and thus disallowing types like
+$\mathbb{Z}\tand\mathbb{Z}$. \citet{ye2024imperative} employed this approach in
+their work on distributive intersection subtyping for imperative languages.
+However, this restriction reduces the expressiveness of the language, so this
+thesis does not adopt it. We leave for future work the exploration of a solution
+that allows unrestricted intersections while avoiding the unexpected duplication
+of side effects.
+
 \paragraph{Reconciliation between eagerness and laziness.}
 As observed by \citet{fan2022direct}, trait instantiation may diverge in CP if a
 call-by-value evaluation strategy is used. Several years ago, a

@@ -110,7 +110,8 @@ minimal types in the type lattice respectively. The top type is a supertype of
 any type, and the bottom type is a subtype of any type. In other words, all
 terms can be assigned the top type, while the bottom type is uninhabited
 theoretically. However, for practical convenience, \lstinline{undefined} can be
-assigned any type, including the bottom type.
+assigned any type, including the bottom type. If \lstinline{undefined} is indeed
+accessed, there will be an error at run time.
 
 \section{Compound Types}
 

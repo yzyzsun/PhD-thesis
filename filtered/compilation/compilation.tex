@@ -234,7 +234,7 @@ delayed until the whole record is constructed with the field \lstinline{y}
 available. But note that the getter is called every time the field is accessed.
 This is undesirable as the computation in the thunk would be triggered on every
 access to the field. We optimize this by memoizing fields using \emph{smart
-getters}\footnote{\url{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get\#smart_self-overwriting_lazy_getters}}.
+getters}.\footnote{\url{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/get\#smart_self-overwriting_lazy_getters}}
 As shown in \autoref{fig:call-by-need}, once the field is evaluated, the getter
 is deleted, and the value is stored instead. Our implementation automatically
 detects self-annotated trait fields and applies the last approach to them; for

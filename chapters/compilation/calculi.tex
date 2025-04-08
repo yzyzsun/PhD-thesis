@@ -10,7 +10,10 @@ parametric polymorphism from \fiplus~\citep{bi2019distributive,fan2022direct},
 the core calculus for CP. Polymorphism is supported in our compiler, and its
 compilation is informally explained in \autoref{sec:poly}. We omit polymorphism
 here because it adds considerable complications that would distract us from the
-key ideas of the compilation scheme. Furthermore, our formalization does not
+key ideas of the compilation scheme. For the same reason, we do not include
+references and recursive types in our formalization. Traits are also absent
+because they have been desugared during the elaboration from CP to
+\fiplus~\citep{zhang2021compositional}. Furthermore, our formalization does not
 include most optimizations.
 
 The \emph{target calculus} \lambdar is a standard $\lambda$-calculus that
@@ -859,7 +862,7 @@ unoptimized to show the correspondence with the \lambdar terms. In the optimized
 code for the first version, for instance, the creation of \lstinline{$4} and
 \lstinline{$6} can be eliminated.
 
-\section{A Sketch of the Coherence Proof} \label{sec:coherence}
+\section{Possible Approach to Proving Coherence} \label{sec:coherence}
 
 In this section, we will provide a summary of the key steps in the coherence
 proof for \necolus~\citep{bi2018essence}. After that, we will discuss how to

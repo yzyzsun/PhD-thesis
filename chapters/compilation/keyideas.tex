@@ -61,6 +61,12 @@ $[[(48,true).fst]]$. Although we only avoid one step of beta reduction in this
 case, a more complicated subtyping judgment will lead to many coercion functions
 composed together and introduce many spurious applications.
 
+An alternative choice is to keep the original elaboration rules and let the
+target language perform standard optimizations like function inlining. However,
+this approach depends on the nature of the target language and brings
+uncertainty to the performance of the generated code. In our implementation, we
+choose to optimize it in the elaboration phase.
+
 \paragraph{Linear merge lookup.}
 A second important drawback of \citeauthor{dunfield2014elaborating}'s approach
 is the representation of merges as nested pairs. The merge operator composes

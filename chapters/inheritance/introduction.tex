@@ -166,8 +166,9 @@ polymorphism.  We are also aware of some designs with both multiple inheritance
 and family polymorphism~\citep{nystrom2006j,aracic2006overview,clarke2007tribe},
 but without dynamic inheritance. Except for the CP language, the only statically
 typed language we know that supports all three features is
-\texttt{gbeta}~\citep{ernst2000gbeta}. However, \texttt{gbeta} cannot statically
-guarantee that every use of dynamic inheritance is type-safe, although
+\texttt{gbeta}~\citep{ernst2000gbeta}. However, \texttt{gbeta} cannot guarantee
+that every use of dynamic inheritance is safe in a well-typed program,
+thus dynamic inheritance in \texttt{gbeta} is type-unsafe. Later,
 \citet{ernst2002safe} proves a subset of use cases to be type-safe. Moreover,
 separate compilation can only be supported with an inefficient linear search
 through super-mixins for inherited attributes. To the best of our knowledge, CP

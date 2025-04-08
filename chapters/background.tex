@@ -312,7 +312,7 @@ let merge (r: { x: Int }) (s: { x: Int }) = r,s in  -- Type Error!
 merge { x = 1 } { x = 3 }  --> { x = ? }
 \end{lstlisting}
 
-\paragraph{Interaction between merging and subtyping.}
+\paragraph{Interaction between merging and subtyping.} \label{sec:merge}
 If we further consider subtyping, the merge operator is still problematic, and
 disjointness alone is not sufficient to prevent ambiguity. For example, consider
 the following code:
@@ -458,8 +458,13 @@ function can be rewritten as:
 \begin{lstlisting}
 double (x: Int|Null) = switch x as x case Null => 0 case Int => 2*x;
 \end{lstlisting}
-Now union types have an explicit elimination form, \textsc{T-OrElim} can be
-replaced by \textsc{T-Switch}:
+Union types now have an explicit elimination form, which is similar to pattern
+matching of algebraic data types in Haskell. However, a big difference is that
+unions are tagged in Haskell while they are \emph{untagged} in our setting.
+Instead, type information is kept at run time to guide the union elimination.
+
+With type-cases, the previous rule \textsc{T-OrElim} can be replaced by a new
+rule \textsc{T-Switch}:
 \begin{mathpar}
 \inferrule[T-Switch]{\Gamma \vdash e_0 : A \tor B \\
                      \Gamma, x : A \,\vdash\, e_1 : C \\
