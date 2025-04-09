@@ -233,7 +233,9 @@ trait implements AddSig<Eval&Print> => {
 To achieve this, CP employs \emph{nested composition}~\citep{bi2018essence} and
 \emph{distributive subtyping}~\citep{barendregt1983filter}, where traits,
 records, and functions distribute over intersections. In other words, merging
-applies to the whole trait hierarchy, including nested traits. This example
+applies to the whole trait hierarchy, including nested traits.
+When merging two functions with the same parameter list, CP will create a new
+function that executes both functions and merges the results. This example
 showcases family polymorphism by the refinement of nested traits (i.e. CP's
 version of virtual classes).
 

@@ -123,7 +123,7 @@ tindx, T, Ts, K, U, ll {{ tex \ell }}, llo {{ tex \ell }} :: 'ti_' ::= {{ com Ty
   | bool          :: M:: bool {{ tex \mathtt{bool} }}
   | char          :: M:: char {{ tex \mathtt{char} }}
   
-texp {{ tex \textit{target expressions} }}, t {{ tex \epsilon }}, tv {{ tex \nu }}, tvo {{ tex \nu }}
+texp {{ tex \textit{target expressions} }}, t {{ tex \epsilon }}, tv {{ tex \nu }}, tvo {{ tex \nu }}, o
                                         :: 'texp_' ::=              {{ com target term  }}
   | x                                   :: :: var     {{ com variable }}
   | n                                   :: :: base    {{ com integer value }}
@@ -146,6 +146,7 @@ texp {{ tex \textit{target expressions} }}, t {{ tex \epsilon }}, tv {{ tex \nu 
   | true           :: M:: true     {{ tex \mathbf{true} }}
   | false          :: M:: false    {{ tex \mathbf{false} }}
   | a              :: M:: chara    {{ tex \text{`\texttt{a}'} }}
+  | foobar         :: M:: foobar  {{ tex \text{``\texttt{foobar}''} }}
   | c t            ::  :: capp     {{ tex c\,[[t]] }}
 
 substitutions

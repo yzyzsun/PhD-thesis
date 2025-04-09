@@ -573,6 +573,26 @@ merged back, guided by the types. Note that, in this process, it is possible to
 duplicate terms and lead to duplicate labels in the corresponding target record
 terms.
 
+\paragraph{Example.}
+To better illustrate the elaboration process, let us consider the following example:
+\begin{lstlisting}
+let o = { l = "foobar" } , { l = 48 } in o.m - 2
+\end{lstlisting}
+According to the elaboration \rref{Ela-Rcd,Ela-Merge}, the elaborated term for
+\lstinline{o} is $\ottsym{\{}   | \ottsym{\{}  \ell  :   \mathbf{String}   \ottsym{\}} |   \Mapsto  \ottsym{\{}   |  \mathbf{String}  |   \Mapsto   \text{``\texttt{foobar}''}   \ottsym{\}}  ; \,   | \ottsym{\{}  \ell  :   \mathbf{Int}   \ottsym{\}} |   \Mapsto  \ottsym{\{}   |  \mathbf{Int}  |   \Mapsto  48  \ottsym{\}}  \ottsym{\}}$. When extracting the field $\ell$, a naive approach may
+coerce \lstinline{o} from $\ottsym{\{}  \ell  :   \mathbf{String}   \ottsym{\}}  \, {\&} \,  \ottsym{\{}  \ell  :   \mathbf{Int}   \ottsym{\}}$ to $\ottsym{\{}  \ell  :   \mathbf{String}   \, {\&} \,   \mathbf{Int}   \ottsym{\}}$
+and resort to the coercive merging \rref{M-Rcd} to reconstruct the target term.
+However, this is not necessary with the help of distributive projection.
+Instead, we can directly extract the field $\ell$ via
+\rref{Ela-Proj,P-And,P-RcdEq}. The elaborated term for \lstinline{o.m} is
+$\ottnt{o}  \ottsym{.}   | \ottsym{\{}  \ell  :   \mathbf{String}   \ottsym{\}} |   \,{+}\!{+}\,  \ottnt{o}  \ottsym{.}   | \ottsym{\{}  \ell  :   \mathbf{Int}   \ottsym{\}} | $ (referred to as $\epsilon$).
+Finally, before subtracting 2, we need to coerce \lstinline{o.m} from
+$ \mathbf{String}   \, {\&} \,   \mathbf{Int} $ to $ \mathbf{Int} $. The elaboration \rref{Ela-Sub} will
+delegate \rref{S-Int} to generate the coercion and lead to
+$\ottsym{\{}   |  \mathbf{Int}  |   \Mapsto  \epsilon  \ottsym{.}   |  \mathbf{Int}  |   \ottsym{\}}  \ottsym{.}   |  \mathbf{Int}  |  - 2$. The boxing/unboxing process is
+annoying and inefficient here; nevertheless, it will be optimized later
+in \autoref{sec:boxing}.
+
 \paragraph{Soundness of elaboration.}
 The semantics of our source calculus is given via an elaboration, which reflects
 the compilation of CP. We establish our type-safety proofs on (1) the type
